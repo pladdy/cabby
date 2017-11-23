@@ -7,5 +7,8 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
+fmt:
+	go fmt -x
+
 test:
 	go test -v -cover ./...
