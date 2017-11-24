@@ -21,6 +21,7 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 		user, pass, ok := r.BasicAuth()
 
 		if !ok || !validate(user, pass) {
+			w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
