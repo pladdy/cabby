@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -9,7 +10,13 @@ import (
 	"testing"
 )
 
-const DiscoveryURL = "http://localhost:1234/taxii"
+const (
+	DiscoveryURL = "http://localhost:1234/taxii"
+	TestUser     = "pladdy"
+	TestPass     = "pants"
+)
+
+/* helpers */
 
 var testResource = DiscoveryResource{
 	"Test Discovery",
@@ -43,8 +50,8 @@ func resourceToJSON(v interface{}) string {
 
 /* tests */
 
-func TestHandler(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+func TestDiscoveryHandler(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
 	defer ts.Close()
 
 	result := getResponseBody(ts.URL)
@@ -56,7 +63,7 @@ func TestHandler(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handler))
+	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL)
@@ -78,10 +85,73 @@ func TestMain(t *testing.T) {
 		main()
 	}()
 
-	result := getResponseBody(DiscoveryURL)
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", DiscoveryURL, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.SetBasicAuth(TestUser, TestPass)
+
+	res, err := client.Do(req)
+	if err != err {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != err {
+		log.Fatal(err)
+	}
+
 	expected := resourceToJSON(testResource)
 
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+	if string(body) != expected {
+		t.Error("Got:", string(body), "Expected:", expected)
+	}
+}
+
+func TestBasicAuth(t *testing.T) {
+	tests := []struct {
+		user     string
+		pass     string
+		expected int
+	}{
+		{"pladdy", "pants", 200},
+		{"simon", "says", 401},
+	}
+
+	testHandlerAuth := basicAuth(
+		func(w http.ResponseWriter, r *http.Request) {
+			io.WriteString(w, "test")
+		})
+
+	for _, test := range tests {
+		req := httptest.NewRequest("GET", DiscoveryURL, nil)
+		req.SetBasicAuth(test.user, test.pass)
+		res := httptest.NewRecorder()
+		testHandlerAuth(res, req)
+
+		if res.Code != test.expected {
+			t.Error("Got:", res.Code, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		user     string
+		pass     string
+		expected bool
+	}{
+		{"pladdy", "pants", true},
+		{"simon", "says", false},
+	}
+
+	for _, test := range tests {
+		actual := validate(test.user, test.pass)
+		if actual != test.expected {
+			t.Error("Got:", actual, "Expected:", test.expected)
+		}
 	}
 }

@@ -1,0 +1,12 @@
+Get basic auth added
+
+Add a cert and get TLS working
+  - https://letsencrypt.org/getting-started/
+  - https://certbot.eff.org/#osx-other
+
+Add a collection
+  - use uuids: https://github.com/satori/go.uuid
+
+Add some kind of db for auth/collections?
+  - https://github.com/rqlite/rqlite/
+

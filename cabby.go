@@ -16,7 +16,27 @@ type DiscoveryResource struct {
 	APIRoots    []string `json:"api_roots"`
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
+func basicAuth(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, pass, ok := r.BasicAuth()
+
+		if !ok || !validate(user, pass) {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		h(w, r)
+	}
+}
+
+func validate(u, p string) bool {
+	if u == "pladdy" && p == "pants" {
+		return true
+	}
+	return false
+}
+
+func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", TAXIIContentType)
 
 	resource := DiscoveryResource{
@@ -33,6 +53,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/taxii", handler)
+	http.HandleFunc("/taxii", basicAuth(handleDiscovery))
 	http.ListenAndServe(":1234", nil)
 }
