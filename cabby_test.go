@@ -16,38 +16,22 @@ const (
 	TestPass     = "pants"
 )
 
-/* helpers */
-
-func getResponseBody(url string) string {
-	res, err := http.Get(url)
-	if err != err {
-		log.Fatal(err)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != err {
-		log.Fatal(err)
-	}
-	return string(body)
-}
-
-/* tests */
-
 func TestParseDiscoveryResource(t *testing.T) {
 	result := string(parseDiscoveryResource(DiscoveryResourceFile))
 
 	if len(result) == 0 {
 		t.Error("Got:", result, "Expected: length > 0")
 	}
+}
 
+func TestParseDiscoveryResourceNotFound(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Println("Recovered", r)
 		}
 	}()
 
-	result = string(parseDiscoveryResource("foo/bar"))
+	_ = string(parseDiscoveryResource("foo/bar"))
 	t.Error("Failed to panic with an unknown resource")
 }
 
@@ -177,7 +161,7 @@ func TestValidate(t *testing.T) {
 		pass     string
 		expected bool
 	}{
-		{"pladdy", "pants", true},
+		{TestUser, TestPass, true},
 		{"simon", "says", false},
 	}
 
