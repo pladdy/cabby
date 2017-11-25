@@ -1,12 +1,16 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
-const TAXIIContentType = "application/vnd.oasis.taxii+json; version=2.0"
+const (
+	TAXIIContentType      = "application/vnd.oasis.taxii+json; version=2.0"
+	DiscoveryResourceFile = "data/discovery.json"
+)
 
 type DiscoveryResource struct {
 	Title       string   `json:"title"`
@@ -14,6 +18,14 @@ type DiscoveryResource struct {
 	Contact     string   `json:"contact"`
 	Default     string   `json:"default"`
 	APIRoots    []string `json:"api_roots"`
+}
+
+func parseDiscoveryResource(resource string) []byte {
+	b, err := ioutil.ReadFile(resource)
+	if err != nil {
+		log.Panic(err)
+	}
+	return b
 }
 
 func basicAuth(h http.HandlerFunc) http.HandlerFunc {
@@ -38,19 +50,15 @@ func validate(u, p string) bool {
 }
 
 func handleDiscovery(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		if r := recover(); r != nil {
+			http.Error(w, "Resource not found", http.StatusNotFound)
+		}
+	}()
+
+	b := parseDiscoveryResource(DiscoveryResourceFile)
 	w.Header().Set("Content-Type", TAXIIContentType)
-
-	resource := DiscoveryResource{
-		"Test Discovery",
-		"This is a test discovery resource",
-		"pladdy",
-		"https://test.com/api1",
-		[]string{"https://test.com/api2", "https://test.com/api3"}}
-
-	b, err := json.Marshal(resource)
-	if err == nil {
-		fmt.Fprintf(w, string(b))
-	}
+	io.WriteString(w, string(b))
 }
 
 func main() {

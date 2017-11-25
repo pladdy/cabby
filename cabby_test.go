@@ -1,12 +1,12 @@
 package main
 
 import (
-	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
@@ -17,13 +17,6 @@ const (
 )
 
 /* helpers */
-
-var testResource = DiscoveryResource{
-	"Test Discovery",
-	"This is a test discovery resource",
-	"pladdy",
-	"https://test.com/api1",
-	[]string{"https://test.com/api2", "https://test.com/api3"}}
 
 func getResponseBody(url string) string {
 	res, err := http.Get(url)
@@ -39,26 +32,66 @@ func getResponseBody(url string) string {
 	return string(body)
 }
 
-func resourceToJSON(v interface{}) string {
-	b, err := json.Marshal(v)
+/* tests */
+
+func TestParseDiscoveryResource(t *testing.T) {
+	result := string(parseDiscoveryResource(DiscoveryResourceFile))
+
+	if len(result) == 0 {
+		t.Error("Got:", result, "Expected: length > 0")
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+		}
+	}()
+
+	result = string(parseDiscoveryResource("foo/bar"))
+	t.Error("Failed to panic with an unknown resource")
+}
+
+func TestDiscoveryHandler(t *testing.T) {
+	req := httptest.NewRequest("GET", DiscoveryURL, nil)
+	res := httptest.NewRecorder()
+	handleDiscovery(res, req)
+
+	if res.Code != 200 {
+		t.Error("Got:", res.Code, "Expected:", 200)
+	}
+
+	b, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	json := string(b)
-	return json
-}
-
-/* tests */
-
-func TestDiscoveryHandler(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
-	defer ts.Close()
-
-	result := getResponseBody(ts.URL)
-	expected := resourceToJSON(testResource)
+	result := string(b)
+	expected := string(parseDiscoveryResource(DiscoveryResourceFile))
 
 	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+		t.Error("Got:", string(result), "Expected:", string(expected))
+	}
+}
+
+func TestDiscoveryHandlerNoResource(t *testing.T) {
+	oldPath := DiscoveryResourceFile
+	newPath := oldPath + ".testing"
+
+	// rename the resource so it can't be found
+	err := os.Rename(oldPath, newPath)
+	if err != nil {
+		log.Fatal("Failed to rename test file:", oldPath)
+	}
+
+	req := httptest.NewRequest("GET", DiscoveryURL, nil)
+	res := httptest.NewRecorder()
+	handleDiscovery(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+	err = os.Rename(newPath, oldPath)
+	if err != nil {
+		log.Fatal("Failed to rename test file:", newPath)
 	}
 }
 
@@ -104,7 +137,7 @@ func TestMain(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	expected := resourceToJSON(testResource)
+	expected := string(parseDiscoveryResource(DiscoveryResourceFile))
 
 	if string(body) != expected {
 		t.Error("Got:", string(body), "Expected:", expected)

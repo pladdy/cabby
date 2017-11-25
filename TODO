@@ -1,5 +1,3 @@
-Get basic auth added
-
 Add a cert and get TLS working
   - https://letsencrypt.org/getting-started/
   - https://certbot.eff.org/#osx-other
