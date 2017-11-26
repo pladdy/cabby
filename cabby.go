@@ -1,10 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 )
 
 const (
@@ -18,6 +21,26 @@ type DiscoveryResource struct {
 	Contact     string   `json:"contact"`
 	Default     string   `json:"default"`
 	APIRoots    []string `json:"api_roots"`
+}
+
+type Config struct {
+	Host string
+	Port int
+}
+
+func parseConfig(file string) (config Config) {
+	configFile, err := os.Open(file)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	decoder := json.NewDecoder(configFile)
+	err = decoder.Decode(&config)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return
 }
 
 func parseDiscoveryResource(resource string) []byte {
@@ -62,6 +85,10 @@ func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	config := parseConfig("config.json")
+	port := strconv.Itoa(config.Port)
+	log.Println("Serving on port " + port)
+
 	http.HandleFunc("/taxii", basicAuth(handleDiscovery))
-	http.ListenAndServe(":1234", nil)
+	http.ListenAndServe(":"+port, nil)
 }

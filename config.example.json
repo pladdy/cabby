@@ -1,0 +1,13 @@
+{
+  "Host": "localhost",
+  "Port": 1234,
+  "Discovery": {
+    "Title": "Test Discovery",
+    "Description": "This is a test discovery resource",
+    "Contact": "pladdy",
+    "Default": "http://localhost/taxii",
+    "APIRoots": [
+      "http://localhost/taxii"
+    ]
+  }
+}

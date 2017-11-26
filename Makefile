@@ -1,6 +1,9 @@
 clean:
 	rm -f cabby
 
+config:
+	cp config.example.json config.json
+
 cover:
 	go test -v -coverprofile=cover.out
 	go tool cover -func=cover.out
