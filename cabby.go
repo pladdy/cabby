@@ -15,6 +15,25 @@ const (
 	DiscoveryResourceFile = "data/discovery.json"
 )
 
+type Error struct {
+	Title           string            `json:"title"`
+	Description     string            `json:"description,omitempty"`
+	ErrorId         string            `json:"error_id,omitempty"`
+	ErrorCode       string            `json:"error_code,omitempty"`
+	HTTPStatus      int               `json:"http_status,string,omitempty"`
+	ExternalDetails string            `json:"external_details,omitempty"`
+	Details         map[string]string `json:"details,omitempty"`
+}
+
+func (e *Error) Message() string {
+	b, err := json.Marshal(e)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return string(b)
+}
+
 type DiscoveryResource struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
@@ -57,7 +76,8 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 
 		if !ok || !validate(user, pass) {
 			w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			error := Error{Title: "Unauthorized", HTTPStatus: http.StatusUnauthorized}
+			http.Error(w, error.Message(), http.StatusUnauthorized)
 			return
 		}
 

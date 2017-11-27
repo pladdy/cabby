@@ -17,6 +17,16 @@ const (
 	TestPass     = "pants"
 )
 
+func TestErrorMessage(t *testing.T) {
+	testError := Error{Title: "Test title", HTTPStatus: 404}
+	result := testError.Message()
+	expected := `{"title":"Test title","http_status":"404"}`
+
+	if testError.Message() != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
 func TestParseConfig(t *testing.T) {
 	config := parseConfig("config.example.json")
 
