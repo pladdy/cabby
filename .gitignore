@@ -16,3 +16,5 @@
 # App specific
 cabby
 config.json
+*.crt
+*.key

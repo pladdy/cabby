@@ -1,6 +1,9 @@
-Add a cert and get TLS working
-  - https://letsencrypt.org/getting-started/
-  - https://certbot.eff.org/#osx-other
+Pick a data store:
+  - sqlite?
+  - rethinkdb?
+  - elasticsearch?
+  - polyglot?
+  - rqlite?
 
 Add a collection
   - use uuids: https://github.com/satori/go.uuid

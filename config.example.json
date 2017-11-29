@@ -1,6 +1,8 @@
 {
   "Host": "localhost",
   "Port": 1234,
+  "SSLCert": "server.crt",
+  "SSLKey": "server.key",
   "Discovery": {
     "Title": "Test Discovery",
     "Description": "This is a test discovery resource",

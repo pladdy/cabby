@@ -1,6 +1,10 @@
 clean:
 	rm -f cabby
 
+cert:
+	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/ST=Maryland/L=Baltimore/O=Cabby TAXII 2.0/CN=pladdy"
+	chmod 600 server.key
+
 config:
 	cp config.example.json config.json
 
@@ -15,6 +19,9 @@ endif
 
 fmt:
 	go fmt -x
+
+run:
+	ls *.go | grep -v _test | xargs go run
 
 test:
 	go test -v -cover ./...

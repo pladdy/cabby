@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	DiscoveryURL = "http://localhost:1234/taxii"
+	DiscoveryURL = "https://localhost:1234/taxii"
 	TestUser     = "pladdy"
 	TestPass     = "pants"
 )
@@ -127,6 +128,19 @@ func TestDiscoveryHandlerNoResource(t *testing.T) {
 	}
 }
 
+func TestStrictTransportSecurity(t *testing.T) {
+	resultKey, resultValue := strictTransportSecurity()
+	expectedKey, expectedValue := "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
+
+	if resultKey != expectedKey {
+		t.Error("Got:", resultKey, "Expected:", expectedKey)
+	}
+
+	if resultValue != expectedValue {
+		t.Error("Got:", resultValue, "Expected:", expectedValue)
+	}
+}
+
 func TestHeaders(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
 	defer ts.Close()
@@ -150,7 +164,12 @@ func TestMain(t *testing.T) {
 		main()
 	}()
 
-	client := &http.Client{}
+	// set up client with TLS configured
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	tr := &http.Transport{TLSClientConfig: tlsConfig}
+	client := &http.Client{Transport: tr}
 
 	req, err := http.NewRequest("GET", DiscoveryURL, nil)
 	if err != nil {
