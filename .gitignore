@@ -18,3 +18,7 @@ cabby
 config.json
 *.crt
 *.key
+
+# Vagrant
+.vagrant
+*.log

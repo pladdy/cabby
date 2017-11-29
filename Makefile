@@ -17,6 +17,9 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
+deps:
+	go get gopkg.in/gorethink/gorethink.v3
+
 fmt:
 	go fmt -x
 
