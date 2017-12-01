@@ -9,7 +9,7 @@
     "Contact": "pladdy",
     "Default": "http://localhost/taxii",
     "APIRoots": [
-      "http://localhost/taxii"
+      "http://localhost/cabby"
     ]
   }
 }

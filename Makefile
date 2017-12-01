@@ -1,3 +1,5 @@
+.PHONY: config
+
 clean:
 	rm -f cabby
 
@@ -6,7 +8,9 @@ cert:
 	chmod 600 server.key
 
 config:
-	cp config.example.json config.json
+	for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
+		cp $${file}.example.json $${file}.json; \
+	done
 
 cover:
 	go test -v -coverprofile=cover.out

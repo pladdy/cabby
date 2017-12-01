@@ -15,7 +15,7 @@
 
 # App specific
 cabby
-config.json
+!config/*example.json
 *.crt
 *.key
 
