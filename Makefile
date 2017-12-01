@@ -1,7 +1,11 @@
 .PHONY: config
 
+all: config cert deps
+
 clean:
 	rm -f cabby
+	rm -f cover.out
+	rm -f *.log
 
 cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/ST=Maryland/L=Baltimore/O=Cabby TAXII 2.0/CN=pladdy"

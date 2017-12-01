@@ -15,9 +15,11 @@
 
 # App specific
 cabby
+config/*
 !config/*example.json
 *.crt
 *.key
+*.swp
 
 # Vagrant
 .vagrant
