@@ -26,7 +26,7 @@ var (
 
 func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-    user, pass, ok := r.BasicAuth()
+		user, pass, ok := r.BasicAuth()
 
 		if !ok || !validate(user, pass) {
 			warn.Println("Invalid user/pass combination")
@@ -37,7 +37,7 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		info.Println("Basic Auth validated")
-    h(w, r)
+		h(w, r)
 	}
 }
 
@@ -68,9 +68,10 @@ func verifyDiscoveryDefined(d DiscoveryResource) {
 
 func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	defer resourceNotFound(w)
+	info.Println("Discovery resource requested")
 
 	config := CabbyConfig{}.parse(CabbyConfigPath)
-  verifyDiscoveryDefined(config.Discovery)
+	verifyDiscoveryDefined(config.Discovery)
 
 	b, err := json.Marshal(config.Discovery)
 	if err != nil {
@@ -78,19 +79,19 @@ func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", TAXIIContentType)
-	info.Println("Handling discovery resource request")
+	info.Println("Responding with a Discovery resource")
 	io.WriteString(w, string(b))
 }
 
-// handler wrapper to force HTTPS use
+/* create server and launch */
+
+// handler wrapper to accept HTTPS requests only
 func HSTS(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-    w.Header().Add(strictTransportSecurity())
-    h.ServeHTTP(w, r)
-  })
+		w.Header().Add(strictTransportSecurity())
+		h.ServeHTTP(w, r)
+	})
 }
-
-/* create server and launch */
 
 func setupTLS() *tls.Config {
 	return &tls.Config{
@@ -108,7 +109,7 @@ func setupTLS() *tls.Config {
 
 func setupServer(c Config, h http.Handler) *http.Server {
 	port := strconv.Itoa(c.Port)
-	info.Println("Serving will listen on port " + port)
+	info.Println("Server will listen on port " + port)
 
 	return &http.Server{
 		Addr:         ":" + port,

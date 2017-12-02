@@ -74,12 +74,12 @@ func TestDiscoveryHandlerNoResourceDefined(t *testing.T) {
 		{"test/noDiscoveryConfig.json", CabbyConfigPath},
 	}
 
-  for _, renameOp := range renameOps {
+	for _, renameOp := range renameOps {
 		err := os.Rename(renameOp.from, renameOp.to)
 		if err != nil {
 			log.Fatal("Failed to rename file:", renameOp.from)
 		}
-  }
+	}
 
 	req := httptest.NewRequest("GET", DiscoveryURL, nil)
 	res := httptest.NewRecorder()
@@ -90,8 +90,8 @@ func TestDiscoveryHandlerNoResourceDefined(t *testing.T) {
 	}
 
 	// rename files back in reverse (order matters or you clobber the files)
-  for i := len(renameOps)-1; i >= 0; i-- {
-    renameOp := renameOps[i]
+	for i := len(renameOps) - 1; i >= 0; i-- {
+		renameOp := renameOps[i]
 		err := os.Rename(renameOp.to, renameOp.from)
 		if err != nil {
 			log.Fatal("Failed to rename file:", renameOp.to)

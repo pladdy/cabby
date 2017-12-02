@@ -7,9 +7,8 @@
     "Title": "Test Discovery",
     "Description": "This is a test discovery resource",
     "Contact": "pladdy",
-    "Default": "http://localhost/taxii",
+    "Default": "https://localhost/taxii",
     "APIRoots": [
-      "http://localhost/cabby"
     ]
   }
 }
