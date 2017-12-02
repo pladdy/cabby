@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"log"
@@ -30,22 +31,24 @@ func TestDiscoveryHandler(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	result := string(b)
-	expected := string(parseDiscoveryResource(DiscoveryResourceFile))
 
-	if result != expected {
-		t.Error("Got:", string(result), "Expected:", string(expected))
+	result := string(b)
+	config := CabbyConfig{}.parse(CabbyConfigPath)
+	expected, _ := json.Marshal(config.Discovery)
+
+	if result != string(expected) {
+		t.Error("Got:", result, "Expected:", string(expected))
 	}
 }
 
-func TestDiscoveryHandlerNoResource(t *testing.T) {
-	oldPath := DiscoveryResourceFile
-	newPath := oldPath + ".testing"
+func TestDiscoveryHandlerNoConfig(t *testing.T) {
+	configPath := CabbyConfigPath
+	newConfigPath := configPath + ".testing"
 
-	// rename the resource so it can't be found
-	err := os.Rename(oldPath, newPath)
+	// rename the app config so it can't be found
+	err := os.Rename(configPath, newConfigPath)
 	if err != nil {
-		log.Fatal("Failed to rename test file:", oldPath)
+		log.Fatal("Failed to rename file:", configPath)
 	}
 
 	req := httptest.NewRequest("GET", DiscoveryURL, nil)
@@ -55,9 +58,44 @@ func TestDiscoveryHandlerNoResource(t *testing.T) {
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
 	}
-	err = os.Rename(newPath, oldPath)
+
+	err = os.Rename(newConfigPath, configPath)
 	if err != nil {
-		log.Fatal("Failed to rename test file:", newPath)
+		log.Fatal("Failed to rename file:", newConfigPath)
+	}
+}
+
+func TestDiscoveryHandlerNoResourceDefined(t *testing.T) {
+	renameOps := []struct {
+		from string
+		to   string
+	}{
+		{CabbyConfigPath, CabbyConfigPath + ".testing"},
+		{"test/noDiscoveryConfig.json", CabbyConfigPath},
+	}
+
+  for _, renameOp := range renameOps {
+		err := os.Rename(renameOp.from, renameOp.to)
+		if err != nil {
+			log.Fatal("Failed to rename file:", renameOp.from)
+		}
+  }
+
+	req := httptest.NewRequest("GET", DiscoveryURL, nil)
+	res := httptest.NewRecorder()
+	handleDiscovery(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+
+	// rename files back in reverse (order matters or you clobber the files)
+  for i := len(renameOps)-1; i >= 0; i-- {
+    renameOp := renameOps[i]
+		err := os.Rename(renameOp.to, renameOp.from)
+		if err != nil {
+			log.Fatal("Failed to rename file:", renameOp.to)
+		}
 	}
 }
 
@@ -121,10 +159,11 @@ func TestMain(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	expected := string(parseDiscoveryResource(DiscoveryResourceFile))
+	config := CabbyConfig{}.parse(CabbyConfigPath)
+	expected, _ := json.Marshal(config.Discovery)
 
-	if string(body) != expected {
-		t.Error("Got:", string(body), "Expected:", expected)
+	if string(body) != string(expected) {
+		t.Error("Got:", string(body), "Expected:", string(expected))
 	}
 }
 

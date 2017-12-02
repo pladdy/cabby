@@ -1,4 +1,4 @@
-.PHONY: config
+.PHONY: config test
 
 all: config cert deps
 

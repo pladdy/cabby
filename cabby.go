@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"io"
 	"log"
 	"net/http"
@@ -10,10 +11,9 @@ import (
 )
 
 const (
-	CabbyConfigFile       = "config/cabby.json"
-	TAXIIContentType      = "application/vnd.oasis.taxii+json; version=2.0"
-	DiscoveryResourceFile = "test_data/discovery.json"
-	SixMonthsOfSeconds    = 63072000
+	CabbyConfigPath    = "config/cabby.json"
+	TAXIIContentType   = "application/vnd.oasis.taxii+json; version=2.0"
+	SixMonthsOfSeconds = 63072000
 )
 
 var (
@@ -22,9 +22,11 @@ var (
 	error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
+/* handler functions */
+
 func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, pass, ok := r.BasicAuth()
+    user, pass, ok := r.BasicAuth()
 
 		if !ok || !validate(user, pass) {
 			warn.Println("Invalid user/pass combination")
@@ -35,7 +37,7 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 		}
 
 		info.Println("Basic Auth validated")
-		h(w, r)
+    h(w, r)
 	}
 }
 
@@ -46,24 +48,49 @@ func validate(u, p string) bool {
 	return false
 }
 
+/* resource handlers */
+
 func strictTransportSecurity() (key, value string) {
 	return "Strict-Transport-Security", "max-age=" + strconv.Itoa(SixMonthsOfSeconds) + "; includeSubDomains"
 }
 
+func resourceNotFound(w http.ResponseWriter) {
+	if r := recover(); r != nil {
+		http.Error(w, "Resource not found", http.StatusNotFound)
+	}
+}
+
+func verifyDiscoveryDefined(d DiscoveryResource) {
+	if d.Title == "" {
+		warn.Panic("Discovery Resource not defined")
+	}
+}
+
 func handleDiscovery(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add(strictTransportSecurity())
+	defer resourceNotFound(w)
 
-	defer func() {
-		if r := recover(); r != nil {
-			http.Error(w, "Resource not found", http.StatusNotFound)
-		}
-	}()
+	config := CabbyConfig{}.parse(CabbyConfigPath)
+  verifyDiscoveryDefined(config.Discovery)
 
-	b := parseDiscoveryResource(DiscoveryResourceFile)
+	b, err := json.Marshal(config.Discovery)
+	if err != nil {
+		warn.Panic("Can't serve Discovery:", err)
+	}
+
 	w.Header().Set("Content-Type", TAXIIContentType)
 	info.Println("Handling discovery resource request")
 	io.WriteString(w, string(b))
 }
+
+// handler wrapper to force HTTPS use
+func HSTS(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.Header().Add(strictTransportSecurity())
+    h.ServeHTTP(w, r)
+  })
+}
+
+/* create server and launch */
 
 func setupTLS() *tls.Config {
 	return &tls.Config{
@@ -79,23 +106,24 @@ func setupTLS() *tls.Config {
 	}
 }
 
+func setupServer(c Config, h http.Handler) *http.Server {
+	port := strconv.Itoa(c.Port)
+	info.Println("Serving will listen on port " + port)
+
+	return &http.Server{
+		Addr:         ":" + port,
+		Handler:      HSTS(h),
+		TLSConfig:    setupTLS(),
+		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+	}
+}
+
 func main() {
-	//config := parseConfig(CabbyConfigFile)
-	config := CabbyConfig{}.parse(CabbyConfigFile)
-	port := strconv.Itoa(config.Port)
+	config := CabbyConfig{}.parse(CabbyConfigPath)
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
 
-	tlsConfig := setupTLS()
-
-	server := &http.Server{
-		Addr:         ":" + port,
-		Handler:      handler,
-		TLSConfig:    tlsConfig,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
-	}
-
-	info.Println("Serving on port " + port)
+	server := setupServer(config, handler)
 	error.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

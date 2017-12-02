@@ -3,16 +3,16 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"os"
 )
 
 /* Config */
 
 type Config struct {
-	Host    string
-	Port    int
-	SSLCert string
-	SSLKey  string
+	Host      string
+	Port      int
+	SSLCert   string
+	SSLKey    string
+	Discovery DiscoveryResource
 }
 
 type CabbyConfig struct {
@@ -24,17 +24,19 @@ type RethinkConfig struct {
 }
 
 func (c Config) parse(file string) (config Config) {
-	configFile, err := os.Open(file)
+	info.Println("Parsing config file", file)
+
+	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		warn.Panic(err)
 	}
 
-	decoder := json.NewDecoder(configFile)
-	err = decoder.Decode(&config)
+	err = json.Unmarshal(b, &config)
 	if err != nil {
 		warn.Panic(err)
 	}
 
+	//debug.Println("Config:", string(b))
 	return
 }
 
@@ -42,18 +44,10 @@ func (c Config) parse(file string) (config Config) {
 
 type DiscoveryResource struct {
 	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Contact     string   `json:"contact"`
-	Default     string   `json:"default"`
-	APIRoots    []string `json:"api_roots"`
-}
-
-func parseDiscoveryResource(resource string) []byte {
-	b, err := ioutil.ReadFile(resource)
-	if err != nil {
-		warn.Panic(err)
-	}
-	return b
+	Description string   `json:"description,omitempty"`
+	Contact     string   `json:"contact,omitempty"`
+	Default     string   `json:"default,omitempty"`
+	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
 /* Error */

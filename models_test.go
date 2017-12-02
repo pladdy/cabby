@@ -47,27 +47,6 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 	t.Error("Failed to panic with an unknown resource")
 }
 
-/* Discovery */
-
-func TestParseDiscoveryResource(t *testing.T) {
-	result := string(parseDiscoveryResource(DiscoveryResourceFile))
-
-	if len(result) == 0 {
-		t.Error("Got:", result, "Expected: length > 0")
-	}
-}
-
-func TestParseDiscoveryResourceNotFound(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered", r)
-		}
-	}()
-
-	_ = string(parseDiscoveryResource("foo/bar"))
-	t.Error("Failed to panic with an unknown resource")
-}
-
 /* Error */
 
 func TestErrorMessage(t *testing.T) {
