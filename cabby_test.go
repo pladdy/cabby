@@ -71,7 +71,7 @@ func TestDiscoveryHandlerNoResourceDefined(t *testing.T) {
 		to   string
 	}{
 		{ConfigPath, ConfigPath + ".testing"},
-		{"test/noDiscoveryConfig.json", ConfigPath},
+		{"test/no_discovery_config.json", ConfigPath},
 	}
 
 	for _, renameOp := range renameOps {

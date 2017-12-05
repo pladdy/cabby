@@ -8,6 +8,7 @@ TAXII 2.0 server in Golang.
 `make run`
 
 ## Configure
+- `make cert` to generate self signed certs
 - `make config`
 - Edit the `config/cabby.json` file to adjust settings
 

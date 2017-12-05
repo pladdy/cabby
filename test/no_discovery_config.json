@@ -1,0 +1,6 @@
+{
+  "host": "localhost",
+  "port": 1234,
+  "ssl_cert": "server.crt",
+  "ssl_key": "server.key"
+}
