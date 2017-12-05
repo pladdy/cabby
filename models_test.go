@@ -8,6 +8,26 @@ import (
 	"testing"
 )
 
+/* API Roots */
+
+func TestAPIRoot(t *testing.T) {
+	config := Config{}.parse("config/cabby.example.json")
+	testRoot := "https://localhost/api_root"
+
+	if len(config.APIRootMap[testRoot].Title) == 0 {
+		t.Error("field not set in API root")
+	}
+	if len(config.APIRootMap[testRoot].Description) == 0 {
+		t.Error("field not set in API root")
+	}
+	if len(config.APIRootMap[testRoot].Versions) == 0 {
+		t.Error("field not set in API root")
+	}
+	if config.APIRootMap[testRoot].MaxContentLength <= 0 {
+		t.Error("field not set in API root")
+	}
+}
+
 /* Config */
 
 func TestParseConfig(t *testing.T) {

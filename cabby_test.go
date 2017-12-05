@@ -33,7 +33,7 @@ func TestDiscoveryHandler(t *testing.T) {
 	}
 
 	result := string(b)
-	config := CabbyConfig{}.parse(CabbyConfigPath)
+	config := Config{}.parse(ConfigPath)
 	expected, _ := json.Marshal(config.Discovery)
 
 	if result != string(expected) {
@@ -42,7 +42,7 @@ func TestDiscoveryHandler(t *testing.T) {
 }
 
 func TestDiscoveryHandlerNoConfig(t *testing.T) {
-	configPath := CabbyConfigPath
+	configPath := ConfigPath
 	newConfigPath := configPath + ".testing"
 
 	// rename the app config so it can't be found
@@ -70,8 +70,8 @@ func TestDiscoveryHandlerNoResourceDefined(t *testing.T) {
 		from string
 		to   string
 	}{
-		{CabbyConfigPath, CabbyConfigPath + ".testing"},
-		{"test/noDiscoveryConfig.json", CabbyConfigPath},
+		{ConfigPath, ConfigPath + ".testing"},
+		{"test/noDiscoveryConfig.json", ConfigPath},
 	}
 
 	for _, renameOp := range renameOps {
@@ -159,7 +159,7 @@ func TestMain(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	config := CabbyConfig{}.parse(CabbyConfigPath)
+	config := Config{}.parse(ConfigPath)
 	expected, _ := json.Marshal(config.Discovery)
 
 	if string(body) != string(expected) {

@@ -5,22 +5,24 @@ import (
 	"io/ioutil"
 )
 
+/* API root */
+
+type APIRoot struct {
+	Title            string   `json:"title"`
+	Description      string   `json:"description,omitempty"`
+	Versions         []string `json:"versions"`
+	MaxContentLength int64    `json:"max_content_length"`
+}
+
 /* Config */
 
 type Config struct {
-	Host      string
-	Port      int
-	SSLCert   string
-	SSLKey    string
-	Discovery DiscoveryResource
-}
-
-type CabbyConfig struct {
-	Config
-}
-
-type RethinkConfig struct {
-	Config
+	Host       string
+	Port       int
+	SSLCert    string `json:"ssl_cert"`
+	SSLKey     string `json:"ssl_key"`
+	Discovery  DiscoveryResource
+	APIRootMap map[string]APIRoot `json:"api_root_map"`
 }
 
 func (c Config) parse(file string) (config Config) {
@@ -31,12 +33,10 @@ func (c Config) parse(file string) (config Config) {
 		warn.Panic(err)
 	}
 
-	err = json.Unmarshal(b, &config)
-	if err != nil {
+	if err = json.Unmarshal(b, &config); err != nil {
 		warn.Panic(err)
 	}
 
-	//debug.Println("Config:", string(b))
 	return
 }
 

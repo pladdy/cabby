@@ -1,11 +1,15 @@
 # cabby
-TAXII server in Golang
+TAXII 2.0 server in Golang.
 
 ## Test
 `make test`
 
 ## Run
 `make run`
+
+## Configure
+- `make config`
+- Edit the `config/cabby.json` file to adjust settings
 
 ## Resources
 - Oasis Docs: https://oasis-open.github.io/cti-documentation/resources.html#taxii-20-specification

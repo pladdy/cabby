@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	CabbyConfigPath    = "config/cabby.json"
+	ConfigPath         = "config/cabby.json"
 	TAXIIContentType   = "application/vnd.oasis.taxii+json; version=2.0"
 	SixMonthsOfSeconds = 63072000
 )
@@ -22,7 +22,7 @@ var (
 	error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
-/* handler functions */
+/* auth functions */
 
 func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -70,7 +70,7 @@ func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	defer resourceNotFound(w)
 	info.Println("Discovery resource requested")
 
-	config := CabbyConfig{}.parse(CabbyConfigPath)
+	config := Config{}.parse(ConfigPath)
 	verifyDiscoveryDefined(config.Discovery)
 
 	b, err := json.Marshal(config.Discovery)
@@ -91,6 +91,10 @@ func HSTS(h http.Handler) http.Handler {
 		w.Header().Add(strictTransportSecurity())
 		h.ServeHTTP(w, r)
 	})
+}
+
+func registerAPIRoots(h http.Handler) {
+
 }
 
 func setupTLS() *tls.Config {
@@ -120,7 +124,7 @@ func setupServer(c Config, h http.Handler) *http.Server {
 }
 
 func main() {
-	config := CabbyConfig{}.parse(CabbyConfigPath)
+	config := Config{}.parse(ConfigPath)
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))

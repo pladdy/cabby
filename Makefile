@@ -1,9 +1,14 @@
 .PHONY: config test
 
-all: config cert deps
+GO_FILES=$(shell find .  -name '*go' | grep -v test)
+
+all: config cert build
+
+build:
+	go build -o bin/cabby $(GO_FILES)
 
 clean:
-	rm -f cabby
+	rm -rf bin/
 	rm -f cover.out
 	rm -f *.log
 
@@ -15,6 +20,7 @@ config:
 	for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
 		cp $${file}.example.json $${file}.json; \
 	done
+	@echo Configs available in config/
 
 cover:
 	go test -v -coverprofile=cover.out
@@ -25,14 +31,11 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
-deps:
-	go get gopkg.in/gorethink/gorethink.v3
-
 fmt:
 	go fmt -x
 
 run:
-	ls *.go | grep -v _test | xargs go run
+	go run $(GO_FILES)
 
 test:
 	go test -v -cover ./...
