@@ -10,7 +10,7 @@ import (
 
 /* API Roots */
 
-func TestAPIRoot(t *testing.T) {
+func TestAPIRootStruct(t *testing.T) {
 	config := Config{}.parse("config/cabby.example.json")
 	testRoot := "https://localhost/api_root"
 
@@ -25,6 +25,35 @@ func TestAPIRoot(t *testing.T) {
 	}
 	if config.APIRootMap[testRoot].MaxContentLength <= 0 {
 		t.Error("field not set in API root")
+	}
+}
+
+func TestAPIRootVerify(t *testing.T) {
+	tests := []struct {
+		apiRoot      string
+		rootMapEntry string
+		expected     bool
+	}{
+		{"https://localhost/api_test", "https://localhost/api_test", true},
+		{"https://localhost/api_fail", "https://localhost/api_test", false},
+	}
+
+	for _, test := range tests {
+		// create a Config struct with an API Root and corresponding API Root Map
+		a := APIRoot{
+			Title:            "test",
+			Description:      "test api root",
+			Versions:         []string{"1.0"},
+			MaxContentLength: 1}
+
+		c := Config{APIRootMap: map[string]APIRoot{test.rootMapEntry: a}}
+
+		c.Discovery = DiscoveryResource{APIRoots: []string{test.apiRoot}}
+
+		result := c.validAPIRoot(test.apiRoot)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
 	}
 }
 

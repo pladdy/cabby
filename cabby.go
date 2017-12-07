@@ -2,8 +2,6 @@ package main
 
 import (
 	"crypto/tls"
-	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -21,81 +19,6 @@ var (
 	warn  = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 	error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
-
-/* auth functions */
-
-func basicAuth(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, pass, ok := r.BasicAuth()
-
-		if !ok || !validate(user, pass) {
-			warn.Println("Invalid user/pass combination")
-			w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-			error := Error{Title: "Unauthorized", HTTPStatus: http.StatusUnauthorized}
-			http.Error(w, error.Message(), http.StatusUnauthorized)
-			return
-		}
-
-		info.Println("Basic Auth validated")
-		h(w, r)
-	}
-}
-
-func validate(u, p string) bool {
-	if u == "pladdy" && p == "pants" {
-		return true
-	}
-	return false
-}
-
-/* resource handlers */
-
-func strictTransportSecurity() (key, value string) {
-	return "Strict-Transport-Security", "max-age=" + strconv.Itoa(SixMonthsOfSeconds) + "; includeSubDomains"
-}
-
-func resourceNotFound(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		http.Error(w, "Resource not found", http.StatusNotFound)
-	}
-}
-
-func verifyDiscoveryDefined(d DiscoveryResource) {
-	if d.Title == "" {
-		warn.Panic("Discovery Resource not defined")
-	}
-}
-
-func handleDiscovery(w http.ResponseWriter, r *http.Request) {
-	defer resourceNotFound(w)
-	info.Println("Discovery resource requested")
-
-	config := Config{}.parse(ConfigPath)
-	verifyDiscoveryDefined(config.Discovery)
-
-	b, err := json.Marshal(config.Discovery)
-	if err != nil {
-		warn.Panic("Can't serve Discovery:", err)
-	}
-
-	w.Header().Set("Content-Type", TAXIIContentType)
-	info.Println("Responding with a Discovery resource")
-	io.WriteString(w, string(b))
-}
-
-/* create server and launch */
-
-// handler wrapper to accept HTTPS requests only
-func HSTS(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add(strictTransportSecurity())
-		h.ServeHTTP(w, r)
-	})
-}
-
-func registerAPIRoots(h http.Handler) {
-
-}
 
 func setupTLS() *tls.Config {
 	return &tls.Config{
@@ -128,6 +51,7 @@ func main() {
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
+	registerAPIRoots(handler)
 
 	server := setupServer(config, handler)
 	error.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))

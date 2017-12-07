@@ -25,6 +25,7 @@ type Config struct {
 	APIRootMap map[string]APIRoot `json:"api_root_map"`
 }
 
+// given a path to a config file parse it from json
 func (c Config) parse(file string) (config Config) {
 	info.Println("Parsing config file", file)
 
@@ -38,6 +39,31 @@ func (c Config) parse(file string) (config Config) {
 	}
 
 	return
+}
+
+// check if given api root is in the API Root Map of a config
+func (c Config) inAPIRootMap(ar string) (r bool) {
+	for k, _ := range c.APIRootMap {
+		if ar == k {
+			r = true
+		}
+	}
+	return
+}
+
+// check if given api root is in the API Roots of a config
+func (c Config) inAPIRoots(ar string) (r bool) {
+	for _, v := range c.Discovery.APIRoots {
+		if ar == v {
+			r = true
+		}
+	}
+	return
+}
+
+// validate that an api root has a same definition in APIRootMap
+func (c Config) validAPIRoot(a string) bool {
+	return c.inAPIRoots(a) && c.inAPIRootMap(a)
 }
 
 /* Discovery */
