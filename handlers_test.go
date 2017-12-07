@@ -87,7 +87,7 @@ func TestHandleDiscoveryNoResourceDefined(t *testing.T) {
 
 func TestHandleAPIRoot(t *testing.T) {
 	u, _ := url.Parse(APIRootURL)
-	noPort := removePort(u)
+	noPort := urlWithNoPort(u)
 
 	config := Config{}.parse(ConfigPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPort])
@@ -140,11 +140,12 @@ func TestRemovePort(t *testing.T) {
 	}{
 		{"https://localhost:1234/api_root", "https://localhost/api_root"},
 		{"https://localhost/api_root", "https://localhost/api_root"},
+    {"/api_root", "https://localhost/api_root"},
 	}
 
 	for _, test := range tests {
 		u, _ := url.Parse(test.host)
-		result := removePort(u)
+		result := urlWithNoPort(u)
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}

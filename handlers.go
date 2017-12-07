@@ -77,7 +77,7 @@ func verifyDiscoveryDefined(d DiscoveryResource) {
 func handleAPIRoot(w http.ResponseWriter, r *http.Request) {
 	defer resourceNotFound(w)
 
-	u := removePort(r.URL)
+	u := urlWithNoPort(r.URL)
 	info.Println("API Root requested for", u)
 
 	config := Config{}.parse(ConfigPath)
@@ -112,9 +112,16 @@ func registerAPIRoots(h *http.ServeMux) {
 	}
 }
 
-func removePort(u *url.URL) string {
-	noPort := u.Scheme + "://" + u.Hostname() + u.Path
-	return noPort
+func urlWithNoPort(u *url.URL) string {
+  c := Config{}.parse(ConfigPath)
+  var noPort string
+
+  if u.Host == "" {
+    noPort = "https://" + c.Host + u.Path
+  } else {
+	  noPort = u.Scheme + "://" + u.Hostname() + u.Path
+  }
+  return noPort
 }
 
 /* wrappers for handlers */
