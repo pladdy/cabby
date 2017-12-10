@@ -46,8 +46,10 @@ func main() {
 	config := config{}.parse(configPath)
 
 	handler := http.NewServeMux()
+
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
 	registerAPIRoots(handler)
+	handler.HandleFunc("/", handleUndefinedRequest)
 
 	server := setupServer(config, handler)
 	error.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))

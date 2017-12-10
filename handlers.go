@@ -52,9 +52,13 @@ func unauthorized(w http.ResponseWriter) {
 }
 
 func resourceNotFound(w http.ResponseWriter) {
+	te := taxiiError{Title: "Resource not found", HTTPStatus: http.StatusNotFound}
+	http.Error(w, resourceToJSON(te), http.StatusNotFound)
+}
+
+func recoverFromPanic(w http.ResponseWriter) {
 	if r := recover(); r != nil {
-		te := taxiiError{Title: "Resource not found", HTTPStatus: http.StatusNotFound}
-		http.Error(w, resourceToJSON(te), http.StatusNotFound)
+		resourceNotFound(w)
 	}
 }
 
@@ -62,7 +66,7 @@ func resourceNotFound(w http.ResponseWriter) {
 
 func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 	info.Println("Discovery resource requested")
-	defer resourceNotFound(w)
+	defer recoverFromPanic(w)
 
 	config := config{}.parse(configPath)
 	if config.discoveryDefined() == false {
@@ -76,7 +80,7 @@ func handleDiscovery(w http.ResponseWriter, r *http.Request) {
 /* register configured API Roots */
 
 func handleAPIRoot(w http.ResponseWriter, r *http.Request) {
-	defer resourceNotFound(w)
+	defer recoverFromPanic(w)
 
 	u := urlWithNoPort(r.URL)
 	info.Println("API Root requested for", u)
@@ -105,6 +109,12 @@ func registerAPIRoots(h *http.ServeMux) {
 			h.HandleFunc(u.Path, basicAuth(handleAPIRoot))
 		}
 	}
+}
+
+/* undefined route */
+func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
+	warn.Printf("Undefined request: %v\n", r.URL)
+	resourceNotFound(w)
 }
 
 /* helpers */

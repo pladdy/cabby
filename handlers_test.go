@@ -180,6 +180,15 @@ func TestHandleAPIRootNotDefined(t *testing.T) {
 	renameFile(configPath+".testing", configPath)
 }
 
+/* undefined request */
+
+func TestHandleUndefinedRequest(t *testing.T) {
+	status, result := handlerTest(handleUndefinedRequest, "/nobody-home")
+	if status != 404 {
+		t.Error("Got:", status, "Expected: 404", "Response:", result)
+	}
+}
+
 /* handler helper tests */
 
 func TestUrlWithNoPort(t *testing.T) {
