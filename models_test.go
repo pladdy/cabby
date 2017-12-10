@@ -10,24 +10,6 @@ import (
 
 /* API Roots */
 
-func TestAPIRootStruct(t *testing.T) {
-	config := Config{}.parse("config/cabby.example.json")
-	testRoot := "https://localhost/api_root"
-
-	if len(config.APIRootMap[testRoot].Title) == 0 {
-		t.Error("field not set in API root")
-	}
-	if len(config.APIRootMap[testRoot].Description) == 0 {
-		t.Error("field not set in API root")
-	}
-	if len(config.APIRootMap[testRoot].Versions) == 0 {
-		t.Error("field not set in API root")
-	}
-	if config.APIRootMap[testRoot].MaxContentLength <= 0 {
-		t.Error("field not set in API root")
-	}
-}
-
 func TestAPIRootVerify(t *testing.T) {
 	tests := []struct {
 		apiRoot      string
@@ -39,16 +21,16 @@ func TestAPIRootVerify(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		// create a Config struct with an API Root and corresponding API Root Map
-		a := APIRoot{
+		// create a config struct with an API Root and corresponding API Root Map
+		a := apiRoot{
 			Title:            "test",
 			Description:      "test api root",
-			Versions:         []string{"1.0"},
+			Versions:         []string{"taxii-2.0"},
 			MaxContentLength: 1}
 
-		c := Config{APIRootMap: map[string]APIRoot{test.rootMapEntry: a}}
+		c := config{APIRootMap: map[string]apiRoot{test.rootMapEntry: a}}
 
-		c.Discovery = DiscoveryResource{APIRoots: []string{test.apiRoot}}
+		c.Discovery = discoveryResource{APIRoots: []string{test.apiRoot}}
 
 		result := c.validAPIRoot(test.apiRoot)
 		if result != test.expected {
@@ -60,7 +42,7 @@ func TestAPIRootVerify(t *testing.T) {
 /* Config */
 
 func TestParseConfig(t *testing.T) {
-	config := Config{}.parse("config/cabby.example.json")
+	config := config{}.parse("config/cabby.example.json")
 
 	if config.Host != "localhost" {
 		t.Error("Got:", "localhost", "Expected:", "localhost")
@@ -77,7 +59,7 @@ func TestParseConfigNotFound(t *testing.T) {
 		}
 	}()
 
-	_ = Config{}.parse("foo/bar")
+	_ = config{}.parse("foo/bar")
 	t.Error("Failed to panic with an unknown resource")
 }
 
@@ -92,18 +74,6 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 	}()
 
 	_ = ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	_ = Config{}.parse(invalidJSON)
+	_ = config{}.parse(invalidJSON)
 	t.Error("Failed to panic with an unknown resource")
-}
-
-/* Error */
-
-func TestErrorMessage(t *testing.T) {
-	testError := Error{Title: "Test title", HTTPStatus: 404}
-	result := testError.Message()
-	expected := `{"title":"Test title","http_status":"404"}`
-
-	if testError.Message() != expected {
-		t.Error("Got:", result, "Expected:", expected)
-	}
 }

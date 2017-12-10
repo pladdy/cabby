@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	DiscoveryURL = "https://localhost:1234/taxii"
-	APIRootURL   = "https://localhost:1234/api_root"
-	TestUser     = "pladdy"
-	TestPass     = "pants"
+	discoveryURL = "https://localhost:1234/taxii"
+	apiRootURL   = "https://localhost:1234/api_root"
+	testUser     = "pladdy"
+	testPass     = "pants"
 )
 
 // Run the webserver and test it
@@ -29,11 +29,11 @@ func TestMain(t *testing.T) {
 	tr := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest("GET", DiscoveryURL, nil)
+	req, err := http.NewRequest("GET", discoveryURL, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.SetBasicAuth(TestUser, TestPass)
+	req.SetBasicAuth(testUser, testPass)
 
 	res, err := client.Do(req)
 	if err != err {
@@ -46,7 +46,7 @@ func TestMain(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	config := Config{}.parse(ConfigPath)
+	config := config{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
 
 	if string(body) != string(expected) {

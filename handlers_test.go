@@ -25,164 +25,18 @@ func renameFile(from, to string) {
 type handlerFn func(http.ResponseWriter, *http.Request)
 
 // handlerTest is a function to handle generic testing of handlers
-// generic handler testing is make sure handler returns a 200 and
-// an expected output
-func handlerTest(h handlerFn, u string) (status int, expected string) {
+// it takes a handler function to call with a url; it returns the stuats code
+// and response as a string
+func handlerTest(h handlerFn, u string) (int, string) {
 	req := httptest.NewRequest("GET", u, nil)
 	res := httptest.NewRecorder()
 	h(res, req)
 
 	b, _ := ioutil.ReadAll(res.Body)
-	return 200, string(b)
+	return res.Code, string(b)
 }
 
-/* discovery handler tests */
-
-func TestHandleDiscovery(t *testing.T) {
-	config := Config{}.parse(ConfigPath)
-	expected, _ := json.Marshal(config.Discovery)
-	status, result := handlerTest(handleDiscovery, DiscoveryURL)
-
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
-	}
-
-	if result != string(expected) {
-		t.Error("Got:", result, "Expected:", string(expected))
-	}
-}
-
-func TestHandleDiscoveryNoConfig(t *testing.T) {
-	renameFile(ConfigPath, ConfigPath+".testing")
-
-	req := httptest.NewRequest("GET", DiscoveryURL, nil)
-	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	renameFile(ConfigPath+".testing", ConfigPath)
-}
-
-func TestHandleDiscoveryNoResourceDefined(t *testing.T) {
-	renameFile(ConfigPath, ConfigPath+".testing")
-	renameFile("test/no_discovery_config.json", ConfigPath)
-
-	req := httptest.NewRequest("GET", DiscoveryURL, nil)
-	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	// rename files back in reverse (order matters or you clobber the files)
-	renameFile(ConfigPath, "test/no_discovery_config.json")
-	renameFile(ConfigPath+".testing", ConfigPath)
-}
-
-/* handleAPIRoot tests */
-
-func TestHandleAPIRoot(t *testing.T) {
-	u, _ := url.Parse(APIRootURL)
-	noPort := urlWithNoPort(u)
-
-	config := Config{}.parse(ConfigPath)
-	expected, _ := json.Marshal(config.APIRootMap[noPort])
-	status, result := handlerTest(handleAPIRoot, noPort)
-
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
-	}
-
-	if result != string(expected) {
-		t.Error("Got:", result, "Expected:", string(expected))
-	}
-}
-
-func TestHandleAPIRootNoConfig(t *testing.T) {
-	renameFile(ConfigPath, ConfigPath+".testing")
-
-	req := httptest.NewRequest("GET", APIRootURL, nil)
-	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	renameFile(ConfigPath+".testing", ConfigPath)
-}
-
-func TestHandleAPIRootNoResourceDefined(t *testing.T) {
-	renameFile(ConfigPath, ConfigPath+".testing")
-	renameFile("test/no_discovery_config.json", ConfigPath)
-
-	req := httptest.NewRequest("GET", APIRootURL, nil)
-	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	// rename files back in reverse (order matters or you clobber the files)
-	renameFile(ConfigPath, "test/no_discovery_config.json")
-	renameFile(ConfigPath+".testing", ConfigPath)
-}
-
-func TestRemovePort(t *testing.T) {
-	tests := []struct {
-		host     string
-		expected string
-	}{
-		{"https://localhost:1234/api_root", "https://localhost/api_root"},
-		{"https://localhost/api_root", "https://localhost/api_root"},
-    {"/api_root", "https://localhost/api_root"},
-	}
-
-	for _, test := range tests {
-		u, _ := url.Parse(test.host)
-		result := urlWithNoPort(u)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
-/* misc tests */
-
-func TestStrictTransportSecurity(t *testing.T) {
-	resultKey, resultValue := strictTransportSecurity()
-	expectedKey, expectedValue := "Strict-Transport-Security", "max-age=63072000; includeSubDomains"
-
-	if resultKey != expectedKey {
-		t.Error("Got:", resultKey, "Expected:", expectedKey)
-	}
-
-	if resultValue != expectedValue {
-		t.Error("Got:", resultValue, "Expected:", expectedValue)
-	}
-}
-
-func TestHeaders(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
-	defer ts.Close()
-
-	res, err := http.Get(ts.URL)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	result := res.Header["Content-Type"][0]
-	expected := TAXIIContentType
-
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
-	}
-}
+/* auth tests */
 
 func TestBasicAuth(t *testing.T) {
 	tests := []struct {
@@ -200,7 +54,7 @@ func TestBasicAuth(t *testing.T) {
 		})
 
 	for _, test := range tests {
-		req := httptest.NewRequest("GET", DiscoveryURL, nil)
+		req := httptest.NewRequest("GET", discoveryURL, nil)
 		req.SetBasicAuth(test.user, test.pass)
 		res := httptest.NewRecorder()
 		testHandlerAuth(res, req)
@@ -217,14 +71,185 @@ func TestValidate(t *testing.T) {
 		pass     string
 		expected bool
 	}{
-		{TestUser, TestPass, true},
+		{testUser, testPass, true},
 		{"simon", "says", false},
 	}
 
 	for _, test := range tests {
-		actual := validate(test.user, test.pass)
+		actual := validated(test.user, test.pass)
 		if actual != test.expected {
 			t.Error("Got:", actual, "Expected:", test.expected)
 		}
+	}
+}
+
+/* handleDiscovery */
+
+func TestHandleDiscovery(t *testing.T) {
+	config := config{}.parse(configPath)
+	expected, _ := json.Marshal(config.Discovery)
+	status, result := handlerTest(handleDiscovery, discoveryURL)
+
+	if status != 200 {
+		t.Error("Got:", status, "Expected:", 200)
+	}
+
+	if result != string(expected) {
+		t.Error("Got:", result, "Expected:", string(expected))
+	}
+}
+
+func TestHandleDiscoveryNoconfig(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+
+	req := httptest.NewRequest("GET", discoveryURL, nil)
+	res := httptest.NewRecorder()
+	handleDiscovery(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+
+	renameFile(configPath+".testing", configPath)
+}
+
+func TestHandleDiscoveryNotDefined(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/no_discovery_config.json", configPath)
+
+	req := httptest.NewRequest("GET", discoveryURL, nil)
+	res := httptest.NewRecorder()
+	handleDiscovery(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+
+	// rename files back in reverse (order matters or you clobber the files)
+	renameFile(configPath, "test/no_discovery_config.json")
+	renameFile(configPath+".testing", configPath)
+}
+
+/* handleAPIRoot */
+
+func TestHandleAPIRoot(t *testing.T) {
+	u, _ := url.Parse(apiRootURL)
+	noPort := urlWithNoPort(u)
+
+	config := config{}.parse(configPath)
+	expected, _ := json.Marshal(config.APIRootMap[noPort])
+	status, result := handlerTest(handleAPIRoot, noPort)
+
+	if status != 200 {
+		t.Error("Got:", status, "Expected:", 200)
+	}
+
+	if result != string(expected) {
+		t.Error("Got:", result, "Expected:", string(expected))
+	}
+}
+
+func TestHandleAPIRootNoconfig(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+
+	req := httptest.NewRequest("GET", apiRootURL, nil)
+	res := httptest.NewRecorder()
+	handleAPIRoot(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+
+	renameFile(configPath+".testing", configPath)
+}
+
+func TestHandleAPIRootNotDefined(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/no_discovery_config.json", configPath)
+
+	req := httptest.NewRequest("GET", apiRootURL, nil)
+	res := httptest.NewRecorder()
+	handleAPIRoot(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+
+	// rename files back in reverse (order matters or you clobber the files)
+	renameFile(configPath, "test/no_discovery_config.json")
+	renameFile(configPath+".testing", configPath)
+}
+
+/* handler helper tests */
+
+func TestUrlWithNoPort(t *testing.T) {
+	tests := []struct {
+		host     string
+		expected string
+	}{
+		{"https://localhost:1234/api_root", "https://localhost/api_root"},
+		{"https://localhost/api_root", "https://localhost/api_root"},
+		{"/api_root", "https://localhost/api_root"},
+	}
+
+	for _, test := range tests {
+		u, _ := url.Parse(test.host)
+		result := urlWithNoPort(u)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestHeaders(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
+	defer ts.Close()
+
+	res, err := http.Get(ts.URL)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	result := res.Header["Content-Type"][0]
+	expected := taxiiContentType
+
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestResourceToJSON(t *testing.T) {
+	tests := []struct {
+		resource interface{}
+		expected string
+	}{
+		{apiRoot{Title: "apiRoot", Description: "apiRoot", Versions: []string{"test-1.0"}, MaxContentLength: 1},
+			`{"title":"apiRoot","description":"apiRoot","versions":["test-1.0"],"max_content_length":1}`},
+	}
+
+	for _, test := range tests {
+		result := resourceToJSON(test.resource)
+
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestResourceToJSONFail(t *testing.T) {
+	recovered := false
+
+	defer func() {
+		if err := recover(); err == nil {
+			t.Error("Failed to recover:", err)
+		}
+		recovered = true
+	}()
+
+	c := make(chan int)
+	result := resourceToJSON(c)
+
+	if recovered != true {
+		t.Error("Got:", result, "Expected: 'recovered' to be true")
 	}
 }

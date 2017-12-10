@@ -16,7 +16,7 @@
     "https://localhost/api_root": {
       "title": "Test API root",
       "description": "this is a test api root",
-      "versions": ["1.0"],
+      "versions": ["taxii-2.0"],
       "max_content_length": 1000000
     }
   }

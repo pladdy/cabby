@@ -8,11 +8,7 @@ import (
 	"strconv"
 )
 
-const (
-	ConfigPath         = "config/cabby.json"
-	TAXIIContentType   = "application/vnd.oasis.taxii+json; version=2.0"
-	SixMonthsOfSeconds = 63072000
-)
+const configPath = "config/cabby.json"
 
 var (
 	info  = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
@@ -34,20 +30,20 @@ func setupTLS() *tls.Config {
 	}
 }
 
-func setupServer(c Config, h http.Handler) *http.Server {
+func setupServer(c config, h http.Handler) *http.Server {
 	port := strconv.Itoa(c.Port)
 	info.Println("Server will listen on port " + port)
 
 	return &http.Server{
 		Addr:         ":" + port,
-		Handler:      HSTS(h),
+		Handler:      hsts(h),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
 }
 
 func main() {
-	config := Config{}.parse(ConfigPath)
+	config := config{}.parse(configPath)
 
 	handler := http.NewServeMux()
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
