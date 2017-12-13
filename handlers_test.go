@@ -134,11 +134,11 @@ func TestHandleDiscoveryNotDefined(t *testing.T) {
 
 func TestHandleAPIRoot(t *testing.T) {
 	u, _ := url.Parse(apiRootURL)
-	noPort := urlWithNoPort(u)
+	noPortHost := urlWithNoPort(u)
 
 	config := config{}.parse(configPath)
-	expected, _ := json.Marshal(config.APIRootMap[noPort])
-	status, result := handlerTest(handleAPIRoot, noPort)
+	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
+	status, result := handlerTest(handleAPIRoot, noPortHost)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)

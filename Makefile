@@ -9,8 +9,7 @@ build:
 
 clean:
 	rm -rf bin/
-	rm -f cover.out
-	rm -f *.log
+	rm -f server.key server.crt *.log cover.out config/cabby.json
 
 cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/ST=Maryland/L=Baltimore/O=Cabby TAXII 2.0/CN=pladdy"

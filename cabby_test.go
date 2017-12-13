@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"testing"
 )
 
@@ -16,12 +17,15 @@ const (
 	testPass     = "pants"
 )
 
-// Run the webserver and test it
-func TestMain(t *testing.T) {
+func init() {
 	go func() {
 		main()
 	}()
+}
 
+/* helpers */
+
+func get(u string) string {
 	// set up client with TLS configured
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -29,7 +33,7 @@ func TestMain(t *testing.T) {
 	tr := &http.Transport{TLSClientConfig: tlsConfig}
 	client := &http.Client{Transport: tr}
 
-	req, err := http.NewRequest("GET", discoveryURL, nil)
+	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -46,10 +50,29 @@ func TestMain(t *testing.T) {
 		log.Fatal(err)
 	}
 
+	return string(body)
+}
+
+/* test */
+func TestMainDiscovery(t *testing.T) {
+	response := get(discoveryURL)
 	config := config{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
 
-	if string(body) != string(expected) {
-		t.Error("Got:", string(body), "Expected:", string(expected))
+	if response != string(expected) {
+		t.Error("Got:", response, "Expected:", string(expected))
+	}
+}
+
+func TestMainAPIRoot(t *testing.T) {
+	u, _ := url.Parse(apiRootURL)
+	noPortHost := urlWithNoPort(u)
+
+	response := get(apiRootURL)
+	config := config{}.parse(configPath)
+	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
+
+	if response != string(expected) {
+		t.Error("Got:", response, "Expected:", string(expected))
 	}
 }

@@ -12,6 +12,15 @@ type apiRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+type collection struct {
+	ID          string   `json:"id"`
+	Title       string   `json:"title"`
+	Description string   `json:"description,omitempty"`
+	CanRead     bool     `json:"can_read"`
+	CanWrite    bool     `json:"can_write"`
+	MediaTypes  []string `json:"media_types,omitempty"`
+}
+
 type config struct {
 	Host       string
 	Port       int
