@@ -16,8 +16,10 @@ bin/*
 
 # App specific
 cabby
+.env
 config/*
 !config/*example.json
+!config/.env
 *.crt
 *.key
 *.swp

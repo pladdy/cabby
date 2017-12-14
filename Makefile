@@ -20,6 +20,8 @@ config:
 		cp $${file}.example.json $${file}.json; \
 	done
 	@echo Configs available in config/
+	cp config/.env ./
+	@echo .env file needs COVEARALLS_TOKEN set...
 
 cover:
 	go test -v -coverprofile=cover.out
@@ -30,9 +32,13 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
+coverage:
+	source .env && goveralls -repotoken $COVERALLS_TOKEN
+
 dependencies:
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
+	go get github.com/mattn/goveralls
 
 fmt:
 	go fmt -x
