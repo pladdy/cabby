@@ -2,7 +2,7 @@
 
 GO_FILES=$(shell find .  -name '*go' | grep -v test)
 
-all: config cert build
+all: config cert dependencies build test
 
 build:
 	go build -o bin/cabby $(GO_FILES)
@@ -32,6 +32,7 @@ endif
 
 dependencies:
 	go get github.com/fzipp/gocyclo
+	go get github.com/golang/lint
 
 fmt:
 	go fmt -x
