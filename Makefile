@@ -30,8 +30,16 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
+dependencies:
+	go get github.com/fzipp/gocyclo
+
 fmt:
 	go fmt -x
+
+reportcard: fmt
+	gocyclo -over 15 .
+	golint
+	go vet
 
 run:
 	go run $(GO_FILES)

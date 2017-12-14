@@ -122,7 +122,7 @@ func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 func resourceToJSON(v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
-		warn.Panic("Can't convert %v to JSON, error: ", v, err)
+		warn.Panicf("Can't convert %v to JSON, error: %v", v, err)
 	}
 	return string(b)
 }
