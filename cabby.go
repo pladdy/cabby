@@ -13,7 +13,7 @@ const configPath = "config/cabby.json"
 var (
 	info  = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 	warn  = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	error = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	err = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
 func setupHandler() *http.ServeMux {
@@ -57,5 +57,5 @@ func main() {
 	config := config{}.parse(configPath)
 	handler := setupHandler()
 	server := setupServer(config, handler)
-	error.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
+	err.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

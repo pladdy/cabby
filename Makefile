@@ -2,7 +2,7 @@
 
 GO_FILES=$(shell find .  -name '*go' | grep -v test)
 
-all: config cert dependencies build test
+all: config cert dependencies test
 
 build:
 	go build -o bin/cabby $(GO_FILES)
@@ -20,8 +20,6 @@ config:
 		cp $${file}.example.json $${file}.json; \
 	done
 	@echo Configs available in config/
-	cp config/.env ./
-	@echo .env file needs COVEARALLS_TOKEN set...
 
 cover:
 	go test -v -coverprofile=cover.out
@@ -33,7 +31,7 @@ ifeq ("$(html)","true")
 endif
 
 coverage:
-	source .env && goveralls -repotoken $COVERALLS_TOKEN
+	goveralls -service=travis-ci
 
 dependencies:
 	go get github.com/fzipp/gocyclo

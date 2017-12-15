@@ -3,11 +3,13 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 const (
@@ -25,6 +27,22 @@ func init() {
 
 /* helpers */
 
+func attempt(c *http.Client, r *http.Request) (*http.Response, error) {
+  for i := 0; i < 3; i++ {
+		res, err := c.Do(r)
+		if err != err {
+			log.Fatal(err)
+		}
+		if res != nil {
+			return res, err
+		}
+		warn.Println("Web server for test not responding, waiting...")
+		time.Sleep(time.Duration(i + 1) * time.Second)
+	}
+
+	return nil, errors.New("Failed to get request")
+}
+
 func get(u string) string {
 	// set up client with TLS configured
 	tlsConfig := &tls.Config{
@@ -39,10 +57,7 @@ func get(u string) string {
 	}
 	req.SetBasicAuth(testUser, testPass)
 
-	res, err := client.Do(req)
-	if err != err {
-		log.Fatal(err)
-	}
+	res, err := attempt(client, req)
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
