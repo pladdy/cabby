@@ -28,7 +28,7 @@ func init() {
 /* helpers */
 
 func attempt(c *http.Client, r *http.Request) (*http.Response, error) {
-  for i := 0; i < 3; i++ {
+	for i := 0; i < 3; i++ {
 		res, err := c.Do(r)
 		if err != err {
 			log.Fatal(err)
@@ -37,7 +37,7 @@ func attempt(c *http.Client, r *http.Request) (*http.Response, error) {
 			return res, err
 		}
 		warn.Println("Web server for test not responding, waiting...")
-		time.Sleep(time.Duration(i + 1) * time.Second)
+		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 
 	return nil, errors.New("Failed to get request")
