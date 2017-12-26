@@ -86,7 +86,7 @@ func TestValidate(t *testing.T) {
 /* handleDiscovery */
 
 func TestHandleDiscovery(t *testing.T) {
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
 	status, result := handlerTest(handleDiscovery, discoveryURL)
 
@@ -136,7 +136,7 @@ func TestHandleAPIRoot(t *testing.T) {
 	u, _ := url.Parse(apiRootURL)
 	noPortHost := urlWithNoPort(u)
 
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
 	status, result := handlerTest(handleAPIRoot, noPortHost)
 
@@ -232,7 +232,7 @@ func TestResourceToJSON(t *testing.T) {
 		resource interface{}
 		expected string
 	}{
-		{apiRoot{Title: "apiRoot", Description: "apiRoot", Versions: []string{"test-1.0"}, MaxContentLength: 1},
+		{taxiiAPIRoot{Title: "apiRoot", Description: "apiRoot", Versions: []string{"test-1.0"}, MaxContentLength: 1},
 			`{"title":"apiRoot","description":"apiRoot","versions":["test-1.0"],"max_content_length":1}`},
 	}
 

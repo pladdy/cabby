@@ -22,15 +22,15 @@ func TestAPIRootVerify(t *testing.T) {
 
 	for _, test := range tests {
 		// create a config struct with an API Root and corresponding API Root Map
-		a := apiRoot{
+		a := taxiiAPIRoot{
 			Title:            "test",
 			Description:      "test api root",
 			Versions:         []string{"taxii-2.0"},
 			MaxContentLength: 1}
 
-		c := config{APIRootMap: map[string]apiRoot{test.rootMapEntry: a}}
+		c := cabbyConfig{APIRootMap: map[string]taxiiAPIRoot{test.rootMapEntry: a}}
 
-		c.Discovery = discoveryResource{APIRoots: []string{test.apiRoot}}
+		c.Discovery = taxiiDiscovery{APIRoots: []string{test.apiRoot}}
 
 		result := c.validAPIRoot(test.apiRoot)
 		if result != test.expected {
@@ -42,7 +42,7 @@ func TestAPIRootVerify(t *testing.T) {
 /* Config */
 
 func TestParseConfig(t *testing.T) {
-	config := config{}.parse("config/cabby.example.json")
+	config := cabbyConfig{}.parse("config/cabby.example.json")
 
 	if config.Host != "localhost" {
 		t.Error("Got:", "localhost", "Expected:", "localhost")
@@ -59,7 +59,7 @@ func TestParseConfigNotFound(t *testing.T) {
 		}
 	}()
 
-	_ = config{}.parse("foo/bar")
+	_ = cabbyConfig{}.parse("foo/bar")
 	t.Error("Failed to panic with an unknown resource")
 }
 
@@ -74,6 +74,6 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 	}()
 
 	_ = ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	_ = config{}.parse(invalidJSON)
+	_ = cabbyConfig{}.parse(invalidJSON)
 	t.Error("Failed to panic with an unknown resource")
 }

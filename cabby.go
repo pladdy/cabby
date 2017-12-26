@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 )
@@ -11,25 +12,41 @@ import (
 const configPath = "config/cabby.json"
 
 var (
-	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	warn = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	err  = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	logInfo  = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	logWarn  = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	logError = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
+func registerAPIRoot(apiRoot string, h *http.ServeMux) {
+	u, err := url.Parse(apiRoot)
+	if u.Path == "" || err != nil {
+		logWarn.Panic(err)
+	}
+
+	logInfo.Println("Registering API handler for", u)
+	h.HandleFunc(u.Path, basicAuth(handleAPIRoot))
+}
+
 func setupHandler() *http.ServeMux {
+	config := cabbyConfig{}.parse(configPath)
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
-	registerAPIRoots(handler)
-	//handler.HandleFunc("/admin/collections", basicAuth(adminCollections))
+
+	for _, apiRoot := range config.Discovery.APIRoots {
+		if config.validAPIRoot(apiRoot) {
+			registerAPIRoot(apiRoot, handler)
+		}
+	}
+	
 	handler.HandleFunc("/", handleUndefinedRequest)
 
 	return handler
 }
 
-func setupServer(c config, h http.Handler) *http.Server {
+func setupServer(c cabbyConfig, h http.Handler) *http.Server {
 	port := strconv.Itoa(c.Port)
-	info.Println("Server will listen on port " + port)
+	logInfo.Println("Server will listen on port " + port)
 
 	return &http.Server{
 		Addr:         ":" + port,
@@ -54,8 +71,8 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	handler := setupHandler()
 	server := setupServer(config, handler)
-	err.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
+	logError.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

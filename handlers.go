@@ -27,11 +27,11 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 		user, pass, ok := r.BasicAuth()
 
 		if !ok || !validated(user, pass) {
-			warn.Println("Invalid user/pass combination")
+			logWarn.Println("Invalid user/pass combination")
 			unauthorized(w)
 			return
 		}
-		info.Println("Basic Auth validated")
+		logInfo.Println("Basic Auth validated")
 		h(w, r)
 	}
 }
@@ -65,12 +65,12 @@ func recoverFromPanic(w http.ResponseWriter) {
 /* handlers */
 
 func handleDiscovery(w http.ResponseWriter, r *http.Request) {
-	info.Println("Discovery resource requested")
+	logInfo.Println("Discovery resource requested")
 	defer recoverFromPanic(w)
 
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	if config.discoveryDefined() == false {
-		warn.Panic("Discovery Resource not defined")
+		logWarn.Panic("Discovery Resource not defined")
 	}
 
 	w.Header().Set("Content-Type", taxiiContentType)
@@ -83,37 +83,21 @@ func handleAPIRoot(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
 	u := urlWithNoPort(r.URL)
-	info.Println("API Root requested for", u)
+	logInfo.Println("API Root requested for", u)
 
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 
 	if !config.validAPIRoot(u) {
-		warn.Panic("API Root ", u, " not defined in config file")
+		logWarn.Panic("API Root ", u, " not defined in config file")
 	}
 
 	w.Header().Set("Content-Type", taxiiContentType)
 	io.WriteString(w, resourceToJSON(config.APIRootMap[u]))
 }
 
-func registerAPIRoots(h *http.ServeMux) {
-	config := config{}.parse(configPath)
-
-	for _, apiRoot := range config.Discovery.APIRoots {
-		if config.validAPIRoot(apiRoot) {
-			u, err := url.Parse(apiRoot)
-			if err != nil {
-				warn.Panic(err)
-			}
-
-			info.Println("Registering API handler for", u)
-			h.HandleFunc(u.Path, basicAuth(handleAPIRoot))
-		}
-	}
-}
-
 /* undefined route */
 func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
-	warn.Printf("Undefined request: %v\n", r.URL)
+	logWarn.Printf("Undefined request: %v\n", r.URL)
 	resourceNotFound(w)
 }
 
@@ -122,13 +106,13 @@ func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 func resourceToJSON(v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
-		warn.Panicf("Can't convert %v to JSON, error: %v", v, err)
+		logWarn.Panicf("Can't convert %v to JSON, error: %v", v, err)
 	}
 	return string(b)
 }
 
 func urlWithNoPort(u *url.URL) string {
-	c := config{}.parse(configPath)
+	c := cabbyConfig{}.parse(configPath)
 	var noPort string
 
 	if u.Host == "" {

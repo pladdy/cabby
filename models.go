@@ -5,32 +5,17 @@ import (
 	"io/ioutil"
 )
 
-type apiRoot struct {
-	Title            string   `json:"title"`
-	Description      string   `json:"description,omitempty"`
-	Versions         []string `json:"versions"`
-	MaxContentLength int64    `json:"max_content_length"`
-}
-
-type collection struct {
-	ID          string   `json:"id"`
-	Title       string   `json:"title"`
-	Description string   `json:"description,omitempty"`
-	CanRead     bool     `json:"can_read"`
-	CanWrite    bool     `json:"can_write"`
-	MediaTypes  []string `json:"media_types,omitempty"`
-}
-
-type config struct {
+type cabbyConfig struct {
 	Host       string
 	Port       int
-	SSLCert    string `json:"ssl_cert"`
-	SSLKey     string `json:"ssl_key"`
-	Discovery  discoveryResource
-	APIRootMap map[string]apiRoot `json:"api_root_map"`
+	SSLCert    string            `json:"ssl_cert"`
+	SSLKey     string            `json:"ssl_key"`
+	DataStore  map[string]string `json:"data_store"`
+	Discovery  taxiiDiscovery
+	APIRootMap map[string]taxiiAPIRoot `json:"api_root_map"`
 }
 
-func (c *config) discoveryDefined() bool {
+func (c *cabbyConfig) discoveryDefined() bool {
 	if c.Discovery.Title == "" {
 		return false
 	}
@@ -38,7 +23,7 @@ func (c *config) discoveryDefined() bool {
 }
 
 // check if given api root is in the API Root Map of a config
-func (c config) inAPIRootMap(ar string) (r bool) {
+func (c cabbyConfig) inAPIRootMap(ar string) (r bool) {
 	for k := range c.APIRootMap {
 		if ar == k {
 			r = true
@@ -48,7 +33,7 @@ func (c config) inAPIRootMap(ar string) (r bool) {
 }
 
 // check if given api root is in the API Roots of a config
-func (c config) inAPIRoots(ar string) (r bool) {
+func (c cabbyConfig) inAPIRoots(ar string) (r bool) {
 	for _, v := range c.Discovery.APIRoots {
 		if ar == v {
 			r = true
@@ -58,25 +43,32 @@ func (c config) inAPIRoots(ar string) (r bool) {
 }
 
 // given a path to a config file parse it from json
-func (c config) parse(file string) (pc config) {
+func (c cabbyConfig) parse(file string) (pc cabbyConfig) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		warn.Panic(err)
+		logWarn.Panic(err)
 	}
 
 	if err = json.Unmarshal(b, &pc); err != nil {
-		warn.Panic(err)
+		logWarn.Panic(err)
 	}
 
 	return
 }
 
 // validate that an api root has a same definition in apiRootMap
-func (c config) validAPIRoot(a string) bool {
+func (c cabbyConfig) validAPIRoot(a string) bool {
 	return c.inAPIRoots(a) && c.inAPIRootMap(a)
 }
 
-type discoveryResource struct {
+type taxiiAPIRoot struct {
+	Title            string   `json:"title"`
+	Description      string   `json:"description,omitempty"`
+	Versions         []string `json:"versions"`
+	MaxContentLength int64    `json:"max_content_length"`
+}
+
+type taxiiDiscovery struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description,omitempty"`
 	Contact     string   `json:"contact,omitempty"`
