@@ -27,8 +27,10 @@ func init() {
 
 /* helpers */
 
-func attempt(c *http.Client, r *http.Request) (*http.Response, error) {
-	for i := 0; i < 3; i++ {
+func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
+	MaxTries := 3
+
+	for i := 0; i < MaxTries; i++ {
 		res, err := c.Do(r)
 		if err != err {
 			log.Fatal(err)
@@ -36,7 +38,7 @@ func attempt(c *http.Client, r *http.Request) (*http.Response, error) {
 		if res != nil {
 			return res, err
 		}
-		warn.Println("Web server for test not responding, waiting...")
+		logWarn.Println("Web server for test not responding, waiting...")
 		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 
@@ -57,7 +59,7 @@ func get(u string) string {
 	}
 	req.SetBasicAuth(testUser, testPass)
 
-	res, err := attempt(client, req)
+	res, err := attemptRequest(client, req)
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)
@@ -69,9 +71,10 @@ func get(u string) string {
 }
 
 /* test */
+
 func TestMainDiscovery(t *testing.T) {
 	response := get(discoveryURL)
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
 
 	if response != string(expected) {
@@ -84,10 +87,28 @@ func TestMainAPIRoot(t *testing.T) {
 	noPortHost := urlWithNoPort(u)
 
 	response := get(apiRootURL)
-	config := config{}.parse(configPath)
+	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
 
 	if response != string(expected) {
 		t.Error("Got:", response, "Expected:", string(expected))
+	}
+}
+
+func TestRegisterAPIRootInvalidURL(t *testing.T) {
+	recovered := false
+
+	defer func() {
+		if err := recover(); err == nil {
+			t.Error("Failed to recover")
+		}
+		recovered = true
+	}()
+
+	mockHandler := http.NewServeMux()
+	registerAPIRoot("", mockHandler)
+
+	if recovered != true {
+		t.Error("Expected: 'recovered' to be true")
 	}
 }
