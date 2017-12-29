@@ -8,18 +8,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
 )
 
 /* helpers */
-
-func renameFile(from, to string) {
-	err := os.Rename(from, to)
-	if err != nil {
-		log.Fatal("Failed to rename file:", from, "to:", to)
-	}
-}
 
 // define a handler function type for handler testing
 type handlerFn func(http.ResponseWriter, *http.Request)

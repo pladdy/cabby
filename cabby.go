@@ -38,7 +38,7 @@ func setupHandler() *http.ServeMux {
 			registerAPIRoot(apiRoot, handler)
 		}
 	}
-	
+
 	handler.HandleFunc("/", handleUndefinedRequest)
 
 	return handler

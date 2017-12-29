@@ -3,6 +3,10 @@
   "port": 1234,
   "ssl_cert": "server.crt",
   "ssl_key": "server.key",
+  "data_store": {
+    "name": "sqlite",
+    "path": "db/cabby.db"
+  },
   "discovery": {
     "title": "Test Discovery",
     "description": "This is a test discovery resource",

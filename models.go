@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 )
 
@@ -68,6 +69,21 @@ type taxiiAPIRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+type taxiiCollection struct {
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description,omitempty"`
+	CanRead     bool      `json:"can_read"`
+	CanWrite    bool      `json:"can_write"`
+	MediaTypes  []string  `json:"media_types,omitempty"`
+}
+
+/*func (c taxiiCollection) create(t *taxiiDB) error {
+	var err error
+	//t.create("taxii_collection", c.ID, c.Title, c.Description)
+	return err
+}*/
+
 type taxiiDiscovery struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description,omitempty"`
@@ -84,4 +100,17 @@ type taxiiError struct {
 	HTTPStatus      int               `json:"http_status,string,omitempty"`
 	ExternalDetails string            `json:"external_details,omitempty"`
 	Details         map[string]string `json:"details,omitempty"`
+}
+
+type taxiiStatus struct {
+	ID               string   `json:"id"`
+	Status           string   `json:"status"`
+	RequestTimestamp string   `json:"request_timestamp"`
+	TotalCount       int64    `json:"total_count"`
+	SuccessCount     int64    `json:"success_count"`
+	Successes        []string `json:"successes"`
+	FailureCount     int64    `json:"failure_count"`
+	Failures         []string `json:"failures"`
+	PendingCount     int64    `json:"pending_count"`
+	Pendings         []string `json:"pendings"`
 }

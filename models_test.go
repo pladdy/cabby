@@ -6,6 +6,8 @@ import (
 	"os"
 	"strconv"
 	"testing"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 /* API Roots */
@@ -36,6 +38,24 @@ func TestAPIRootVerify(t *testing.T) {
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
+	}
+}
+
+/* collections */
+
+func TestTaxiiCollectionCreateSQLite(t *testing.T) {
+	s := newSQLiteDB()
+
+	err := s.connect(testDB)
+	if err != nil {
+		t.Error(err)
+	}
+	defer s.disconnect()
+
+	cid := uuid.NewV4()
+	testCollection := taxiiCollection{ID: cid, Title: "test collection", Description: "a test collection"}
+	if testCollection.ID != cid {
+		t.Error("Error")
 	}
 }
 
