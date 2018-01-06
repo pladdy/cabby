@@ -50,7 +50,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	c := cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
 
-	cid := uuid.NewV4()
+	cid := uuid.Must(uuid.NewV4())
 	testCollection := taxiiCollection{ID: cid, Title: "test collection", Description: "a test collection"}
 
 	err := testCollection.create(c)
@@ -77,7 +77,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 }
 
 func TestTaxiiCollectionCreateFail(t *testing.T) {
-	testCollection := taxiiCollection{ID: uuid.NewV4(), Title: "test collection", Description: "a test collection"}
+	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
 	c := cabbyConfig{}
 	err := testCollection.create(c)
 	if err == nil {

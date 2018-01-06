@@ -92,7 +92,7 @@ func TestSQLiteRead(t *testing.T) {
 	defer s.disconnect()
 
   // create a collection record and add a user to access it
-  tuid := uuid.NewV4()
+  tuid := uuid.Must(uuid.NewV4())
 	_, err = s.db.Exec(`insert into taxii_collection values ("` + tuid.String() + `", "a title", "a description")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
