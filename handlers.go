@@ -64,22 +64,7 @@ func recoverFromPanic(w http.ResponseWriter) {
 
 /* handlers */
 
-func handleDiscovery(w http.ResponseWriter, r *http.Request) {
-	logInfo.Println("Discovery resource requested")
-	defer recoverFromPanic(w)
-
-	config := cabbyConfig{}.parse(configPath)
-	if config.discoveryDefined() == false {
-		logWarn.Panic("Discovery Resource not defined")
-	}
-
-	w.Header().Set("Content-Type", taxiiContentType)
-	io.WriteString(w, resourceToJSON(config.Discovery))
-}
-
-/* register configured API Roots */
-
-func handleAPIRoot(w http.ResponseWriter, r *http.Request) {
+func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
 	u := urlWithNoPort(r.URL)
@@ -93,6 +78,19 @@ func handleAPIRoot(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", taxiiContentType)
 	io.WriteString(w, resourceToJSON(config.APIRootMap[u]))
+}
+
+func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
+	logInfo.Println("Discovery resource requested")
+	defer recoverFromPanic(w)
+
+	config := cabbyConfig{}.parse(configPath)
+	if config.discoveryDefined() == false {
+		logWarn.Panic("Discovery Resource not defined")
+	}
+
+	w.Header().Set("Content-Type", taxiiContentType)
+	io.WriteString(w, resourceToJSON(config.Discovery))
 }
 
 /* undefined route */

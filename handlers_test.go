@@ -75,12 +75,12 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-/* handleDiscovery */
+/* handleTaxiiDiscovery */
 
 func TestHandleDiscovery(t *testing.T) {
 	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
-	status, result := handlerTest(handleDiscovery, discoveryURL)
+	status, result := handlerTest(handleTaxiiDiscovery, discoveryURL)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -96,7 +96,7 @@ func TestHandleDiscoveryNoconfig(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
+	handleTaxiiDiscovery(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
@@ -111,7 +111,7 @@ func TestHandleDiscoveryNotDefined(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
+	handleTaxiiDiscovery(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
@@ -122,15 +122,15 @@ func TestHandleDiscoveryNotDefined(t *testing.T) {
 	renameFile(configPath+".testing", configPath)
 }
 
-/* handleAPIRoot */
+/* handleTaxiiAPIRoot */
 
-func TestHandleAPIRoot(t *testing.T) {
+func TestHandleTaxiiAPIRoot(t *testing.T) {
 	u, _ := url.Parse(apiRootURL)
 	noPortHost := urlWithNoPort(u)
 
 	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
-	status, result := handlerTest(handleAPIRoot, noPortHost)
+	status, result := handlerTest(handleTaxiiAPIRoot, noPortHost)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -141,12 +141,12 @@ func TestHandleAPIRoot(t *testing.T) {
 	}
 }
 
-func TestHandleAPIRootNoconfig(t *testing.T) {
+func TestHandleTaxiiAPIRootNoconfig(t *testing.T) {
 	renameFile(configPath, configPath+".testing")
 
 	req := httptest.NewRequest("GET", apiRootURL, nil)
 	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
+	handleTaxiiAPIRoot(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
@@ -155,13 +155,13 @@ func TestHandleAPIRootNoconfig(t *testing.T) {
 	renameFile(configPath+".testing", configPath)
 }
 
-func TestHandleAPIRootNotDefined(t *testing.T) {
+func TestHandleTaxiiAPIRootNotDefined(t *testing.T) {
 	renameFile(configPath, configPath+".testing")
 	renameFile("test/no_discovery_config.json", configPath)
 
 	req := httptest.NewRequest("GET", apiRootURL, nil)
 	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
+	handleTaxiiAPIRoot(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
@@ -203,7 +203,7 @@ func TestUrlWithNoPort(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
+	ts := httptest.NewServer(http.HandlerFunc(handleTaxiiDiscovery))
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL)

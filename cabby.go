@@ -24,14 +24,14 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 	}
 
 	logInfo.Println("Registering API handler for", u)
-	h.HandleFunc(u.Path, basicAuth(handleAPIRoot))
+	h.HandleFunc(u.Path, basicAuth(handleTaxiiAPIRoot))
 }
 
 func setupHandler() *http.ServeMux {
 	config := cabbyConfig{}.parse(configPath)
 	handler := http.NewServeMux()
 
-	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
+	handler.HandleFunc("/taxii", basicAuth(handleTaxiiDiscovery))
 
 	for _, apiRoot := range config.Discovery.APIRoots {
 		if config.validAPIRoot(apiRoot) {
