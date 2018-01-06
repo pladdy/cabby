@@ -12,13 +12,14 @@ create table taxii_user_pass (
   pass    text not null check (pass != "")
 );
 
-drop table if exists taxi_user_collection;
+drop table if exists taxii_user_collection;
 
-create table taxi_user_collection (
-  user_id       text not null,
-  collection_id text not null,
-  can_read      bool   not null,
-  can_write     bool   not null,
+create table taxii_user_collection (
+  user_id       text    not null,
+  collection_id text    not null,
+  can_read      integer not null,
+  can_write     integer not null,
+  media_types   text,
 
   primary key (user_id, collection_id)
 );

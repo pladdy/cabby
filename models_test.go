@@ -43,19 +43,45 @@ func TestAPIRootVerify(t *testing.T) {
 
 /* collections */
 
-func TestTaxiiCollectionCreateSQLite(t *testing.T) {
-	s := newSQLiteDB()
+func TestTaxiiCollectionCreate(t *testing.T) {
+	setupSQLite()
+	defer tearDownSQLite()
 
-	err := s.connect(testDB)
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	cid := uuid.NewV4()
+	testCollection := taxiiCollection{ID: cid, Title: "test collection", Description: "a test collection"}
+
+	err := testCollection.create(c)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// check
+	s, err := newSQLiteDB(c)
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	cid := uuid.NewV4()
-	testCollection := taxiiCollection{ID: cid, Title: "test collection", Description: "a test collection"}
-	if testCollection.ID != cid {
-		t.Error("Error")
+	var uid string
+	err = s.db.QueryRow("select id from taxii_collection where id = '" + cid.String() + "'").Scan(&uid)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if uid != cid.String() {
+		t.Error("Got:", uid, "Expected:", cid.String())
+	}
+}
+
+func TestTaxiiCollectionCreateFail(t *testing.T) {
+	testCollection := taxiiCollection{ID: uuid.NewV4(), Title: "test collection", Description: "a test collection"}
+	c := cabbyConfig{}
+	err := testCollection.create(c)
+	if err == nil {
+		t.Error("Expected an error")
 	}
 }
 

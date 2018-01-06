@@ -9,10 +9,10 @@ import (
 type cabbyConfig struct {
 	Host       string
 	Port       int
-	SSLCert    string            `json:"ssl_cert"`
-	SSLKey     string            `json:"ssl_key"`
-	DataStore  map[string]string `json:"data_store"`
-	Discovery  taxiiDiscovery
+	SSLCert    string                  `json:"ssl_cert"`
+	SSLKey     string                  `json:"ssl_key"`
+	DataStore  map[string]string       `json:"data_store"`
+	Discovery  taxiiDiscovery          `json:"discovery"`
 	APIRootMap map[string]taxiiAPIRoot `json:"api_root_map"`
 }
 
@@ -47,11 +47,11 @@ func (c cabbyConfig) inAPIRoots(ar string) (r bool) {
 func (c cabbyConfig) parse(file string) (pc cabbyConfig) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		logWarn.Panic(err)
+		logError.Panic(err)
 	}
 
 	if err = json.Unmarshal(b, &pc); err != nil {
-		logWarn.Panic(err)
+		logError.Panic(err)
 	}
 
 	return
@@ -78,11 +78,20 @@ type taxiiCollection struct {
 	MediaTypes  []string  `json:"media_types,omitempty"`
 }
 
-/*func (c taxiiCollection) create(t *taxiiDB) error {
-	var err error
-	//t.create("taxii_collection", c.ID, c.Title, c.Description)
-	return err
-}*/
+func (c taxiiCollection) create(config cabbyConfig) error {
+	t, err := newTaxiiDataStore(config)
+	if err != nil {
+		return err
+	}
+
+	args := map[string]string{"id": c.ID.String(), "title": c.Title, "description": c.Description}
+	return t.create("taxii_collection", args)
+}
+
+//
+// func (c taxiiCollection) read(config cabbyConfig) error {
+//   args := map[string]string{"user": userName, "id": c.ID.String()}
+// }
 
 type taxiiDiscovery struct {
 	Title       string   `json:"title"`
