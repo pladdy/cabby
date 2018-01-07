@@ -2,11 +2,11 @@ package main
 
 import (
 	"database/sql"
+	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
-	uuid "github.com/satori/go.uuid"
 )
 
 func init() {
@@ -91,8 +91,8 @@ func TestSQLiteRead(t *testing.T) {
 	}
 	defer s.disconnect()
 
-  // create a collection record and add a user to access it
-  tuid := uuid.Must(uuid.NewV4())
+	// create a collection record and add a user to access it
+	tuid := uuid.Must(uuid.NewV4())
 	_, err = s.db.Exec(`insert into taxii_collection values ("` + tuid.String() + `", "a title", "a description")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
@@ -103,11 +103,11 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal("DB Err:", err)
 	}
 
-  // buffered channel
-  results := make(chan interface{}, 10)
-  go s.read("taxii_collection", map[string]string{"user_id": "user1"}, results)
+	// buffered channel
+	results := make(chan interface{}, 10)
+	go s.read("taxii_collection", map[string]string{"user_id": "user1"}, results)
 
-  for r := range results {
+	for r := range results {
 		switch r := r.(type) {
 		case error:
 			t.Fatal(r)
@@ -148,23 +148,23 @@ func TestSQLiteReadFail(t *testing.T) {
 	}
 	defer s.disconnect()
 
-  _, err = s.db.Exec("drop table taxii_user_collection")
+	_, err = s.db.Exec("drop table taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-  results := make(chan interface{}, 10)
-  go s.read("taxii_collection", map[string]string{"user_id": "user1"}, results)
+	results := make(chan interface{}, 10)
+	go s.read("taxii_collection", map[string]string{"user_id": "user1"}, results)
 
-  Loop:
-	  for r := range results {
-			switch r := r.(type) {
-			case error:
-				logError.Println(r)
-				break Loop
-			}
-			t.Error("Expected error")
+Loop:
+	for r := range results {
+		switch r := r.(type) {
+		case error:
+			logError.Println(r)
+			break Loop
 		}
+		t.Error("Expected error")
+	}
 
 	setupSQLite() // reset state
 }
@@ -179,12 +179,12 @@ func TestSQLiteReadCollectionScanError(t *testing.T) {
 	}
 	defer s.disconnect()
 
-  rows, err := s.db.Query(`select "fail"`)
+	rows, err := s.db.Query(`select "fail"`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-  results := make(chan interface{})
+	results := make(chan interface{})
 	go s.readCollection(rows, results)
 
 	for r := range results {

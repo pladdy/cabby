@@ -3,8 +3,8 @@ package main
 import (
 	"database/sql"
 	"errors"
-	_ "github.com/mattn/go-sqlite3"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -77,7 +77,7 @@ func (s *sqliteDB) disconnect() {
 }
 
 func (s *sqliteDB) statement(action, name string, args map[string]string) string {
-  stmt := parseStatement(s.language, action, name)
+	stmt := parseStatement(s.language, action, name)
 	stmt = swapArgs(stmt, args)
 	return stmt
 }
@@ -109,7 +109,7 @@ func (s *sqliteDB) read(name string, args map[string]string, r chan<- interface{
 	}
 	defer rows.Close()
 
-  if name == "taxii_collection" {
+	if name == "taxii_collection" {
 		s.readCollection(rows, r)
 	}
 }
@@ -119,7 +119,7 @@ func (s *sqliteDB) readCollection(rows *sql.Rows, r chan<- interface{}) {
 		var tc taxiiCollection
 		var mediaTypes string
 
-    if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
+		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
 			r <- err
 			continue
 		}
@@ -127,8 +127,8 @@ func (s *sqliteDB) readCollection(rows *sql.Rows, r chan<- interface{}) {
 		r <- tc
 	}
 
-  if err := rows.Err(); err != nil {
-	  r <- err
+	if err := rows.Err(); err != nil {
+		r <- err
 	}
 	close(r)
 }

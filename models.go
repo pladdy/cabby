@@ -88,10 +88,16 @@ func (c taxiiCollection) create(config cabbyConfig) error {
 	return t.create("taxii_collection", args)
 }
 
-//
-// func (c taxiiCollection) read(config cabbyConfig) error {
-//   args := map[string]string{"user": userName, "id": c.ID.String()}
-// }
+func (c taxiiCollection) read(config cabbyConfig, u string, r chan<- interface{}) {
+	t, err := newTaxiiDataStore(config)
+	if err != nil {
+		r <- err
+		return
+	}
+
+	args := map[string]string{"user": u, "id": c.ID.String()}
+	t.read("taxii_collection", args, r)
+}
 
 type taxiiDiscovery struct {
 	Title       string   `json:"title"`
