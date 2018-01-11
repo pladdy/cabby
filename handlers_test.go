@@ -236,6 +236,14 @@ func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
 	if res.Code != 400 {
 		t.Error("Got:", res.Code, "Expected:", 400)
 	}
+
+	req = httptest.NewRequest("CUSTOM", "https://localhost/api_root/collections", nil)
+	res = httptest.NewRecorder()
+	handleTaxiiCollection(res, req)
+
+	if res.Code != 400 {
+		t.Error("Got:", res.Code, "Expected:", 400)
+	}
 }
 
 func TestHandleTaxiiCollectionCreateInvalidDB(t *testing.T) {
