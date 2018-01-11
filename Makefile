@@ -30,8 +30,9 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
-db_create:
-	sqlite3 db/cabby.db '.read db/schema.sql'
+sqlite:
+	mkdir db
+	sqlite3 db/cabby.db '.read backend/sql/schema.sql'
 
 dependencies:
 	go get github.com/fzipp/gocyclo

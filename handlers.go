@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -71,7 +72,7 @@ func recoverFromPanic(w http.ResponseWriter) {
 	}
 }
 
-/* handlers */
+/* api root */
 
 func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
@@ -104,6 +105,9 @@ func handleTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 			badRequest(w, err)
 			return
 		}
+	default:
+		badRequest(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+		return
 	}
 
 	w.Header().Set("Content-Type", taxiiContentType)

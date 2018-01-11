@@ -30,6 +30,7 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 
 	logInfo.Println("Registering API handler for", u)
 	h.HandleFunc(u.Path, basicAuth(handleTaxiiAPIRoot))
+	h.HandleFunc(u.Path+"/collections", basicAuth(handleTaxiiCollection))
 }
 
 func setupHandler() *http.ServeMux {

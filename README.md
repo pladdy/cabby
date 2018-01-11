@@ -27,6 +27,19 @@ The `make` task will generate certs and a default config file.  Edit the `config
 ## DB Setup
 Using Sqlite as a light-weight data store to run this in development mode.  Goal is to move to some kind of JSON store
 (rethinkdb or elasticsearch) in the future.
+`make sqlite`
+
+## API Examples
+Assumes a server is running
+
+##### View TAXII Root
+`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/taxii'`
+
+##### View API Root
+`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root'`
+
+##### Create a collection
+`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root/collections?title=a+collection'`
 
 ## Resources
 - Oasis Docs: https://oasis-open.github.io/cti-documentation/resources.html#taxii-20-specification
