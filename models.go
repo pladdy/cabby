@@ -78,6 +78,27 @@ type taxiiCollection struct {
 	MediaTypes  []string  `json:"media_types,omitempty"`
 }
 
+func newTaxiiCollection(args map[string]string) (taxiiCollection, error) {
+	tc := taxiiCollection{}
+	uid, err := newUUID(args["id"])
+
+	tc.ID = uid
+	tc.Title = args["title"]
+	tc.Description = args["description"]
+
+	return tc, err
+}
+
+func newUUID(arg ...string) (uuid.UUID, error) {
+	var err error
+
+	if len(arg) > 0 && len(arg[0]) > 0 {
+		uid, err := uuid.FromString(arg[0])
+		return uid, err
+	}
+	return uuid.Must(uuid.NewV4()), err
+}
+
 func (c taxiiCollection) create(config cabbyConfig) error {
 	t, err := newTaxiiDataStore(config)
 	if err != nil {

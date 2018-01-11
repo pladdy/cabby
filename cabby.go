@@ -17,6 +17,11 @@ var (
 	logError = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
+func newCabby(c cabbyConfig) *http.Server {
+	handler := setupHandler()
+	return setupServer(c, handler)
+}
+
 func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 	u, err := url.Parse(apiRoot)
 	if u.Path == "" || err != nil {
@@ -72,7 +77,6 @@ func setupTLS() *tls.Config {
 
 func main() {
 	config := cabbyConfig{}.parse(configPath)
-	handler := setupHandler()
-	server := setupServer(config, handler)
+	server := newCabby(config)
 	logError.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

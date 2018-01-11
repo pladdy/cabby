@@ -19,12 +19,6 @@ const (
 	testPass     = "pants"
 )
 
-func init() {
-	go func() {
-		main()
-	}()
-}
-
 /* helpers */
 
 func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
@@ -46,6 +40,12 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 }
 
 func get(u string) string {
+	c := cabbyConfig{}.parse(configPath)
+	server := newCabby(c)
+	go func() {
+		server.ListenAndServeTLS(c.SSLCert, c.SSLKey)
+	}()
+
 	// set up client with TLS configured
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
@@ -67,10 +67,28 @@ func get(u string) string {
 		log.Fatal(err)
 	}
 
+	server.Close()
 	return string(body)
 }
 
-/* test */
+/* tests */
+
+func TestMain(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/different_port_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/different_port_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	go func() {
+		main()
+	}()
+
+	// rename files back in reverse (order matters or you clobber the files)
+	time.Sleep(100 * time.Millisecond)
+}
 
 func TestMainDiscovery(t *testing.T) {
 	response := get(discoveryURL)

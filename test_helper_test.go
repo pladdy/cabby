@@ -3,6 +3,8 @@
 package main
 
 import (
+	"database/sql"
+	"io/ioutil"
 	"log"
 	"os"
 	"testing"
@@ -11,16 +13,42 @@ import (
 var sqlDriver = "sqlite3"
 var testDB = "test/test.db"
 
-/* helpers */
-
 func renameFile(from, to string) {
 	err := os.Rename(from, to)
 	if err != nil {
-		log.Fatal("Failed to rename file:", from, "to:", to)
+		logError.Fatal("Failed to rename file: ", from, " to: ", to)
 	}
 }
 
-/* check for panics */
+func setupSQLite() {
+	tearDownSQLite()
+
+	db, err := sql.Open(sqlDriver, testDB)
+	if err != nil {
+		log.Fatal("Can't connect to test DB:", testDB)
+	}
+
+	f, err := os.Open("backend/sql/schema.sql")
+	if err != nil {
+		log.Fatal("Couldn't open schema file")
+	}
+
+	schema, err := ioutil.ReadAll(f)
+	if err != nil {
+		log.Fatal("Couldn't read schema file")
+	}
+
+	_, err = db.Exec(string(schema))
+	if err != nil {
+		log.Fatal("Couldn't load schema")
+	}
+}
+
+func tearDownSQLite() {
+	os.Remove(testDB)
+}
+
+/* check for panics and record recovery */
 
 type panicChecker struct {
 	recovered bool

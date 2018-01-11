@@ -1,46 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
-	"log"
-	"os"
 	"testing"
 )
 
 func init() {
 	setupSQLite()
-}
-
-/* helpers */
-
-func setupSQLite() {
-	tearDownSQLite()
-
-	db, err := sql.Open(sqlDriver, testDB)
-	if err != nil {
-		log.Fatal("Can't connect to test DB:", testDB)
-	}
-
-	f, err := os.Open("backend/sql/schema.sql")
-	if err != nil {
-		log.Fatal("Couldn't open schema file")
-	}
-
-	schema, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal("Couldn't read schema file")
-	}
-
-	_, err = db.Exec(string(schema))
-	if err != nil {
-		log.Fatal("Couldn't load schema")
-	}
-}
-
-func tearDownSQLite() {
-	os.Remove(testDB)
 }
 
 /* taxiiDataStorer */

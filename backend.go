@@ -86,6 +86,7 @@ func (s *sqliteDB) statement(action, name string, args map[string]string) string
 
 func (s *sqliteDB) create(name string, args map[string]string) error {
 	statement := s.statement("create", name, args)
+	logInfo.Println("create:", statement)
 
 	_, err := s.db.Exec(statement)
 	if err != nil {

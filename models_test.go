@@ -43,6 +43,95 @@ func TestAPIRootVerify(t *testing.T) {
 
 /* collections */
 
+func TestNewCollection(t *testing.T) {
+	tests := []struct {
+		title       string
+		description string
+	}{
+		{"title1", "description1"},
+		{"title2", "description2"},
+	}
+
+	// no uuid provided
+	for _, test := range tests {
+		c, err := newTaxiiCollection(map[string]string{"title": test.title, "description": test.description})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if c.Title != test.title {
+			t.Error("Got:", c.Title, "Expected:", test.title)
+		}
+		if c.Description != test.description {
+			t.Error("Got:", c.Description, "Expected:", test.description)
+		}
+		if len(c.ID) == 0 {
+			t.Error("UUID is empty")
+		}
+	}
+
+	// uuid provided
+	for _, test := range tests {
+		tuid := uuid.Must(uuid.NewV4())
+		c, err := newTaxiiCollection(map[string]string{"id": tuid.String(), "title": test.title, "description": test.description})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if c.Title != test.title {
+			t.Error("Got:", c.Title, "Expected:", test.title)
+		}
+		if c.Description != test.description {
+			t.Error("Got:", c.Description, "Expected:", test.description)
+		}
+		if c.ID != tuid {
+			t.Error("Got:", c.ID, "Expected:", tuid)
+		}
+	}
+}
+
+func TestNewCollectionFail(t *testing.T) {
+	_, err := newTaxiiCollection(map[string]string{"id": "fail", "title": "a title", "description": "a description"})
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+
+func TestNewUUID(t *testing.T) {
+	// no string passed
+	uid, err := newUUID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// empty string passed
+	uid, err = newUUID("")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(uid) == 0 {
+		t.Error("Got:", uid.String(), "Expected a UUID")
+	}
+
+	// uuid string passed
+	tuid := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+	uid, err = newUUID(tuid)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if uid.String() != tuid {
+		t.Error("Got:", uid.String(), "Expected:", tuid)
+	}
+
+	// invalid uid passed
+	uid, err = newUUID("fail")
+	if err == nil {
+		t.Fatal("Expected error")
+	}
+}
+
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
 	defer tearDownSQLite()
@@ -58,7 +147,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 		t.Error(err)
 	}
 
-	// check
+	// check on record
 	s, err := newSQLiteDB(c)
 	if err != nil {
 		t.Error(err)

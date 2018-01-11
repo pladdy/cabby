@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -51,6 +52,14 @@ func unauthorized(w http.ResponseWriter) {
 	http.Error(w, resourceToJSON(te), http.StatusUnauthorized)
 }
 
+func badRequest(w http.ResponseWriter, err error) {
+	logError.Println(err)
+	errString := fmt.Sprintf("%v", err)
+
+	te := taxiiError{Title: "Bad Request", Description: errString, HTTPStatus: http.StatusBadRequest}
+	http.Error(w, resourceToJSON(te), http.StatusBadRequest)
+}
+
 func resourceNotFound(w http.ResponseWriter) {
 	te := taxiiError{Title: "Resource not found", HTTPStatus: http.StatusNotFound}
 	http.Error(w, resourceToJSON(te), http.StatusNotFound)
@@ -80,6 +89,56 @@ func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, resourceToJSON(config.APIRootMap[u]))
 }
 
+/* collections */
+
+func handleTaxiiCollection(w http.ResponseWriter, r *http.Request) {
+	defer recoverFromPanic(w)
+
+	var tc taxiiCollection
+	var err error
+
+	switch r.Method {
+	case "POST":
+		tc, err = createTaxiiCollection(w, r)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", taxiiContentType)
+	io.WriteString(w, resourceToJSON(tc))
+}
+
+func createTaxiiCollection(w http.ResponseWriter, r *http.Request) (taxiiCollection, error) {
+	var tc taxiiCollection
+	var err error
+
+	err = r.ParseForm()
+	if err != nil {
+		return tc, err
+	}
+
+	args := map[string]string{
+		"id":          r.Form.Get("id"),
+		"title":       r.Form.Get("title"),
+		"description": r.Form.Get("description")}
+
+	tc, err = newTaxiiCollection(args)
+	if err != nil {
+		return tc, err
+	}
+
+	err = tc.create(cabbyConfig{}.parse(configPath))
+	if err != nil {
+		return tc, err
+	}
+
+	return tc, err
+}
+
+/* discovery */
+
 func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
 	logInfo.Println("Discovery resource requested")
 	defer recoverFromPanic(w)
@@ -93,7 +152,8 @@ func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, resourceToJSON(config.Discovery))
 }
 
-/* undefined route */
+/* catch undefined route */
+
 func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 	logWarn.Printf("Undefined request: %v\n", r.URL)
 	resourceNotFound(w)
