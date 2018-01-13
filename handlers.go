@@ -95,50 +95,45 @@ func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 func handleTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
-	var tc taxiiCollection
-	var err error
-
 	switch r.Method {
 	case "POST":
-		tc, err = createTaxiiCollection(w, r)
-		if err != nil {
-			badRequest(w, err)
-			return
-		}
+		postTaxiiCollection(w, r)
 	default:
 		badRequest(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+		return
+	}
+}
+
+func postTaxiiCollection(w http.ResponseWriter, r *http.Request) {
+	var err error
+
+	// any error, send badRequest
+	defer func(err *error) {
+		if err != nil {
+			err := fmt.Errorf("%v", err)
+			badRequest(w, err)
+		}
+	}(&err)
+
+	err = r.ParseForm()
+	if err != nil {
+		return
+	}
+
+	tc, err := newTaxiiCollection(r.Form.Get("id"))
+	if err != nil {
+		return
+	}
+	tc.Title = r.Form.Get("title")
+	tc.Description = r.Form.Get("description")
+
+	err = tc.create(cabbyConfig{}.parse(configPath))
+	if err != nil {
 		return
 	}
 
 	w.Header().Set("Content-Type", taxiiContentType)
 	io.WriteString(w, resourceToJSON(tc))
-}
-
-func createTaxiiCollection(w http.ResponseWriter, r *http.Request) (taxiiCollection, error) {
-	var tc taxiiCollection
-	var err error
-
-	err = r.ParseForm()
-	if err != nil {
-		return tc, err
-	}
-
-	args := map[string]string{
-		"id":          r.Form.Get("id"),
-		"title":       r.Form.Get("title"),
-		"description": r.Form.Get("description")}
-
-	tc, err = newTaxiiCollection(args)
-	if err != nil {
-		return tc, err
-	}
-
-	err = tc.create(cabbyConfig{}.parse(configPath))
-	if err != nil {
-		return tc, err
-	}
-
-	return tc, err
 }
 
 /* discovery */

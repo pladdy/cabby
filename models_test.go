@@ -45,55 +45,24 @@ func TestAPIRootVerify(t *testing.T) {
 
 func TestNewCollection(t *testing.T) {
 	tests := []struct {
-		title       string
-		description string
+		id          string
+		shouldError bool
 	}{
-		{"title1", "description1"},
-		{"title2", "description2"},
+		{"invalid", true},
+		{uuid.Must(uuid.NewV4()).String(), false},
 	}
 
 	// no uuid provided
 	for _, test := range tests {
-		c, err := newTaxiiCollection(map[string]string{"title": test.title, "description": test.description})
-		if err != nil {
-			t.Fatal(err)
-		}
+		c, err := newTaxiiCollection(test.id)
 
-		if c.Title != test.title {
-			t.Error("Got:", c.Title, "Expected:", test.title)
+		if test.shouldError {
+			if err == nil {
+				t.Error("Test with id of", test.id, "should produce an error!")
+			}
+		} else if c.ID.String() != test.id {
+			t.Error("Got:", c.ID.String(), "Expected:", test.id)
 		}
-		if c.Description != test.description {
-			t.Error("Got:", c.Description, "Expected:", test.description)
-		}
-		if len(c.ID) == 0 {
-			t.Error("UUID is empty")
-		}
-	}
-
-	// uuid provided
-	for _, test := range tests {
-		tuid := uuid.Must(uuid.NewV4())
-		c, err := newTaxiiCollection(map[string]string{"id": tuid.String(), "title": test.title, "description": test.description})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if c.Title != test.title {
-			t.Error("Got:", c.Title, "Expected:", test.title)
-		}
-		if c.Description != test.description {
-			t.Error("Got:", c.Description, "Expected:", test.description)
-		}
-		if c.ID != tuid {
-			t.Error("Got:", c.ID, "Expected:", tuid)
-		}
-	}
-}
-
-func TestNewCollectionFail(t *testing.T) {
-	_, err := newTaxiiCollection(map[string]string{"id": "fail", "title": "a title", "description": "a description"})
-	if err == nil {
-		t.Error("Expected an error")
 	}
 }
 

@@ -217,6 +217,14 @@ func TestHandleTaxiiCollectionCreateBadID(t *testing.T) {
 }
 
 func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
+	tests := []struct {
+		method   string
+		expected int
+	}{
+		{"POST", 400},
+		{"CUSTOM", 400},
+	}
+
 	renameFile(configPath, configPath+".testing")
 	renameFile("test/config/testing_config.json", configPath)
 
@@ -225,24 +233,20 @@ func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
 		renameFile(configPath+".testing", configPath)
 	}()
 
-	req := httptest.NewRequest("POST", "https://localhost/api_root/collections", nil)
+	for _, test := range tests {
+		req := httptest.NewRequest(test.method, "https://localhost/api_root/collections", nil)
 
-	// change body to nil to trigger a parse error once the handler tries to parse the form elements in the url
-	req.Body = nil
+		// change body to nil to trigger a parse error in handler
+		if test.method == "POST" {
+			req.Body = nil
+		}
 
-	res := httptest.NewRecorder()
-	handleTaxiiCollection(res, req)
+		res := httptest.NewRecorder()
+		handleTaxiiCollection(res, req)
 
-	if res.Code != 400 {
-		t.Error("Got:", res.Code, "Expected:", 400)
-	}
-
-	req = httptest.NewRequest("CUSTOM", "https://localhost/api_root/collections", nil)
-	res = httptest.NewRecorder()
-	handleTaxiiCollection(res, req)
-
-	if res.Code != 400 {
-		t.Error("Got:", res.Code, "Expected:", 400)
+		if res.Code != test.expected {
+			t.Error("Got:", res.Code, "Expected:", test.expected, "for method:", test.method)
+		}
 	}
 }
 

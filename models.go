@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	uuid "github.com/satori/go.uuid"
 	"io/ioutil"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type cabbyConfig struct {
@@ -78,25 +79,20 @@ type taxiiCollection struct {
 	MediaTypes  []string  `json:"media_types,omitempty"`
 }
 
-func newTaxiiCollection(args map[string]string) (taxiiCollection, error) {
+func newTaxiiCollection(uid ...string) (taxiiCollection, error) {
+	var err error
 	tc := taxiiCollection{}
-	uid, err := newUUID(args["id"])
-
-	tc.ID = uid
-	tc.Title = args["title"]
-	tc.Description = args["description"]
-
+	tc.ID, err = newUUID(uid[0])
 	return tc, err
 }
 
 func newUUID(arg ...string) (uuid.UUID, error) {
-	var err error
-
 	if len(arg) > 0 && len(arg[0]) > 0 {
 		uid, err := uuid.FromString(arg[0])
 		return uid, err
 	}
-	return uuid.Must(uuid.NewV4()), err
+	uid, err := uuid.NewV4()
+	return uid, err
 }
 
 func (c taxiiCollection) create(config cabbyConfig) error {
