@@ -33,7 +33,7 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 			unauthorized(w)
 			return
 		}
-		logInfo.Println("Basic Auth validated")
+		logInfo.Println("Basic Auth validated for", user)
 		h(w, r)
 	}
 }

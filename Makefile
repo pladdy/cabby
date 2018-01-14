@@ -32,7 +32,7 @@ endif
 
 sqlite:
 	mkdir db
-	sqlite3 db/cabby.db '.read backend/sql/schema.sql'
+	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
 dependencies:
 	go get github.com/fzipp/gocyclo

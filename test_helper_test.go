@@ -28,7 +28,7 @@ func setupSQLite() {
 		log.Fatal("Can't connect to test DB:", testDB)
 	}
 
-	f, err := os.Open("backend/sql/schema.sql")
+	f, err := os.Open("backend/sqlite/schema.sql")
 	if err != nil {
 		log.Fatal("Couldn't open schema file")
 	}
