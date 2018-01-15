@@ -105,23 +105,15 @@ func handleTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 }
 
 func postTaxiiCollection(w http.ResponseWriter, r *http.Request) {
-	var err error
-
-	// any error, send badRequest
-	defer func(err *error) {
-		if err != nil {
-			err := fmt.Errorf("%v", err)
-			badRequest(w, err)
-		}
-	}(&err)
-
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
+		badRequest(w, err)
 		return
 	}
 
 	tc, err := newTaxiiCollection(r.Form.Get("id"))
 	if err != nil {
+		badRequest(w, err)
 		return
 	}
 	tc.Title = r.Form.Get("title")
@@ -129,6 +121,7 @@ func postTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 
 	err = tc.create(cabbyConfig{}.parse(configPath))
 	if err != nil {
+		badRequest(w, err)
 		return
 	}
 

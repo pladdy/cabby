@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	"time"
 )
 
 /* helpers */
@@ -156,6 +157,8 @@ func TestHandleTaxiiCollectionCreate(t *testing.T) {
 	}
 
 	// check on record
+	time.Sleep(100 * time.Millisecond)
+
 	c := cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
 	s, err := newSQLiteDB(c)

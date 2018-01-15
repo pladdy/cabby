@@ -4,43 +4,52 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"io/ioutil"
 	"path"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-const backendDir = "backend"
+const (
+	backendDir = "backend"
+	maxWrites  = 500
+)
 
 type taxiiConnector interface {
 	connect(connection string) error
-	statement(action, name string, args map[string]string) string
 	disconnect()
 }
 
-type taxiiWriter interface {
-	create(name string, args map[string]string) error
+type taxiiParser interface {
+	parse(command, container string) (string, error)
 }
 
 type taxiiReader interface {
-	read(name string, args map[string]string, c chan<- interface{})
+	read(query, name string, args []interface{}, results chan interface{})
 }
 
-type taxiiDataStorer interface {
+type taxiiWriter interface {
+	write(query string, toWrite chan interface{}, errors chan error)
+}
+
+type taxiiStorer interface {
 	taxiiConnector
+	taxiiParser
 	taxiiReader
 	taxiiWriter
 }
 
 type sqliteDB struct {
-	db       *sql.DB
-	language string
-	path     string
-	driver   string
+	db        *sql.DB
+	dbName    string
+	extension string
+	path      string
+	driver    string
 }
 
-func newTaxiiDataStore(c cabbyConfig) (taxiiDataStorer, error) {
-	var t taxiiDataStorer
+func newTaxiiStorer(c cabbyConfig) (taxiiStorer, error) {
+	var t taxiiStorer
 	var err error
 
 	if c.DataStore["name"] == "sqlite" {
@@ -54,7 +63,7 @@ func newTaxiiDataStore(c cabbyConfig) (taxiiDataStorer, error) {
 /* sqlite */
 
 func newSQLiteDB(c cabbyConfig) (*sqliteDB, error) {
-	s := sqliteDB{language: "sql", driver: "sqlite3", path: c.DataStore["path"]}
+	s := sqliteDB{dbName: "sqlite", extension: "sql", driver: "sqlite3", path: c.DataStore["path"]}
 	if s.path == "" {
 		return &s, errors.New("No database location specfied in config")
 	}
@@ -76,46 +85,36 @@ func (s *sqliteDB) disconnect() {
 	s.db.Close()
 }
 
-func (s *sqliteDB) statement(action, name string, args map[string]string) string {
-	stmt := parseStatement(s.language, action, name)
-	stmt = swapArgs(stmt, args)
-	return stmt
-}
+/* parser methods */
 
-/* writer methods */
+func (s *sqliteDB) parse(command, name string) (string, error) {
+	path := path.Join(backendDir, s.dbName, command, name+"."+s.extension)
 
-func (s *sqliteDB) create(name string, args map[string]string) error {
-	statement := s.statement("create", name, args)
-	logInfo.Println("create:", statement)
-
-	_, err := s.db.Exec(statement)
+	statement, err := ioutil.ReadFile(path)
 	if err != nil {
-		logError.Printf("Error: '%v', in statement \"%v\"\n", err, statement)
+		err = fmt.Errorf("Unable to parse statement file: %v", path)
 	}
-	return err
+
+	return string(statement), err
 }
 
 /* read methods */
 
-// read methods take a name and args like create, but also a channel.  The channel is used to put returned
-// data into.  It allows the caller to buffer a channel and apply back pressure.
-func (s *sqliteDB) read(name string, args map[string]string, r chan<- interface{}) {
-	statement := s.statement("read", name, args)
-
-	rows, err := s.db.Query(statement)
+func (s *sqliteDB) read(query, name string, args []interface{}, r chan interface{}) {
+	rows, err := s.db.Query(query, args...)
 	if err != nil {
-		r <- fmt.Errorf("%v in statement: %v", err, statement)
+		r <- fmt.Errorf("%v in statement: %v", err, query)
 		close(r)
 		return
 	}
 	defer rows.Close()
 
-	if name == "taxii_collection" {
+	if name == "taxiiCollection" {
 		s.readCollection(rows, r)
 	}
 }
 
-func (s *sqliteDB) readCollection(rows *sql.Rows, r chan<- interface{}) {
+func (s *sqliteDB) readCollection(rows *sql.Rows, r chan interface{}) {
 	for rows.Next() {
 		var tc taxiiCollection
 		var mediaTypes string
@@ -134,24 +133,41 @@ func (s *sqliteDB) readCollection(rows *sql.Rows, r chan<- interface{}) {
 	close(r)
 }
 
-/* helpers */
+/* writer methods */
 
-func parseStatement(language, command, name string) string {
-	fileName := strings.Join([]string{command, name}, "_")
-	fileName = fileName + "." + language
-	path := path.Join(backendDir, language, fileName)
+func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error) {
+	defer close(errs)
 
-	statement, err := ioutil.ReadFile(path)
+	tx, err := s.db.Begin()
 	if err != nil {
-		logError.Panicf("Unable to parse statement file: %v", path)
+		logError.Println(err)
+		errs <- err
+		return
 	}
 
-	return string(statement)
-}
-
-func swapArgs(statement string, args map[string]string) string {
-	for k, v := range args {
-		statement = strings.Replace(statement, "$"+k, v, -1)
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		logError.Printf("%v in statement: %v\n", query, err)
+		errs <- err
+		return
 	}
-	return statement
+	defer stmt.Close()
+
+	i := 0
+	for item := range toWrite {
+		args := item.([]interface{})
+
+		_, err = stmt.Exec(args...)
+		if err != nil {
+			logError.Println(err)
+			errs <- err
+			continue
+		}
+
+		i++
+		if i >= maxWrites {
+			tx.Commit()
+		}
+	}
+	tx.Commit()
 }

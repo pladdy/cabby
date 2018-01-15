@@ -10,4 +10,4 @@ from
   inner join taxii_user_collection uc
     on c.id = uc.collection_id
 where
-  uc.user_id = '$user_id'
+  uc.user_id = ?

@@ -7,6 +7,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+const minBuffer = 10
+
 type cabbyConfig struct {
 	Host       string
 	Port       int
@@ -96,24 +98,48 @@ func newUUID(arg ...string) (uuid.UUID, error) {
 }
 
 func (c taxiiCollection) create(config cabbyConfig) error {
-	t, err := newTaxiiDataStore(config)
+	t, err := newTaxiiStorer(config)
 	if err != nil {
+		logError.Println(err)
 		return err
 	}
 
-	args := map[string]string{"id": c.ID.String(), "title": c.Title, "description": c.Description}
-	return t.create("taxii_collection", args)
+	query, err := t.parse("create", "taxiiCollection")
+	if err != nil {
+		logError.Println(err)
+		return err
+	}
+
+	args := []interface{}{c.ID.String(), c.Title, c.Description}
+	toWrite := make(chan interface{}, minBuffer)
+	errs := make(chan error, minBuffer)
+
+	go t.write(query, toWrite, errs)
+	toWrite <- args
+	close(toWrite)
+
+	for e := range errs {
+		err = e
+	}
+
+	return err
 }
 
-func (c taxiiCollection) read(config cabbyConfig, u string, r chan<- interface{}) {
-	t, err := newTaxiiDataStore(config)
+func (c taxiiCollection) read(config cabbyConfig, u string, results chan interface{}) {
+	t, err := newTaxiiStorer(config)
 	if err != nil {
-		r <- err
+		results <- err
 		return
 	}
 
-	args := map[string]string{"user": u, "id": c.ID.String()}
-	t.read("taxii_collection", args, r)
+	query, err := t.parse("read", "taxiiCollection")
+	if err != nil {
+		results <- err
+		return
+	}
+
+	args := []interface{}{u, c.ID.String()}
+	t.read(query, "taxiiCollection", args, results)
 }
 
 type taxiiDiscovery struct {

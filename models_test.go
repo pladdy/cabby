@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -103,7 +104,7 @@ func TestNewUUID(t *testing.T) {
 
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
-	defer tearDownSQLite()
+	//defer tearDownSQLite()
 
 	c := cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
@@ -113,20 +114,22 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 
 	err := testCollection.create(c)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	// check on record
+	time.Sleep(100 * time.Millisecond)
+
 	s, err := newSQLiteDB(c)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer s.disconnect()
 
 	var uid string
 	err = s.db.QueryRow("select id from taxii_collection where id = '" + cid.String() + "'").Scan(&uid)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if uid != cid.String() {
@@ -134,12 +137,50 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	}
 }
 
-func TestTaxiiCollectionCreateFail(t *testing.T) {
+func TestTaxiiCollectionCreateFailTaxiiStorer(t *testing.T) {
 	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
 	c := cabbyConfig{}
 	err := testCollection.create(c)
 	if err == nil {
-		t.Error("Expected an error")
+		t.Error("Expected a taxiiStorer error")
+	}
+}
+
+func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
+	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
+	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
+
+	err := testCollection.create(c)
+	if err == nil {
+		t.Error("Expected a query error")
+	}
+}
+
+func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
+	defer setupSQLite()
+
+	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	s, err := newSQLiteDB(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	_, err = s.db.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testCollection.create(c)
+	if err == nil {
+		t.Error("Expected a write error")
 	}
 }
 
@@ -211,12 +252,30 @@ func TestTaxiiCollectionReadFail(t *testing.T) {
 	results := make(chan interface{}, 10)
 	go testCollection.read(c, "user", results)
 
-Loop:
+NoRecord:
 	for r := range results {
 		switch r := r.(type) {
 		case error:
 			logError.Println(r)
-			break Loop
+			break NoRecord
+		}
+		t.Error("Expected error")
+	}
+
+	defer renameFile("backend/sqlite/read/taxiiCollection.sql.testing", "backend/sqlite/read/taxiiCollection.sql")
+	renameFile("backend/sqlite/read/taxiiCollection.sql", "backend/sqlite/read/taxiiCollection.sql.testing")
+
+	c = cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	go testCollection.read(c, "user", results)
+
+NoQuery:
+	for r := range results {
+		switch r := r.(type) {
+		case error:
+			logError.Println(r)
+			break NoQuery
 		}
 		t.Error("Expected error")
 	}
