@@ -5,7 +5,7 @@
   "ssl_key": "server.key",
   "data_store": {
     "name": "sqlite",
-    "path": "db/cabby.db"
+    "path": "test/test.db"
   },
   "discovery": {
     "title": "Test Discovery",

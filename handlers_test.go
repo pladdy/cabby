@@ -8,27 +8,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
+	"time"
 )
 
 /* helpers */
 
-func renameFile(from, to string) {
-	err := os.Rename(from, to)
-	if err != nil {
-		log.Fatal("Failed to rename file:", from, "to:", to)
-	}
-}
-
 // define a handler function type for handler testing
 type handlerFn func(http.ResponseWriter, *http.Request)
 
-// handlerTest is a function to handle generic testing of handlers
-// it takes a handler function to call with a url; it returns the stuats code
-// and response as a string
-func handlerTest(h handlerFn, u string) (int, string) {
-	req := httptest.NewRequest("GET", u, nil)
+// handle generic testing of handlers.  It takes a handler function to call with a url;
+// it returns the status code and response as a string
+func handlerTest(h handlerFn, m, u string) (int, string) {
+	req := httptest.NewRequest(m, u, nil)
 	res := httptest.NewRecorder()
 	h(res, req)
 
@@ -83,12 +75,217 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-/* handleDiscovery */
+/* handleTaxiiAPIRoot */
+
+func TestHandleTaxiiAPIRoot(t *testing.T) {
+	u, _ := url.Parse(apiRootURL)
+	noPortHost := urlWithNoPort(u)
+
+	config := cabbyConfig{}.parse(configPath)
+	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
+	status, result := handlerTest(handleTaxiiAPIRoot, "GET", noPortHost)
+
+	if status != 200 {
+		t.Error("Got:", status, "Expected:", 200)
+	}
+
+	if result != string(expected) {
+		t.Error("Got:", result, "Expected:", string(expected))
+	}
+}
+
+func TestHandleTaxiiAPIRootNoconfig(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+
+	defer func() {
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	req := httptest.NewRequest("GET", apiRootURL, nil)
+	res := httptest.NewRecorder()
+	handleTaxiiAPIRoot(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+}
+
+func TestHandleTaxiiAPIRootNotDefined(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/no_discovery_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/no_discovery_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	req := httptest.NewRequest("GET", apiRootURL, nil)
+	res := httptest.NewRecorder()
+	handleTaxiiAPIRoot(res, req)
+
+	if res.Code != 404 {
+		t.Error("Got:", res.Code, "Expected:", 404)
+	}
+}
+
+/* handleTaxiiCollection */
+
+func TestHandleTaxiiCollectionCreate(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	// set up URL
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Error(err)
+	}
+
+	q := u.Query()
+	q.Set("title", t.Name())
+	q.Set("description", "a description")
+	u.RawQuery = q.Encode()
+
+	status, _ := handlerTest(handleTaxiiCollection, "POST", u.String())
+
+	if status != 200 {
+		t.Error("Got:", status, "Expected:", 200)
+	}
+
+	// check on record
+	time.Sleep(100 * time.Millisecond)
+
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+	s, err := newSQLiteDB(c)
+	if err != nil {
+		t.Error(err)
+	}
+	defer s.disconnect()
+
+	var title string
+	err = s.db.QueryRow("select title from taxii_collection where title = '" + t.Name() + "'").Scan(&title)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if title != t.Name() {
+		t.Error("Got:", title, "Expected:", t.Name())
+	}
+}
+
+func TestHandleTaxiiCollectionCreateBadID(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	// set up URL
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Error(err)
+	}
+
+	q := u.Query()
+	q.Set("id", "fail")
+	u.RawQuery = q.Encode()
+
+	status, _ := handlerTest(handleTaxiiCollection, "POST", u.String())
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+
+	// verify no record exists
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+	s, err := newSQLiteDB(c)
+	if err != nil {
+		t.Error(err)
+	}
+	defer s.disconnect()
+
+	var title string
+	err = s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
+	if err == nil {
+		t.Fatal("Should be no record created")
+	}
+}
+
+func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
+	tests := []struct {
+		method   string
+		expected int
+	}{
+		{"POST", 400},
+		{"CUSTOM", 400},
+	}
+
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	for _, test := range tests {
+		req := httptest.NewRequest(test.method, "https://localhost/api_root/collections", nil)
+
+		// change body to nil to trigger a parse error in handler
+		if test.method == "POST" {
+			req.Body = nil
+		}
+
+		res := httptest.NewRecorder()
+		handleTaxiiCollection(res, req)
+
+		if res.Code != test.expected {
+			t.Error("Got:", res.Code, "Expected:", test.expected, "for method:", test.method)
+		}
+	}
+}
+
+func TestHandleTaxiiCollectionCreateInvalidDB(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/no_datastore_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/no_datastore_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
+	// set up URL
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Error(err)
+	}
+
+	q := u.Query()
+	q.Set("title", "a title")
+	q.Set("description", "a description")
+	u.RawQuery = q.Encode()
+
+	status, _ := handlerTest(handleTaxiiCollection, "POST", u.String())
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+}
+
+/* handleTaxiiDiscovery */
 
 func TestHandleDiscovery(t *testing.T) {
 	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
-	status, result := handlerTest(handleDiscovery, discoveryURL)
+	status, result := handlerTest(handleTaxiiDiscovery, "GET", discoveryURL)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -102,88 +299,41 @@ func TestHandleDiscovery(t *testing.T) {
 func TestHandleDiscoveryNoconfig(t *testing.T) {
 	renameFile(configPath, configPath+".testing")
 
+	defer func() {
+		renameFile(configPath+".testing", configPath)
+	}()
+
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
+	handleTaxiiDiscovery(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
 	}
-
-	renameFile(configPath+".testing", configPath)
 }
 
 func TestHandleDiscoveryNotDefined(t *testing.T) {
 	renameFile(configPath, configPath+".testing")
-	renameFile("test/no_discovery_config.json", configPath)
+	renameFile("test/config/no_discovery_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/no_discovery_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleDiscovery(res, req)
+	handleTaxiiDiscovery(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
 	}
-
-	// rename files back in reverse (order matters or you clobber the files)
-	renameFile(configPath, "test/no_discovery_config.json")
-	renameFile(configPath+".testing", configPath)
-}
-
-/* handleAPIRoot */
-
-func TestHandleAPIRoot(t *testing.T) {
-	u, _ := url.Parse(apiRootURL)
-	noPortHost := urlWithNoPort(u)
-
-	config := cabbyConfig{}.parse(configPath)
-	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
-	status, result := handlerTest(handleAPIRoot, noPortHost)
-
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
-	}
-
-	if result != string(expected) {
-		t.Error("Got:", result, "Expected:", string(expected))
-	}
-}
-
-func TestHandleAPIRootNoconfig(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-
-	req := httptest.NewRequest("GET", apiRootURL, nil)
-	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	renameFile(configPath+".testing", configPath)
-}
-
-func TestHandleAPIRootNotDefined(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/no_discovery_config.json", configPath)
-
-	req := httptest.NewRequest("GET", apiRootURL, nil)
-	res := httptest.NewRecorder()
-	handleAPIRoot(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-
-	// rename files back in reverse (order matters or you clobber the files)
-	renameFile(configPath, "test/no_discovery_config.json")
-	renameFile(configPath+".testing", configPath)
 }
 
 /* undefined request */
 
 func TestHandleUndefinedRequest(t *testing.T) {
-	status, result := handlerTest(handleUndefinedRequest, "/nobody-home")
+	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home")
 	if status != 404 {
 		t.Error("Got:", status, "Expected: 404", "Response:", result)
 	}
@@ -211,7 +361,7 @@ func TestUrlWithNoPort(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handleDiscovery))
+	ts := httptest.NewServer(http.HandlerFunc(handleTaxiiDiscovery))
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL)

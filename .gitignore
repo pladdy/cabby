@@ -23,6 +23,8 @@ config/*
 *.crt
 *.key
 *.swp
+*.db
+TODO.md
 
 # Vagrant
 .vagrant

@@ -1,6 +1,6 @@
 .PHONY: config test
 
-GO_FILES=$(shell find .  -name '*go' | grep -v test)
+GO_FILES=$(shell find . -name '*go' | grep -v test)
 
 all: config cert dependencies test
 
@@ -16,9 +16,9 @@ cert:
 	chmod 600 server.key
 
 config:
-	for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
-		cp $${file}.example.json $${file}.json; \
-	done
+	@for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
+		 cp $${file}.example.json $${file}.json; \
+	 done
 	@echo Configs available in config/
 
 cover:
@@ -30,13 +30,15 @@ ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
 
-coverage:
-	goveralls -service=travis-ci
+sqlite:
+	mkdir db
+	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
 dependencies:
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
-	go get github.com/mattn/goveralls
+	go get github.com/mattn/go-sqlite3
+	go get github.com/satori/go.uuid
 
 fmt:
 	go fmt -x

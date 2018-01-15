@@ -17,6 +17,11 @@ var (
 	logError = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
+func newCabby(c cabbyConfig) *http.Server {
+	handler := setupHandler()
+	return setupServer(c, handler)
+}
+
 func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 	u, err := url.Parse(apiRoot)
 	if u.Path == "" || err != nil {
@@ -24,21 +29,22 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 	}
 
 	logInfo.Println("Registering API handler for", u)
-	h.HandleFunc(u.Path, basicAuth(handleAPIRoot))
+	h.HandleFunc(u.Path, basicAuth(handleTaxiiAPIRoot))
+	h.HandleFunc(u.Path+"/collections", basicAuth(handleTaxiiCollection))
 }
 
 func setupHandler() *http.ServeMux {
 	config := cabbyConfig{}.parse(configPath)
 	handler := http.NewServeMux()
 
-	handler.HandleFunc("/taxii", basicAuth(handleDiscovery))
+	handler.HandleFunc("/taxii", basicAuth(handleTaxiiDiscovery))
 
 	for _, apiRoot := range config.Discovery.APIRoots {
 		if config.validAPIRoot(apiRoot) {
 			registerAPIRoot(apiRoot, handler)
 		}
 	}
-	
+
 	handler.HandleFunc("/", handleUndefinedRequest)
 
 	return handler
@@ -72,7 +78,6 @@ func setupTLS() *tls.Config {
 
 func main() {
 	config := cabbyConfig{}.parse(configPath)
-	handler := setupHandler()
-	server := setupServer(config, handler)
+	server := newCabby(config)
 	logError.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }
