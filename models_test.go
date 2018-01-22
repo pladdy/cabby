@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -104,7 +106,6 @@ func TestNewUUID(t *testing.T) {
 
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
-	//defer tearDownSQLite()
 
 	c := cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
@@ -198,14 +199,8 @@ func TestTaxiiCollectionRead(t *testing.T) {
 
 	// create a collection record and add a user to access it
 	tuid := uuid.Must(uuid.NewV4())
-	user := "user1"
-
-	_, err = s.db.Exec(`insert into taxii_collection values ("` + tuid.String() + `", "a title", "a description")`)
-	if err != nil {
-		t.Fatal("DB Err:", err)
-	}
-
-	_, err = s.db.Exec(`insert into taxii_user_collection values ("` + user + `", "` + tuid.String() + `", 1, 1, "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -213,7 +208,7 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	// buffered channel
 	testCollection := taxiiCollection{ID: tuid, Title: "test collection", Description: "a test collection"}
 	results := make(chan interface{}, 10)
-	go testCollection.read(c, user, results)
+	go testCollection.read(c, testUser, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -223,13 +218,13 @@ func TestTaxiiCollectionRead(t *testing.T) {
 		resultCollection := r.(taxiiCollection)
 
 		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", "collection id")
+			t.Error("Got:", resultCollection.ID, "Expected", tuid.String())
 		}
 	}
 
 	// unbuffered channel
 	results = make(chan interface{})
-	go testCollection.read(c, user, results)
+	go testCollection.read(c, testUser, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -239,12 +234,13 @@ func TestTaxiiCollectionRead(t *testing.T) {
 		resultCollection := r.(taxiiCollection)
 
 		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", "collection id")
+			t.Error("Got:", resultCollection.ID, "Expected", tuid.String())
 		}
 	}
 }
 
 func TestTaxiiCollectionReadFail(t *testing.T) {
+	// fail due to no valid database specified
 	c := cabbyConfig{}
 	c.DataStore = map[string]string{"name": "sqlite"}
 
@@ -262,11 +258,13 @@ NoRecord:
 		t.Error("Expected error")
 	}
 
+	// fail due to no query being avialable
 	defer renameFile("backend/sqlite/read/taxiiCollection.sql.testing", "backend/sqlite/read/taxiiCollection.sql")
 	renameFile("backend/sqlite/read/taxiiCollection.sql", "backend/sqlite/read/taxiiCollection.sql.testing")
 
 	c = cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
+	results = make(chan interface{}, 10)
 
 	go testCollection.read(c, "user", results)
 
@@ -279,6 +277,104 @@ NoQuery:
 		}
 		t.Error("Expected error")
 	}
+}
+
+/* taxiiUser */
+
+func TestNewTaxiiUser(t *testing.T) {
+	setupSQLite()
+
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	s, err := newSQLiteDB(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	// create a collection record
+	collectionID := uuid.Must(uuid.NewV4())
+	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	                    values ('` + collectionID.String() + `', "a title", "a description", "")`)
+	if err != nil {
+		t.Fatal("DB Err:", err)
+	}
+
+	// associate user to collection
+	_, err = s.db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
+	                    values ('` + testUser + `', '` + collectionID.String() + `', 1, 1)`)
+	if err != nil {
+		t.Fatal("DB Err:", err)
+	}
+
+	user, err := newTaxiiUser(c, testUser, testPass)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if user.Email != testUser {
+		t.Error("Got:", user.Email, "Expected:", testUser)
+	}
+
+	for k, v := range user.CollectionAccess {
+		logInfo.Println("Got collection id of", k)
+
+		if v.CanRead != true {
+			t.Error("Got:", v.CanRead, "Expected:", true)
+		}
+		if v.CanWrite != true {
+			t.Error("Got:", v.CanWrite, "Expected:", true)
+		}
+	}
+}
+
+func TestNewTaxiiUserNoAccess(t *testing.T) {
+	setupSQLite()
+
+	c := cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	s, err := newSQLiteDB(c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	// create a collection record
+	collectionID := uuid.Must(uuid.NewV4())
+	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	                    values ('` + collectionID.String() + `', "a title", "a description", "")`)
+	if err != nil {
+		t.Fatal("DB Err:", err)
+	}
+
+	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
+	_, err = newTaxiiUser(c, testUser, pass)
+	if err == nil {
+		t.Error("Expected error with no access")
+	}
+}
+
+func TestNewTaxiiUserFail(t *testing.T) {
+	c := cabbyConfig{}
+	_, err := newTaxiiUser(c, "test@test.fail", "nopass")
+	if err == nil {
+		t.Error("Expected an error")
+	}
+
+	// fail due to no query being avialable
+	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
+	renameFile("backend/sqlite/read/taxiiUser.sql", "backend/sqlite/read/taxiiUser.sql.testing")
+
+	c = cabbyConfig{}.parse(configPath)
+	c.DataStore["path"] = testDB
+
+	_, err = newTaxiiUser(c, "test@test.fail", "nopass")
+	if err == nil {
+		t.Error("Expected an error")
+	}
+
 }
 
 /* Config */

@@ -3,11 +3,15 @@
 package main
 
 import (
+	"crypto/sha256"
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"testing"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 var sqlDriver = "sqlite3"
@@ -41,6 +45,33 @@ func setupSQLite() {
 	_, err = db.Exec(string(schema))
 	if err != nil {
 		log.Fatal("Couldn't load schema")
+	}
+
+	// create a user
+	_, err = db.Exec(`insert into taxii_user (email) values('` + testUser + `')`)
+	if err != nil {
+		log.Fatal("Couldn't add user")
+	}
+
+	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
+	_, err = db.Exec(`insert into taxii_user_pass (email, pass) values('` + testUser + `', '` + pass + `')`)
+	if err != nil {
+		log.Fatalf("Couldn't add password: %v", err)
+	}
+
+	// create a collection
+	collectionID := uuid.Must(uuid.NewV4())
+	_, err = db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	                    values ('` + collectionID.String() + `', "a title", "a description", "")`)
+	if err != nil {
+		log.Fatal("DB Err:", err)
+	}
+
+	// associate user to collection
+	_, err = db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
+	                    values ('` + testUser + `', '` + collectionID.String() + `', 1, 1)`)
+	if err != nil {
+		log.Fatal("DB Err:", err)
 	}
 }
 
