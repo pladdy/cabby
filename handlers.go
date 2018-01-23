@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,10 +10,14 @@ import (
 	"net/url"
 )
 
+// per context docuentation, use a key type for context keys
+type key int
+
 const (
-	sixMonthsOfSeconds = "63072000"
-	stixContentType    = "application/vnd.oasis.stix+json; version=2.0"
-	taxiiContentType   = "application/vnd.oasis.taxii+json; version=2.0"
+	sixMonthsOfSeconds     = "63072000"
+	stixContentType        = "application/vnd.oasis.stix+json; version=2.0"
+	taxiiContentType       = "application/vnd.oasis.taxii+json; version=2.0"
+	userEmail          key = 0
 )
 
 func hsts(h http.Handler) http.Handler {
@@ -29,46 +34,54 @@ func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 		user, pass, ok := r.BasicAuth()
 
 		if !ok || !validated(user, pass) {
-			logWarn.Println("Invalid user/pass combination")
-			unauthorized(w)
+			unauthorized(w, errors.New("Invalid user/pass combination"))
 			return
 		}
 		logInfo.Println("Basic Auth validated for", user)
+
+		ctx := context.WithValue(context.Background(), userEmail, user)
+		r = r.WithContext(ctx)
 		h(w, r)
 	}
 }
 
 func validated(u, p string) bool {
-	if u == "pladdy" && p == "pants" {
-		return true
+	config := cabbyConfig{}.parse(configPath)
+	_, err := newTaxiiUser(config, u, p)
+	if err != nil {
+		logError.Println(err)
+		return false
 	}
-	return false
+
+	return true
 }
 
 /* http status functions */
 
-func unauthorized(w http.ResponseWriter) {
-	te := taxiiError{Title: "Unauthorized", Description: "Invalid user/password combination", HTTPStatus: http.StatusUnauthorized}
-	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-	http.Error(w, resourceToJSON(te), http.StatusUnauthorized)
-}
-
-func badRequest(w http.ResponseWriter, err error) {
+func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 	logError.Println(err)
 	errString := fmt.Sprintf("%v", err)
 
-	te := taxiiError{Title: "Bad Request", Description: errString, HTTPStatus: http.StatusBadRequest}
-	http.Error(w, resourceToJSON(te), http.StatusBadRequest)
+	te := taxiiError{Title: title, Description: errString, HTTPStatus: status}
+	http.Error(w, resourceToJSON(te), status)
 }
 
-func resourceNotFound(w http.ResponseWriter) {
-	te := taxiiError{Title: "Resource not found", HTTPStatus: http.StatusNotFound}
-	http.Error(w, resourceToJSON(te), http.StatusNotFound)
+func unauthorized(w http.ResponseWriter, err error) {
+	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
+	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
+}
+
+func badRequest(w http.ResponseWriter, err error) {
+	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
+}
+
+func resourceNotFound(w http.ResponseWriter, err error) {
+	errorStatus(w, "Resource not found", err, http.StatusNotFound)
 }
 
 func recoverFromPanic(w http.ResponseWriter) {
 	if r := recover(); r != nil {
-		resourceNotFound(w)
+		resourceNotFound(w, errors.New("Resource not found"))
 	}
 }
 
@@ -147,8 +160,7 @@ func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
 /* catch undefined route */
 
 func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
-	logWarn.Printf("Undefined request: %v\n", r.URL)
-	resourceNotFound(w)
+	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
 }
 
 /* helpers */

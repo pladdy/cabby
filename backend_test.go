@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"strconv"
 	"testing"
@@ -100,7 +101,7 @@ func TestSQLiteParseInvalid(t *testing.T) {
 	}
 }
 
-/* sqlite reader interface */
+/* sqlite reader functions */
 
 func TestSQLiteRead(t *testing.T) {
 	c := cabbyConfig{}.parse(configPath)
@@ -114,12 +115,14 @@ func TestSQLiteRead(t *testing.T) {
 
 	// create a collection record and add a user to access it
 	tuid := uuid.Must(uuid.NewV4())
-	_, err = s.db.Exec(`insert into taxii_collection values ("` + tuid.String() + `", "a title", "a description")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
 
-	_, err = s.db.Exec(`insert into taxii_user_collection values ("user1", "` + tuid.String() + `", 1, 1, "")`)
+	_, err = s.db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
+	                    values ('` + testUser + `', "` + tuid.String() + `", 1, 1)`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -127,7 +130,7 @@ func TestSQLiteRead(t *testing.T) {
 	// buffered channel
 	results := make(chan interface{}, 10)
 	query, _ := s.parse("read", "taxiiCollection")
-	go s.read(query, "taxiiCollection", []interface{}{"user1"}, results)
+	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -143,7 +146,7 @@ func TestSQLiteRead(t *testing.T) {
 
 	// unbuffered channel
 	results = make(chan interface{})
-	go s.read(query, "taxiiCollection", []interface{}{"user1"}, results)
+	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -192,7 +195,8 @@ Loop:
 	setupSQLite() // reset state
 }
 
-func TestSQLiteReadCollectionScanError(t *testing.T) {
+// new readX functions get tested here
+func TestSQLiteReadScanError(t *testing.T) {
 	c := cabbyConfig{}.parse(configPath)
 	c.DataStore["path"] = testDB
 
@@ -202,24 +206,35 @@ func TestSQLiteReadCollectionScanError(t *testing.T) {
 	}
 	defer s.disconnect()
 
-	rows, err := s.db.Query(`select "fail"`)
-	if err != nil {
-		t.Fatal(err)
+	type readFunction func(*sql.Rows, chan interface{})
+
+	tests := []struct {
+		fn readFunction
+	}{
+		{s.readCollection},
+		{s.readUser},
 	}
 
-	results := make(chan interface{})
-	go s.readCollection(rows, results)
-
-	for r := range results {
-		switch r := r.(type) {
-		case error:
-			logError.Println(r)
-			err = r
+	for _, rf := range tests {
+		rows, err := s.db.Query(`select "fail"`)
+		if err != nil {
+			t.Fatal(err)
 		}
-	}
 
-	if err == nil {
-		t.Error("Expected error")
+		results := make(chan interface{})
+		go rf.fn(rows, results)
+
+		for r := range results {
+			switch r := r.(type) {
+			case error:
+				logError.Println(r)
+				err = r
+			}
+		}
+
+		if err == nil {
+			t.Error("Expected error")
+		}
 	}
 }
 

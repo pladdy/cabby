@@ -107,30 +107,57 @@ func (s *sqliteDB) read(query, name string, args []interface{}, r chan interface
 		close(r)
 		return
 	}
-	defer rows.Close()
 
-	if name == "taxiiCollection" {
-		s.readCollection(rows, r)
-	}
+	s.readResults(name, rows, r)
 }
 
 func (s *sqliteDB) readCollection(rows *sql.Rows, r chan interface{}) {
 	for rows.Next() {
-		var tc taxiiCollection
+		var t taxiiCollection
 		var mediaTypes string
 
-		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.CanRead, &t.CanWrite, &mediaTypes); err != nil {
 			r <- err
 			continue
 		}
-		tc.MediaTypes = strings.Split(mediaTypes, ",")
-		r <- tc
+		t.MediaTypes = strings.Split(mediaTypes, ",")
+		r <- t
 	}
 
+	checkRowsError(rows, r)
+	close(r)
+}
+
+func (s *sqliteDB) readResults(name string, rows *sql.Rows, r chan interface{}) {
+	defer rows.Close()
+
+	switch name {
+	case "taxiiCollection":
+		s.readCollection(rows, r)
+	case "taxiiUser":
+		s.readUser(rows, r)
+	}
+}
+
+func (s *sqliteDB) readUser(rows *sql.Rows, r chan interface{}) {
+	for rows.Next() {
+		var t taxiiCollectionAccess
+
+		if err := rows.Scan(&t.ID, &t.CanRead, &t.CanWrite); err != nil {
+			r <- err
+			continue
+		}
+		r <- t
+	}
+
+	checkRowsError(rows, r)
+	close(r)
+}
+
+func checkRowsError(rows *sql.Rows, r chan interface{}) {
 	if err := rows.Err(); err != nil {
 		r <- err
 	}
-	close(r)
 }
 
 /* writer methods */

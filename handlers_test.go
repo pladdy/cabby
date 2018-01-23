@@ -31,12 +31,20 @@ func handlerTest(h handlerFn, m, u string) (int, string) {
 /* auth tests */
 
 func TestBasicAuth(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
 	tests := []struct {
 		user     string
 		pass     string
 		expected int
 	}{
-		{"pladdy", "pants", 200},
+		{testUser, testPass, 200},
 		{"simon", "says", 401},
 	}
 
@@ -58,6 +66,14 @@ func TestBasicAuth(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
 	tests := []struct {
 		user     string
 		pass     string

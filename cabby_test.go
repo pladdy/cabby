@@ -15,8 +15,8 @@ import (
 const (
 	discoveryURL = "https://localhost:1234/taxii"
 	apiRootURL   = "https://localhost:1234/api_root"
-	testUser     = "pladdy"
-	testPass     = "pants"
+	testUser     = "test@cabby.com"
+	testPass     = "test"
 )
 
 /* helpers */
@@ -40,6 +40,14 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 }
 
 func get(u string) string {
+	renameFile(configPath, configPath+".testing")
+	renameFile("test/config/testing_config.json", configPath)
+
+	defer func() {
+		renameFile(configPath, "test/config/testing_config.json")
+		renameFile(configPath+".testing", configPath)
+	}()
+
 	c := cabbyConfig{}.parse(configPath)
 	server := newCabby(c)
 	go func() {
