@@ -115,7 +115,6 @@ func TestSQLiteRead(t *testing.T) {
 
 	// create a collection record and add a user to access it
 	tuid := uuid.Must(uuid.NewV4())
-	email := "test@test.com"
 	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
 	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
 	if err != nil {
@@ -123,7 +122,7 @@ func TestSQLiteRead(t *testing.T) {
 	}
 
 	_, err = s.db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
-	                    values ('` + email + `', "` + tuid.String() + `", 1, 1)`)
+	                    values ('` + testUser + `', "` + tuid.String() + `", 1, 1)`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -131,7 +130,7 @@ func TestSQLiteRead(t *testing.T) {
 	// buffered channel
 	results := make(chan interface{}, 10)
 	query, _ := s.parse("read", "taxiiCollection")
-	go s.read(query, "taxiiCollection", []interface{}{email, tuid.String()}, results)
+	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -147,7 +146,7 @@ func TestSQLiteRead(t *testing.T) {
 
 	// unbuffered channel
 	results = make(chan interface{})
-	go s.read(query, "taxiiCollection", []interface{}{email, tuid.String()}, results)
+	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
 
 	for r := range results {
 		switch r := r.(type) {
