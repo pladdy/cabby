@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // per context docuentation, use a key type for context keys
@@ -17,7 +18,8 @@ const (
 	sixMonthsOfSeconds     = "63072000"
 	stixContentType        = "application/vnd.oasis.stix+json; version=2.0"
 	taxiiContentType       = "application/vnd.oasis.taxii+json; version=2.0"
-	userEmail          key = 0
+	userName           key = 0
+	userCollections    key = 1
 )
 
 func hsts(h http.Handler) http.Handler {
@@ -31,29 +33,30 @@ func hsts(h http.Handler) http.Handler {
 
 func basicAuth(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, pass, ok := r.BasicAuth()
+		u, p, ok := r.BasicAuth()
+		collections, validated := validateUser(u, p)
 
-		if !ok || !validated(user, pass) {
+		if !ok || !validated {
 			unauthorized(w, errors.New("Invalid user/pass combination"))
 			return
 		}
-		logInfo.Println("Basic Auth validated for", user)
+		logInfo.Println("Basic Auth validated for", u)
 
-		ctx := context.WithValue(context.Background(), userEmail, user)
+		ctx := context.WithValue(context.Background(), userName, u)
+		ctx = context.WithValue(context.Background(), userCollections, collections)
 		r = r.WithContext(ctx)
 		h(w, r)
 	}
 }
 
-func validated(u, p string) bool {
-	config := cabbyConfig{}.parse(configPath)
-	_, err := newTaxiiUser(config, u, p)
+func validateUser(u, p string) (map[taxiiID]taxiiCollectionAccess, bool) {
+	tu, err := newTaxiiUser(u, p)
 	if err != nil {
 		logError.Println(err)
-		return false
+		return tu.CollectionAccess, false
 	}
 
-	return true
+	return tu.CollectionAccess, true
 }
 
 /* http status functions */
@@ -93,8 +96,6 @@ func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 	u := urlWithNoPort(r.URL)
 	logInfo.Println("API Root requested for", u)
 
-	config := cabbyConfig{}.parse(configPath)
-
 	if !config.validAPIRoot(u) {
 		logWarn.Panic("API Root ", u, " not defined in config file")
 	}
@@ -109,11 +110,53 @@ func handleTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
 	switch r.Method {
+	case "GET":
+		getTaxiiCollection(w, r)
 	case "POST":
 		postTaxiiCollection(w, r)
 	default:
 		badRequest(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 		return
+	}
+}
+
+func apiRoot(u string) string {
+	var rootIndex = 1
+	tokens := strings.Split(u, "/")
+	return tokens[rootIndex]
+}
+
+func lastString(u string) string {
+	tokens := strings.Split(u, "/")
+	length := len(tokens)
+	return tokens[length-1]
+}
+
+func getTaxiiCollection(w http.ResponseWriter, r *http.Request) {
+	collectionID := lastString(r.URL.Path)
+	tc, err := newTaxiiCollection(collectionID)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	results := make(chan interface{}, minBuffer)
+	user, ok := r.Context().Value(userName).(string)
+	if !ok {
+		badRequest(w, errors.New("Invalid user specified"))
+		return
+	}
+
+	go tc.read(user, results)
+
+	for r := range results {
+		switch r := r.(type) {
+		case error:
+			badRequest(w, r)
+		}
+		resultCollection := r.(taxiiCollection)
+		w.Header().Set("Content-Type", taxiiContentType)
+		io.WriteString(w, resourceToJSON(resultCollection))
 	}
 }
 
@@ -132,7 +175,13 @@ func postTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 	tc.Title = r.Form.Get("title")
 	tc.Description = r.Form.Get("description")
 
-	err = tc.create(cabbyConfig{}.parse(configPath))
+	user, ok := r.Context().Value(userName).(string)
+	if !ok {
+		badRequest(w, errors.New("Invalid user specified"))
+		return
+	}
+
+	err = tc.create(user, apiRoot(r.URL.Path))
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -148,7 +197,6 @@ func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
 	logInfo.Println("Discovery resource requested")
 	defer recoverFromPanic(w)
 
-	config := cabbyConfig{}.parse(configPath)
 	if config.discoveryDefined() == false {
 		logWarn.Panic("Discovery Resource not defined")
 	}
@@ -174,11 +222,10 @@ func resourceToJSON(v interface{}) string {
 }
 
 func urlWithNoPort(u *url.URL) string {
-	c := cabbyConfig{}.parse(configPath)
 	var noPort string
 
 	if u.Host == "" {
-		noPort = "https://" + c.Host + u.Path
+		noPort = "https://" + config.Host + u.Path
 	} else {
 		noPort = u.Scheme + "://" + u.Hostname() + u.Path
 	}

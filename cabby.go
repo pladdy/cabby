@@ -12,14 +12,19 @@ import (
 const configPath = "config/cabby.json"
 
 var (
+	config   cabbyConfig
 	logInfo  = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 	logWarn  = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 	logError = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
-func newCabby(c cabbyConfig) *http.Server {
+func init() {
+	config = cabbyConfig{}.parse(configPath)
+}
+
+func newCabby() *http.Server {
 	handler := setupHandler()
-	return setupServer(c, handler)
+	return setupServer(handler)
 }
 
 func registerAPIRoot(apiRoot string, h *http.ServeMux) {
@@ -34,7 +39,6 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 }
 
 func setupHandler() *http.ServeMux {
-	config := cabbyConfig{}.parse(configPath)
 	handler := http.NewServeMux()
 
 	handler.HandleFunc("/taxii", basicAuth(handleTaxiiDiscovery))
@@ -50,8 +54,8 @@ func setupHandler() *http.ServeMux {
 	return handler
 }
 
-func setupServer(c cabbyConfig, h http.Handler) *http.Server {
-	port := strconv.Itoa(c.Port)
+func setupServer(h http.Handler) *http.Server {
+	port := strconv.Itoa(config.Port)
 	logInfo.Println("Server will listen on port " + port)
 
 	return &http.Server{
@@ -77,7 +81,6 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
-	config := cabbyConfig{}.parse(configPath)
-	server := newCabby(config)
+	server := newCabby()
 	logError.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

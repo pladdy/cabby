@@ -20,6 +20,28 @@ create table taxii_collection (
       update taxii_collection set updated_at = datetime('now') where id = new.id;
     end;
 
+drop table if exists taxii_collection_api_root;
+
+create table taxii_collection_api_root (
+  id         text not null,
+  api_root   text not null,
+  created_at text,
+  updated_at text,
+
+  primary key (id, api_root)
+);
+
+  create trigger taxii_collection_api_root_ai_created_at after insert on taxii_collection_api_root
+    begin
+      update taxii_collection_api_root set created_at = datetime('now') where id = new.id and api_root = new.api_root;
+      update taxii_collection_api_root set updated_at = datetime('now') where id = new.id and api_root = new.api_root;
+    end;
+
+  create trigger taxii_collection_api_root_au_updated_at after update on taxii_collection_api_root
+    begin
+      update taxii_collection_api_root set updated_at = datetime('now') where id = new.id and api_root = new.api_root;
+    end;
+
 drop table if exists taxii_user;
 
 create table taxii_user (

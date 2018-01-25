@@ -48,10 +48,9 @@ func get(u string) string {
 		renameFile(configPath+".testing", configPath)
 	}()
 
-	c := cabbyConfig{}.parse(configPath)
-	server := newCabby(c)
+	server := newCabby()
 	go func() {
-		server.ListenAndServeTLS(c.SSLCert, c.SSLKey)
+		server.ListenAndServeTLS(config.SSLCert, config.SSLKey)
 	}()
 
 	// set up client with TLS configured

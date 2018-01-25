@@ -39,7 +39,11 @@ Assumes a server is running
 `curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root'`
 
 ##### Create a collection
+Let the server assign an ID:
 `curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root/collections?title=a+collection'`
+
+Assign an ID:
+`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root/collections?id=352abc04-a474-4e22-9f4d-944ca508e68c&title=a+collection'`
 
 ## Resources
 - Oasis Docs: https://oasis-open.github.io/cti-documentation/resources.html#taxii-20-specification

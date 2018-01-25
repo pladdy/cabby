@@ -10,12 +10,18 @@ import (
 	"log"
 	"os"
 	"testing"
-
-	uuid "github.com/satori/go.uuid"
 )
 
-var sqlDriver = "sqlite3"
 var testDB = "test/test.db"
+
+func init() {
+	reloadTestConfig()
+}
+
+func reloadTestConfig() {
+	var testConfig = "test/config/testing_config.json"
+	config = cabbyConfig{}.parse(testConfig)
+}
 
 func renameFile(from, to string) {
 	err := os.Rename(from, to)
@@ -26,6 +32,7 @@ func renameFile(from, to string) {
 
 func setupSQLite() {
 	tearDownSQLite()
+	var sqlDriver = "sqlite3"
 
 	db, err := sql.Open(sqlDriver, testDB)
 	if err != nil {
@@ -60,16 +67,20 @@ func setupSQLite() {
 	}
 
 	// create a collection
-	collectionID := uuid.Must(uuid.NewV4())
+	collectionID, err := newTaxiiID()
+	if err != nil {
+		log.Fatalf("Couldn't create id: %v", err)
+	}
+
 	_, err = db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ('` + collectionID.String() + `', "a title", "a description", "")`)
+											values ('` + collectionID.String() + `', "a title", "a description", "")`)
 	if err != nil {
 		log.Fatal("DB Err:", err)
 	}
 
 	// associate user to collection
 	_, err = db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
-	                    values ('` + testUser + `', '` + collectionID.String() + `', 1, 1)`)
+											values ('` + testUser + `', '` + collectionID.String() + `', 1, 1)`)
 	if err != nil {
 		log.Fatal("DB Err:", err)
 	}

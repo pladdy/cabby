@@ -48,12 +48,12 @@ type sqliteDB struct {
 	driver    string
 }
 
-func newTaxiiStorer(c cabbyConfig) (taxiiStorer, error) {
+func newTaxiiStorer() (taxiiStorer, error) {
 	var t taxiiStorer
 	var err error
 
-	if c.DataStore["name"] == "sqlite" {
-		t, err = newSQLiteDB(c)
+	if config.DataStore["name"] == "sqlite" {
+		t, err = newSQLiteDB()
 	} else {
 		err = errors.New("Unsupported data store specified in config")
 	}
@@ -62,8 +62,8 @@ func newTaxiiStorer(c cabbyConfig) (taxiiStorer, error) {
 
 /* sqlite */
 
-func newSQLiteDB(c cabbyConfig) (*sqliteDB, error) {
-	s := sqliteDB{dbName: "sqlite", extension: "sql", driver: "sqlite3", path: c.DataStore["path"]}
+func newSQLiteDB() (*sqliteDB, error) {
+	s := sqliteDB{dbName: "sqlite", extension: "sql", driver: "sqlite3", path: config.DataStore["path"]}
 	if s.path == "" {
 		return &s, errors.New("No database location specfied in config")
 	}
@@ -117,6 +117,7 @@ func (s *sqliteDB) readCollection(rows *sql.Rows, r chan interface{}) {
 		var mediaTypes string
 
 		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.CanRead, &t.CanWrite, &mediaTypes); err != nil {
+			logError.Println(err)
 			r <- err
 			continue
 		}
@@ -144,6 +145,7 @@ func (s *sqliteDB) readUser(rows *sql.Rows, r chan interface{}) {
 		var t taxiiCollectionAccess
 
 		if err := rows.Scan(&t.ID, &t.CanRead, &t.CanWrite); err != nil {
+			logError.Println(err)
 			r <- err
 			continue
 		}
@@ -156,6 +158,7 @@ func (s *sqliteDB) readUser(rows *sql.Rows, r chan interface{}) {
 
 func checkRowsError(rows *sql.Rows, r chan interface{}) {
 	if err := rows.Err(); err != nil {
+		logError.Println(err)
 		r <- err
 	}
 }
@@ -165,17 +168,8 @@ func checkRowsError(rows *sql.Rows, r chan interface{}) {
 func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error) {
 	defer close(errs)
 
-	tx, err := s.db.Begin()
+	tx, stmt, err := batchWriteTx(s, query, errs)
 	if err != nil {
-		logError.Println(err)
-		errs <- err
-		return
-	}
-
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		logError.Printf("%v in statement: %v\n", query, err)
-		errs <- err
 		return
 	}
 	defer stmt.Close()
@@ -184,7 +178,7 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 	for item := range toWrite {
 		args := item.([]interface{})
 
-		_, err = stmt.Exec(args...)
+		_, err := stmt.Exec(args...)
 		if err != nil {
 			logError.Println(err)
 			errs <- err
@@ -193,8 +187,32 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 
 		i++
 		if i >= maxWrites {
-			tx.Commit()
+			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
+			tx, stmt, err = batchWriteTx(s, query, errs)
+			if err != nil {
+				return
+			}
 		}
 	}
 	tx.Commit()
+}
+
+func batchWriteTx(s *sqliteDB, query string, errs chan error) (*sql.Tx, *sql.Stmt, error) {
+	var tx *sql.Tx
+	var stmt *sql.Stmt
+	var err error
+
+	tx, err = s.db.Begin()
+	if err != nil {
+		logError.Println(err)
+		errs <- err
+	}
+
+	stmt, err = tx.Prepare(query)
+	if err != nil {
+		logError.Printf("%v in statement: %v\n", query, err)
+		errs <- err
+	}
+
+	return tx, stmt, err
 }
