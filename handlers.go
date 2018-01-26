@@ -66,6 +66,7 @@ func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 	errString := fmt.Sprintf("%v", err)
 
 	te := taxiiError{Title: title, Description: errString, HTTPStatus: status}
+	w.Header().Set("Content-Type", taxiiContentType)
 	http.Error(w, resourceToJSON(te), status)
 }
 
@@ -157,7 +158,9 @@ func getTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 		resultCollection := r.(taxiiCollection)
 		w.Header().Set("Content-Type", taxiiContentType)
 		io.WriteString(w, resourceToJSON(resultCollection))
+		return
 	}
+	resourceNotFound(w, errors.New("Invalid Collection"))
 }
 
 func postTaxiiCollection(w http.ResponseWriter, r *http.Request) {

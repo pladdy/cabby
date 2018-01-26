@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"strconv"
 	"testing"
-	"time"
 )
 
 func init() {
@@ -269,8 +268,13 @@ func TestSQLiteWriteFail(t *testing.T) {
 	errs := make(chan error, 10)
 	go s.write("invalidName", toWrite, errs)
 
-	// sleep to let it fail in the go routine
-	time.Sleep(100 * time.Millisecond)
+	for e := range errs {
+		err = e
+	}
+
+	if err == nil {
+		t.Fatal("Expected error")
+	}
 }
 
 func TestSQLiteWriteFailTransaction(t *testing.T) {
@@ -303,7 +307,6 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 
 	args := []interface{}{"not enough params"}
 	toWrite := make(chan interface{}, 10)
-	defer close(toWrite)
 	errs := make(chan error, 10)
 
 	query, err := s.parse("create", "taxiiCollection")
@@ -313,9 +316,15 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 
 	go s.write(query, toWrite, errs)
 	toWrite <- args
+	close(toWrite)
 
-	// sleep to let it fail in the go routine
-	time.Sleep(100 * time.Millisecond)
+	for e := range errs {
+		err = e
+	}
+
+	if err == nil {
+		t.Fatal("Expected error")
+	}
 }
 
 func TestSQLiteWriteMaxWrites(t *testing.T) {
@@ -347,7 +356,7 @@ func TestSQLiteWriteMaxWrites(t *testing.T) {
 		}
 	}(t)
 
-	writes := 500
+	writes := maxWrites
 	for i := 0; i < writes; i++ {
 		iStr := strconv.FormatInt(int64(i), 10)
 		args := []interface{}{"test" + iStr, t.Name(), "description", "media_type"}

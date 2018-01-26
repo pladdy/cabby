@@ -187,6 +187,7 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 
 		i++
 		if i >= maxWrites {
+			logInfo.Println("Commiting batch")
 			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
 			tx, stmt, err = batchWriteTx(s, query, errs)
 			if err != nil {
