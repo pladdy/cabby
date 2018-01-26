@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -21,6 +22,9 @@ type handlerFn func(http.ResponseWriter, *http.Request)
 // it returns the status code and response as a string
 func handlerTest(h handlerFn, m, u string) (int, string) {
 	req := httptest.NewRequest(m, u, nil)
+	ctx := context.WithValue(context.Background(), userName, testUser)
+	req = req.WithContext(ctx)
+
 	res := httptest.NewRecorder()
 	h(res, req)
 
@@ -31,14 +35,6 @@ func handlerTest(h handlerFn, m, u string) (int, string) {
 /* auth tests */
 
 func TestBasicAuth(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
-
 	tests := []struct {
 		user     string
 		pass     string
@@ -65,15 +61,7 @@ func TestBasicAuth(t *testing.T) {
 	}
 }
 
-func TestValidate(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
-
+func TestValidateUser(t *testing.T) {
 	tests := []struct {
 		user     string
 		pass     string
@@ -84,7 +72,7 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		actual := validated(test.user, test.pass)
+		_, actual := validateUser(test.user, test.pass)
 		if actual != test.expected {
 			t.Error("Got:", actual, "Expected:", test.expected)
 		}
@@ -111,11 +99,8 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 }
 
 func TestHandleTaxiiAPIRootNoconfig(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-
-	defer func() {
-		renameFile(configPath+".testing", configPath)
-	}()
+	config = cabbyConfig{}
+	defer reloadTestConfig()
 
 	req := httptest.NewRequest("GET", apiRootURL, nil)
 	res := httptest.NewRecorder()
@@ -127,13 +112,8 @@ func TestHandleTaxiiAPIRootNoconfig(t *testing.T) {
 }
 
 func TestHandleTaxiiAPIRootNotDefined(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/no_discovery_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/no_discovery_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
+	config = cabbyConfig{}.parse("test/config/no_discovery_config.json")
+	defer reloadTestConfig()
 
 	req := httptest.NewRequest("GET", apiRootURL, nil)
 	res := httptest.NewRecorder()
@@ -146,16 +126,7 @@ func TestHandleTaxiiAPIRootNotDefined(t *testing.T) {
 
 /* handleTaxiiCollection */
 
-func TestHandleTaxiiCollectionCreate(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
-
-	// set up URL
+func TestHandleTaxiiCollectionPost(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
 		t.Error(err)
@@ -175,9 +146,7 @@ func TestHandleTaxiiCollectionCreate(t *testing.T) {
 	// check on record
 	time.Sleep(100 * time.Millisecond)
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -194,16 +163,7 @@ func TestHandleTaxiiCollectionCreate(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionCreateBadID(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
-
-	// set up URL
+func TestHandleTaxiiCollectionPostBadID(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
 		t.Error(err)
@@ -220,9 +180,7 @@ func TestHandleTaxiiCollectionCreateBadID(t *testing.T) {
 	}
 
 	// verify no record exists
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -235,7 +193,7 @@ func TestHandleTaxiiCollectionCreateBadID(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
+func TestHandleTaxiiCollectionPostBadParse(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected int
@@ -243,14 +201,6 @@ func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
 		{"POST", 400},
 		{"CUSTOM", 400},
 	}
-
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
 
 	for _, test := range tests {
 		req := httptest.NewRequest(test.method, "https://localhost/api_root/collections", nil)
@@ -269,19 +219,14 @@ func TestHandleTaxiiCollectionCreateBadParse(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionCreateInvalidDB(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/no_datastore_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/no_datastore_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
+func TestHandleTaxiiCollectionPostInvalidDB(t *testing.T) {
+	config = cabbyConfig{}.parse("test/config/no_datastore_config.json")
+	defer reloadTestConfig()
 
 	// set up URL
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	q := u.Query()
@@ -296,10 +241,198 @@ func TestHandleTaxiiCollectionCreateInvalidDB(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiCollectionPostInvalidUser(t *testing.T) {
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("POST", u.String(), nil)
+	// don't set a user in the context before setting up a response
+	res := httptest.NewRecorder()
+	handleTaxiiCollection(res, req)
+	b, _ := ioutil.ReadAll(res.Body)
+
+	status, result := res.Code, string(b)
+	expected := `{"title":"Bad Request","description":"Invalid user specified","http_status":"400"}` + "\n"
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionGet(t *testing.T) {
+	// create a collection
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	q := u.Query()
+	q.Set("id", id.String())
+	q.Set("title", t.Name())
+	q.Set("description", "a description")
+	u.RawQuery = q.Encode()
+
+	status, result := handlerTest(handleTaxiiCollection, "POST", u.String())
+	if status != 200 {
+		t.Fatal(result)
+	}
+
+	// test reading it
+	u, err = url.Parse("https://localhost/api_root/collections/" + id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, result = handlerTest(handleTaxiiCollection, "GET", u.String())
+
+	expected := `{"id":"` + id.String() + `","can_read":true,"can_write":true,` +
+		`"title":"` + t.Name() + `","description":"a description",` +
+		`"media_types":["application/vnd.oasis.stix+json; version=2.0"]}`
+
+	if status != 200 {
+		t.Error("Got:", status, "Expected:", 200)
+	}
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionGetBadID(t *testing.T) {
+	u, err := url.Parse("https://localhost/api_root/collections/fail")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, result := handlerTest(handleTaxiiCollection, "GET", u.String())
+	expected := `{"title":"Bad Request","description":"uuid: incorrect UUID length: fail","http_status":"400"}` + "\n"
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionGetInvalidID(t *testing.T) {
+	defer setupSQLite()
+
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, result := handlerTest(handleTaxiiCollection, "GET", u.String())
+	expected := `{"title":"Resource not found","description":"Invalid Collection","http_status":"404"}` + "\n"
+
+	if status != 404 {
+		t.Error("Got:", status, "Expected:", 404)
+	}
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionGetInvalidUser(t *testing.T) {
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req := httptest.NewRequest("GET", u.String(), nil)
+	// don't set a user in the context before setting up a response
+	res := httptest.NewRecorder()
+	handleTaxiiCollection(res, req)
+	b, _ := ioutil.ReadAll(res.Body)
+
+	status, result := res.Code, string(b)
+	expected := `{"title":"Bad Request","description":"Invalid user specified","http_status":"400"}` + "\n"
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionGetReadError(t *testing.T) {
+	defer setupSQLite()
+
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Error(err)
+	}
+	defer s.disconnect()
+
+	_, err = s.db.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, _ := handlerTest(handleTaxiiCollection, "GET", u.String())
+	if status != 400 {
+		t.Error("Got:", status, "Expected:", 400)
+	}
+}
+
+/* API Root */
+
+func TestAPIRoot(t *testing.T) {
+	tests := []struct {
+		urlPath  string
+		expected string
+	}{
+		{"/api_root/collection/1234", "api_root"},
+		{"/api_root/collections", "api_root"},
+	}
+
+	for _, test := range tests {
+		result := apiRoot(test.urlPath)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
 /* handleTaxiiDiscovery */
 
 func TestHandleDiscovery(t *testing.T) {
-	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.Discovery)
 	status, result := handlerTest(handleTaxiiDiscovery, "GET", discoveryURL)
 
@@ -313,11 +446,8 @@ func TestHandleDiscovery(t *testing.T) {
 }
 
 func TestHandleDiscoveryNoconfig(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-
-	defer func() {
-		renameFile(configPath+".testing", configPath)
-	}()
+	config = cabbyConfig{}
+	defer reloadTestConfig()
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
@@ -329,13 +459,8 @@ func TestHandleDiscoveryNoconfig(t *testing.T) {
 }
 
 func TestHandleDiscoveryNotDefined(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/no_discovery_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/no_discovery_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
+	config = cabbyConfig{}
+	defer reloadTestConfig()
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()

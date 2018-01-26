@@ -5,9 +5,6 @@ import (
 	"io/ioutil"
 	"strconv"
 	"testing"
-	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 func init() {
@@ -15,10 +12,7 @@ func init() {
 }
 
 func TestTaxiiStorer(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	tds, err := newTaxiiStorer(c)
+	tds, err := newTaxiiStorer()
 	if err != nil {
 		t.Error(err)
 	}
@@ -28,10 +22,7 @@ func TestTaxiiStorer(t *testing.T) {
 /* sqlite connector interface */
 
 func TestSQLiteConnect(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -39,10 +30,12 @@ func TestSQLiteConnect(t *testing.T) {
 }
 
 func TestSQLiteConnectFail(t *testing.T) {
-	c := cabbyConfig{}
-	c.DataStore = map[string]string{"name": "sqlite"}
+	config = cabbyConfig{}
+	defer reloadTestConfig()
 
-	_, err := newSQLiteDB(c)
+	config.DataStore = map[string]string{"name": "sqlite"}
+
+	_, err := newSQLiteDB()
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -59,10 +52,7 @@ func TestSQLiteParse(t *testing.T) {
 		{"create", "taxiiCollection", "backend/sqlite/create/taxiiCollection.sql"},
 	}
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,10 +76,7 @@ func TestSQLiteParse(t *testing.T) {
 }
 
 func TestSQLiteParseInvalid(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,17 +91,18 @@ func TestSQLiteParseInvalid(t *testing.T) {
 /* sqlite reader functions */
 
 func TestSQLiteRead(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.disconnect()
 
 	// create a collection record and add a user to access it
-	tuid := uuid.Must(uuid.NewV4())
+	tuid, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
 	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
 	if err != nil {
@@ -164,10 +152,7 @@ func TestSQLiteRead(t *testing.T) {
 func TestSQLiteReadFail(t *testing.T) {
 	setupSQLite() // reset state
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -197,10 +182,7 @@ Loop:
 
 // new readX functions get tested here
 func TestSQLiteReadScanError(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -241,16 +223,13 @@ func TestSQLiteReadScanError(t *testing.T) {
 /* sqlite writer interface */
 
 func TestSQLiteWrite(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	args := []interface{}{"test", "test collection", "this is a test collection"}
+	args := []interface{}{"test", "test collection", "this is a test collection", "media type"}
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
@@ -263,8 +242,9 @@ func TestSQLiteWrite(t *testing.T) {
 	toWrite <- args
 	close(toWrite)
 
-	// check
-	time.Sleep(250 * time.Millisecond)
+	for e := range errs {
+		t.Fatal(e)
+	}
 
 	var uid string
 	err = s.db.QueryRow(`select id from taxii_collection where id = 'test'`).Scan(&uid)
@@ -278,10 +258,7 @@ func TestSQLiteWrite(t *testing.T) {
 }
 
 func TestSQLiteWriteFail(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -291,34 +268,38 @@ func TestSQLiteWriteFail(t *testing.T) {
 	errs := make(chan error, 10)
 	go s.write("invalidName", toWrite, errs)
 
-	// sleep to let it fail in the go routine
-	time.Sleep(100 * time.Millisecond)
+	for e := range errs {
+		err = e
+	}
+
+	if err == nil {
+		t.Fatal("Expected error")
+	}
 }
 
 func TestSQLiteWriteFailTransaction(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	s.disconnect()
 	toWrite := make(chan interface{}, 10)
+	defer close(toWrite)
 	errs := make(chan error, 10)
 	go s.write("invalidName", toWrite, errs)
 
-	// sleep to let it fail in the go routine
-	time.Sleep(100 * time.Millisecond)
+	for e := range errs {
+		err = e
+	}
+
+	if err == nil {
+		t.Fatal("Expected error")
+	}
 }
 
 func TestSQLiteWriteFailExec(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -326,7 +307,6 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 
 	args := []interface{}{"not enough params"}
 	toWrite := make(chan interface{}, 10)
-	defer close(toWrite)
 	errs := make(chan error, 10)
 
 	query, err := s.parse("create", "taxiiCollection")
@@ -336,16 +316,21 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 
 	go s.write(query, toWrite, errs)
 	toWrite <- args
+	close(toWrite)
 
-	// sleep to let it fail in the go routine
-	time.Sleep(100 * time.Millisecond)
+	for e := range errs {
+		err = e
+	}
+
+	if err == nil {
+		t.Fatal("Expected error")
+	}
 }
 
 func TestSQLiteWriteMaxWrites(t *testing.T) {
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
+	setupSQLite()
 
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
@@ -362,12 +347,29 @@ func TestSQLiteWriteMaxWrites(t *testing.T) {
 
 	go s.write(query, toWrite, errs)
 
-	for i := 0; i <= 500; i++ {
+	// check errors while testing
+	go func(t *testing.T) {
+		for e := range errs {
+			logError.Println("Should not have an error during test.  Error:", e)
+			close(toWrite)
+			t.Fatal(e)
+		}
+	}(t)
+
+	writes := maxWrites
+	for i := 0; i < writes; i++ {
 		iStr := strconv.FormatInt(int64(i), 10)
-		args := []interface{}{"test" + iStr, "title", "description"}
+		args := []interface{}{"test" + iStr, t.Name(), "description", "media_type"}
 		toWrite <- args
 	}
 
-	// sleep to let it fail in the go routine
-	time.Sleep(250 * time.Millisecond)
+	var collections int
+	err = s.db.QueryRow("select count(*) from taxii_collection where title = '" + t.Name() + "'").Scan(&collections)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if collections != writes {
+		t.Error("Got:", collections, "Expected:", writes)
+	}
 }

@@ -8,7 +8,7 @@ build:
 	go build -o bin/cabby $(GO_FILES)
 
 clean:
-	rm -rf bin/
+	rm -rf bin/ db/
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 
 cert:
@@ -29,8 +29,10 @@ cover:
 ifeq ("$(html)","true")
 	go tool cover -html=cover.out
 endif
+	@rm cover.out
 
 sqlite:
+	rm -rf db/
 	mkdir db
 	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 

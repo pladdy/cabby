@@ -12,3 +12,4 @@ from
 where
   uc.email = ?
   and c.id = ?
+  and uc.can_read = 1

@@ -69,51 +69,51 @@ func TestNewCollection(t *testing.T) {
 	}
 }
 
-func TestNewUUID(t *testing.T) {
+func TestNewTaxiiID(t *testing.T) {
 	// no string passed
-	uid, err := newUUID()
+	id, err := newTaxiiID()
 	if err != nil {
-		t.Fatal(err)
+		t.Error(err)
 	}
 
 	// empty string passed
-	uid, err = newUUID("")
+	id, err = newTaxiiID("")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(uid) == 0 {
-		t.Error("Got:", uid.String(), "Expected a UUID")
+	if len(id.String()) == 0 {
+		t.Error("Got:", id.String(), "Expected a taxiiID")
 	}
 
-	// uuid string passed
-	tuid := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-	uid, err = newUUID(tuid)
+	// uuid passed (valid taxiiID)
+	uid := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+	id, err = newTaxiiID(uid)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if uid.String() != tuid {
-		t.Error("Got:", uid.String(), "Expected:", tuid)
+	if id.String() != uid {
+		t.Error("Got:", id.String(), "Expected:", uid)
 	}
 
 	// invalid uid passed
-	uid, err = newUUID("fail")
+	id, err = newTaxiiID("fail")
 	if err == nil {
-		t.Fatal("Expected error")
+		t.Error("Expected error")
 	}
 }
 
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	cid := uuid.Must(uuid.NewV4())
+	cid, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
 	testCollection := taxiiCollection{ID: cid, Title: "test collection", Description: "a test collection"}
 
-	err := testCollection.create(c)
+	err = testCollection.create(testUser, "api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,14 +121,25 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	// check on record
 	time.Sleep(100 * time.Millisecond)
 
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.disconnect()
 
+	// check id in taxii_collection
 	var uid string
 	err = s.db.QueryRow("select id from taxii_collection where id = '" + cid.String() + "'").Scan(&uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if uid != cid.String() {
+		t.Error("Got:", uid, "Expected:", cid.String())
+	}
+
+	// check for collection api root association
+	err = s.db.QueryRow("select id from taxii_collection_api_root where id = '" + cid.String() + "'").Scan(&uid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,23 +150,32 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 }
 
 func TestTaxiiCollectionCreateFailTaxiiStorer(t *testing.T) {
-	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
-	c := cabbyConfig{}
-	err := testCollection.create(c)
+	config = cabbyConfig{}
+	defer reloadTestConfig()
+
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
+	err = testCollection.create(testUser, "api_root")
 	if err == nil {
 		t.Error("Expected a taxiiStorer error")
 	}
 }
 
 func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
-	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
 	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
+	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
 
-	err := testCollection.create(c)
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
+
+	err = testCollection.create(testUser, "api_root")
 	if err == nil {
 		t.Error("Expected a query error")
 	}
@@ -164,11 +184,13 @@ func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
 func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	defer setupSQLite()
 
-	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
 
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -179,7 +201,33 @@ func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = testCollection.create(c)
+	err = testCollection.create(testUser, "api_root")
+	if err == nil {
+		t.Error("Expected a write error")
+	}
+}
+
+func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
+	defer setupSQLite()
+
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
+
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	_, err = s.db.Exec("drop table taxii_collection_api_root")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = testCollection.create(testUser, "api_root")
 	if err == nil {
 		t.Error("Expected a write error")
 	}
@@ -188,27 +236,27 @@ func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 func TestTaxiiCollectionRead(t *testing.T) {
 	setupSQLite()
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer s.disconnect()
 
 	// create a collection record and add a user to access it
-	tuid := uuid.Must(uuid.NewV4())
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
 	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
+	                    values ("` + id.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
 
 	// buffered channel
-	testCollection := taxiiCollection{ID: tuid, Title: "test collection", Description: "a test collection"}
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
 	results := make(chan interface{}, 10)
-	go testCollection.read(c, testUser, results)
+	go testCollection.read(testUser, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -217,14 +265,14 @@ func TestTaxiiCollectionRead(t *testing.T) {
 		}
 		resultCollection := r.(taxiiCollection)
 
-		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", tuid.String())
+		if resultCollection.ID != id {
+			t.Error("Got:", resultCollection.ID, "Expected", id.String())
 		}
 	}
 
 	// unbuffered channel
 	results = make(chan interface{})
-	go testCollection.read(c, testUser, results)
+	go testCollection.read(testUser, results)
 
 	for r := range results {
 		switch r := r.(type) {
@@ -233,20 +281,25 @@ func TestTaxiiCollectionRead(t *testing.T) {
 		}
 		resultCollection := r.(taxiiCollection)
 
-		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", tuid.String())
+		if resultCollection.ID != id {
+			t.Error("Got:", resultCollection.ID, "Expected", id.String())
 		}
 	}
 }
 
 func TestTaxiiCollectionReadFail(t *testing.T) {
-	// fail due to no valid database specified
-	c := cabbyConfig{}
-	c.DataStore = map[string]string{"name": "sqlite"}
+	defer reloadTestConfig()
+	config = cabbyConfig{}
+	config.DataStore = map[string]string{"name": "sqlite"}
 
-	testCollection := taxiiCollection{ID: uuid.Must(uuid.NewV4()), Title: "test collection", Description: "a test collection"}
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
+
 	results := make(chan interface{}, 10)
-	go testCollection.read(c, "user", results)
+	go testCollection.read("user", results)
 
 NoRecord:
 	for r := range results {
@@ -262,11 +315,10 @@ NoRecord:
 	defer renameFile("backend/sqlite/read/taxiiCollection.sql.testing", "backend/sqlite/read/taxiiCollection.sql")
 	renameFile("backend/sqlite/read/taxiiCollection.sql", "backend/sqlite/read/taxiiCollection.sql.testing")
 
-	c = cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
+	reloadTestConfig()
 	results = make(chan interface{}, 10)
 
-	go testCollection.read(c, "user", results)
+	go testCollection.read("user", results)
 
 NoQuery:
 	for r := range results {
@@ -284,10 +336,7 @@ NoQuery:
 func TestNewTaxiiUser(t *testing.T) {
 	setupSQLite()
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -308,7 +357,7 @@ func TestNewTaxiiUser(t *testing.T) {
 		t.Fatal("DB Err:", err)
 	}
 
-	user, err := newTaxiiUser(c, testUser, testPass)
+	user, err := newTaxiiUser(testUser, testPass)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,10 +381,7 @@ func TestNewTaxiiUser(t *testing.T) {
 func TestNewTaxiiUserNoAccess(t *testing.T) {
 	setupSQLite()
 
-	c := cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	s, err := newSQLiteDB(c)
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -350,37 +396,37 @@ func TestNewTaxiiUserNoAccess(t *testing.T) {
 	}
 
 	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
-	_, err = newTaxiiUser(c, testUser, pass)
+	_, err = newTaxiiUser(testUser, pass)
 	if err == nil {
 		t.Error("Expected error with no access")
 	}
 }
 
 func TestNewTaxiiUserFail(t *testing.T) {
-	c := cabbyConfig{}
-	_, err := newTaxiiUser(c, "test@test.fail", "nopass")
+	config = cabbyConfig{}
+	defer reloadTestConfig()
+
+	_, err := newTaxiiUser("test@test.fail", "nopass")
 	if err == nil {
 		t.Error("Expected an error")
 	}
+}
 
-	// fail due to no query being avialable
-	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
+func TestTaxiiUserReadFail(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiUser.sql", "backend/sqlite/read/taxiiUser.sql.testing")
+	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
 
-	c = cabbyConfig{}.parse(configPath)
-	c.DataStore["path"] = testDB
-
-	_, err = newTaxiiUser(c, "test@test.fail", "nopass")
+	_, err := newTaxiiUser("test@test.fail", "nopass")
 	if err == nil {
 		t.Error("Expected an error")
 	}
-
 }
 
 /* Config */
 
 func TestParseConfig(t *testing.T) {
-	config := cabbyConfig{}.parse("config/cabby.example.json")
+	config = cabbyConfig{}.parse("config/cabby.example.json")
+	defer reloadTestConfig()
 
 	if config.Host != "localhost" {
 		t.Error("Got:", "localhost", "Expected:", "localhost")
