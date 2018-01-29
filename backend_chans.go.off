@@ -24,7 +24,7 @@ type taxiiParser interface {
 }
 
 type taxiiReader interface {
-	read(query, name string, args []interface{}) (interface{}, error)
+	read(query, name string, args []interface{}, results chan interface{})
 }
 
 type taxiiWriter interface {
@@ -98,71 +98,72 @@ func (s *sqliteDB) parse(command, name string) (string, error) {
 
 /* read methods */
 
-func (s *sqliteDB) read(query, name string, args []interface{}) (interface{}, error) {
-	var result interface{}
-
+func (s *sqliteDB) read(query, name string, args []interface{}, r chan interface{}) {
 	rows, err := s.db.Query(query, args...)
 	if err != nil {
-		return result, fmt.Errorf("%v in statement: %v", err, query)
+		r <- fmt.Errorf("%v in statement: %v", err, query)
+		close(r)
+		return
 	}
 
-	result, err = s.readRows(name, rows)
-	return result, err
+	s.readResults(name, rows, r)
 }
 
-func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
-	tcs := taxiiCollections{}
-	var err error
-
+func (s *sqliteDB) readCollections(rows *sql.Rows, r chan interface{}) {
 	for rows.Next() {
-		var tc taxiiCollection
+		var t taxiiCollection
 		var mediaTypes string
 
-		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
-			return tcs, err
+		if err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.CanRead, &t.CanWrite, &mediaTypes); err != nil {
+			fail.Println(err)
+			r <- err
+			continue
 		}
-		tc.MediaTypes = strings.Split(mediaTypes, ",")
-		tcs.Collections = append(tcs.Collections, tc)
+		t.MediaTypes = strings.Split(mediaTypes, ",")
+		r <- t
 	}
 
-	err = rows.Err()
-	return tcs, err
+	checkRowsError(rows, r)
+	close(r)
 }
 
-func (s *sqliteDB) readRows(name string, rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readResults(name string, rows *sql.Rows, r chan interface{}) {
 	defer rows.Close()
-
-	var result interface{}
-	var err error
 
 	switch name {
 	case "taxiiCollection":
-		result, err = s.readCollections(rows)
+		s.readCollections(rows, r)
 	case "taxiiCollections":
-		result, err = s.readCollections(rows)
+		s.readCollections(rows, r)
 	case "taxiiUser":
-		result, err = s.readUser(rows)
+		s.readUser(rows, r)
 	default:
-		err = errors.New("Unknown result name '" + name)
+		r <- errors.New("Unknown result name '" + name)
+		close(r)
 	}
-
-	return result, err
 }
 
-func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
-	var tcas []taxiiCollectionAccess
-	var err error
-
+func (s *sqliteDB) readUser(rows *sql.Rows, r chan interface{}) {
 	for rows.Next() {
-		var tca taxiiCollectionAccess
-		if err := rows.Scan(&tca.ID, &tca.CanRead, &tca.CanWrite); err != nil {
-			return tca, err
+		var t taxiiCollectionAccess
+
+		if err := rows.Scan(&t.ID, &t.CanRead, &t.CanWrite); err != nil {
+			fail.Println(err)
+			r <- err
+			continue
 		}
-		tcas = append(tcas, tca)
+		r <- t
 	}
 
-	err = rows.Err()
-	return tcas, err
+	checkRowsError(rows, r)
+	close(r)
+}
+
+func checkRowsError(rows *sql.Rows, r chan interface{}) {
+	if err := rows.Err(); err != nil {
+		fail.Println(err)
+		r <- err
+	}
 }
 
 /* writer methods */
@@ -189,6 +190,7 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 
 		i++
 		if i >= maxWrites {
+			info.Println("Commiting batch")
 			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
 			tx, stmt, err = batchWriteTx(s, query, errs)
 			if err != nil {
@@ -217,4 +219,10 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (*sql.Tx, *sql.Stm
 	}
 
 	return tx, stmt, err
+}
+
+func processReadError(err error, results chan interface{}) {
+	fail.Println(err)
+	results <- err
+	close(results)
 }

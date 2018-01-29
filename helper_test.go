@@ -1,5 +1,3 @@
-// test helper file to declare top level vars/constants and define helper functions for all tests
-
 package main
 
 import (
@@ -7,15 +5,21 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
+)
+
+const (
+	testUser = "test@cabby.com"
+	testPass = "test"
 )
 
 var testDB = "test/test.db"
 
 func init() {
-	reloadTestConfig()
+	setupSQLite()
 }
 
 func reloadTestConfig() {
@@ -26,63 +30,60 @@ func reloadTestConfig() {
 func renameFile(from, to string) {
 	err := os.Rename(from, to)
 	if err != nil {
-		logError.Fatal("Failed to rename file: ", from, " to: ", to)
+		fail.Fatal("Failed to rename file: ", from, " to: ", to)
 	}
 }
 
 func setupSQLite() {
 	tearDownSQLite()
+
 	var sqlDriver = "sqlite3"
 
 	db, err := sql.Open(sqlDriver, testDB)
 	if err != nil {
-		log.Fatal("Can't connect to test DB:", testDB)
+		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
 	f, err := os.Open("backend/sqlite/schema.sql")
 	if err != nil {
-		log.Fatal("Couldn't open schema file")
+		fail.Fatal("Couldn't open schema file")
 	}
 
 	schema, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Fatal("Couldn't read schema file")
+		fail.Fatal("Couldn't read schema file")
 	}
 
 	_, err = db.Exec(string(schema))
 	if err != nil {
-		log.Fatal("Couldn't load schema")
+		fail.Fatal("Couldn't load schema")
 	}
 
 	// create a user
 	_, err = db.Exec(`insert into taxii_user (email) values('` + testUser + `')`)
 	if err != nil {
-		log.Fatal("Couldn't add user")
+		fail.Fatal("Couldn't add user")
 	}
 
 	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
 	_, err = db.Exec(`insert into taxii_user_pass (email, pass) values('` + testUser + `', '` + pass + `')`)
 	if err != nil {
-		log.Fatalf("Couldn't add password: %v", err)
+		fail.Fatalf("Couldn't add password: %v", err)
 	}
 
 	// create a collection
-	collectionID, err := newTaxiiID()
-	if err != nil {
-		log.Fatalf("Couldn't create id: %v", err)
-	}
-
+	testID := "82407036-edf9-4c75-9a56-e72697c53e99"
 	_, err = db.Exec(`insert into taxii_collection (id, title, description, media_types)
-											values ('` + collectionID.String() + `', "a title", "a description", "")`)
+											values ('` + testID + `', "a title", "a description", "")`)
 	if err != nil {
-		log.Fatal("DB Err:", err)
+		fail.Fatal("DB Err:", err)
 	}
 
 	// associate user to collection
 	_, err = db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
-											values ('` + testUser + `', '` + collectionID.String() + `', 1, 1)`)
+											values ('` + testUser + `', '` + testID + `', 1, 1)`)
 	if err != nil {
-		log.Fatal("DB Err:", err)
+		fail.Fatal("DB Err:", err)
 	}
 }
 
