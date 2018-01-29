@@ -55,6 +55,9 @@ func requestFromTestServer(r *http.Request) (*http.Response, string) {
 	defer server.Close()
 
 	res, err := attemptRequest(tlsClient(), r)
+	if err != nil {
+		fail.Fatal(err)
+	}
 	defer res.Body.Close()
 
 	body, err := ioutil.ReadAll(res.Body)

@@ -213,7 +213,7 @@ func (tc *taxiiCollection) read(u string) error {
 		return err
 	}
 
-	result, err := ts.read(query, "taxiiCollection", []interface{}{u, tc.ID.String()})
+	result, err := ts.read(query, "taxiiCollections", []interface{}{u, tc.ID.String()})
 	if err != nil {
 		return err
 	}

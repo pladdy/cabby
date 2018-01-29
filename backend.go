@@ -38,16 +38,13 @@ type taxiiStorer interface {
 	taxiiWriter
 }
 
-func newTaxiiStorer() (taxiiStorer, error) {
-	var t taxiiStorer
-	var err error
-
+func newTaxiiStorer() (t taxiiStorer, err error) {
 	if config.DataStore["name"] == "sqlite" {
 		t, err = newSQLiteDB()
 	} else {
 		err = errors.New("Unsupported data store specified in config")
 	}
-	return t, err
+	return
 }
 
 /* sqlite */
@@ -71,12 +68,10 @@ func newSQLiteDB() (*sqliteDB, error) {
 
 /* connector methods */
 
-func (s *sqliteDB) connect(connection string) error {
-	info.Println("Connecting to", connection)
-
-	var err error
+func (s *sqliteDB) connect(connection string) (err error) {
+	info.Println("Opening connection to", connection)
 	s.db, err = sql.Open(s.driver, connection)
-	return err
+	return
 }
 
 func (s *sqliteDB) disconnect() {
@@ -106,8 +101,7 @@ func (s *sqliteDB) read(query, name string, args []interface{}) (interface{}, er
 		return result, fmt.Errorf("%v in statement: %v", err, query)
 	}
 
-	result, err = s.readRows(name, rows)
-	return result, err
+	return s.readRows(name, rows)
 }
 
 func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
@@ -129,11 +123,8 @@ func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
 	return tcs, err
 }
 
-func (s *sqliteDB) readRows(name string, rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readRows(name string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
-
-	var result interface{}
-	var err error
 
 	switch name {
 	case "taxiiCollection":
@@ -146,7 +137,7 @@ func (s *sqliteDB) readRows(name string, rows *sql.Rows) (interface{}, error) {
 		err = errors.New("Unknown result name '" + name)
 	}
 
-	return result, err
+	return
 }
 
 func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
@@ -199,11 +190,7 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 	tx.Commit()
 }
 
-func batchWriteTx(s *sqliteDB, query string, errs chan error) (*sql.Tx, *sql.Stmt, error) {
-	var tx *sql.Tx
-	var stmt *sql.Stmt
-	var err error
-
+func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt *sql.Stmt, err error) {
 	tx, err = s.db.Begin()
 	if err != nil {
 		fail.Println(err)
@@ -216,5 +203,5 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (*sql.Tx, *sql.Stm
 		errs <- err
 	}
 
-	return tx, stmt, err
+	return
 }
