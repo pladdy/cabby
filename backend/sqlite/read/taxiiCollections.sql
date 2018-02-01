@@ -11,4 +11,4 @@ from
     on c.id = uc.collection_id
 where
   uc.email = ?
-  and uc.can_read = 1
+  and uc.can_read = 1 or uc.can_write = 1
