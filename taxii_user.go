@@ -56,13 +56,13 @@ func (tu *taxiiUser) read(pass string) error {
 func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, error) {
 	var tcas []taxiiCollectionAccess
 
-	query, err := ts.parse("read", "taxiiCollectionAccess")
+	tq, err := ts.parse("read", "taxiiCollectionAccess")
 	if err != nil {
 		fail.Println(err)
 		return tcas, err
 	}
 
-	result, err := ts.read(query, "taxiiCollectionAccess", []interface{}{e})
+	result, err := ts.read(tq, []interface{}{e})
 	if err != nil {
 		return tcas, err
 	}
@@ -74,13 +74,13 @@ func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, err
 func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
 	var valid bool
 
-	query, err := ts.parse("read", "taxiiUser")
+	tq, err := ts.parse("read", "taxiiUser")
 	if err != nil {
 		fail.Println(err)
 		return valid, err
 	}
 
-	result, err := ts.read(query, "taxiiUser", []interface{}{e, p})
+	result, err := ts.read(tq, []interface{}{e, p})
 	valid = result.(bool)
 
 	if valid != true {

@@ -58,7 +58,9 @@ curl -sk --location-trusted -basic -u test@cabby.com:test 'https://localhost:123
 ```
 
 ##### View API Root
-`curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .`
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .`
+```
 
 ##### Create a collection
 Let the server assign an ID:
@@ -69,7 +71,9 @@ curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/
 ```
 
 Check it:
-`curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/' | jq .`
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/' | jq .
+```
 
 Assign an ID in request:
 ```sh

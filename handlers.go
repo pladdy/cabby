@@ -22,7 +22,7 @@ const (
 
 /* auth functions */
 
-func addUserToRequestContext(tu taxiiUser, r *http.Request) *http.Request {
+func addTaxiiUserToRequest(tu taxiiUser, r *http.Request) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tu.Email)
 	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
 	return r.WithContext(ctx)
@@ -40,7 +40,7 @@ func basicAuth(h http.Handler) http.Handler {
 		}
 		info.Println("Basic Auth validated for", u)
 
-		r = addUserToRequestContext(tu, r)
+		r = addTaxiiUserToRequest(tu, r)
 		h.ServeHTTP(hsts(w), r)
 	})
 }

@@ -45,12 +45,6 @@ func handleGetTaxiiCollections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func assignTaxiiID(tc *taxiiCollection) error {
-	var err error
-	tc.ID, err = newTaxiiID()
-	return err
-}
-
 func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
 	var tc taxiiCollection
 
@@ -59,9 +53,7 @@ func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
 		return tc, fmt.Errorf("invalid data to POST, error: %v", err)
 	}
 
-	if tc.ID.isEmpty() {
-		err = assignTaxiiID(&tc)
-	}
+	err = tc.ensureID()
 	if err != nil {
 		return tc, err
 	}
@@ -184,8 +176,7 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 	return tc, err
 }
 
-// creating a collection is a two step process: create the collection then create the association of the collection
-// to the api root
+// creating a collection is a multi-step process, multiple "parts" have to be created as part of the associations
 func (tc taxiiCollection) create(user, apiRoot string) error {
 	ts, err := newTaxiiStorer()
 	if err != nil {
@@ -211,8 +202,43 @@ func (tc taxiiCollection) create(user, apiRoot string) error {
 	return err
 }
 
+func (tc *taxiiCollection) ensureID() error {
+	var err error
+	if tc.ID.isEmpty() {
+		tc.ID, err = newTaxiiID()
+	}
+	return err
+}
+
+func (tc *taxiiCollection) read(u string) error {
+	collection := *tc
+
+	ts, err := newTaxiiStorer()
+	if err != nil {
+		return err
+	}
+
+	tq, err := ts.parse("read", "taxiiCollection")
+	if err != nil {
+		return err
+	}
+
+	result, err := ts.read(tq, []interface{}{u, tc.ID.String()})
+	if err != nil {
+		return err
+	}
+
+	tcs := result.(taxiiCollections)
+	collection = firstTaxiiCollection(tcs)
+	*tc = collection
+
+	return err
+}
+
+/* taxiiCollection helpers */
+
 func createTaxiiCollectionPart(ts taxiiStorer, part string, args []interface{}) error {
-	query, err := ts.parse("create", part)
+	tq, err := ts.parse("create", part)
 	if err != nil {
 		return err
 	}
@@ -220,7 +246,7 @@ func createTaxiiCollectionPart(ts taxiiStorer, part string, args []interface{}) 
 	toWrite := make(chan interface{}, minBuffer)
 	errs := make(chan error, minBuffer)
 
-	go ts.write(query, toWrite, errs)
+	go ts.write(tq, toWrite, errs)
 	toWrite <- args
 	close(toWrite)
 
@@ -238,31 +264,6 @@ func firstTaxiiCollection(tcs taxiiCollections) taxiiCollection {
 	return taxiiCollection{}
 }
 
-func (tc *taxiiCollection) read(u string) error {
-	collection := *tc
-
-	ts, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
-
-	query, err := ts.parse("read", "taxiiCollection")
-	if err != nil {
-		return err
-	}
-
-	result, err := ts.read(query, "taxiiCollections", []interface{}{u, tc.ID.String()})
-	if err != nil {
-		return err
-	}
-
-	tcs := result.(taxiiCollections)
-	collection = firstTaxiiCollection(tcs)
-	*tc = collection
-
-	return err
-}
-
 type taxiiCollections struct {
 	Collections []taxiiCollection `json:"collections"`
 }
@@ -275,13 +276,13 @@ func (tcs *taxiiCollections) read(u string) error {
 		return err
 	}
 
-	query, err := ts.parse("read", "taxiiCollections")
+	tq, err := ts.parse("read", "taxiiCollections")
 	if err != nil {
 		return err
 	}
 
 	args := []interface{}{u}
-	result, err := ts.read(query, "taxiiCollections", args)
+	result, err := ts.read(tq, args)
 	if err != nil {
 		return err
 	}

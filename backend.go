@@ -22,15 +22,20 @@ type taxiiConnector interface {
 }
 
 type taxiiParser interface {
-	parse(command, container string) (string, error)
+	parse(command, name string) (taxiiQuery, error)
+}
+
+type taxiiQuery struct {
+	name  string
+	query string
 }
 
 type taxiiReader interface {
-	read(query, name string, args []interface{}) (interface{}, error)
+	read(tq taxiiQuery, args []interface{}) (interface{}, error)
 }
 
 type taxiiWriter interface {
-	write(query string, toWrite chan interface{}, errors chan error)
+	write(tq taxiiQuery, toWrite chan interface{}, errors chan error)
 }
 
 type taxiiStorer interface {
@@ -82,29 +87,31 @@ func (s *sqliteDB) disconnect() {
 
 /* parser methods */
 
-func (s *sqliteDB) parse(command, name string) (string, error) {
+func (s *sqliteDB) parse(command, name string) (taxiiQuery, error) {
 	path := path.Join(backendDir, s.dbName, command, name+"."+s.extension)
 
-	statement, err := ioutil.ReadFile(path)
+	query, err := ioutil.ReadFile(path)
 	if err != nil {
-		err = fmt.Errorf("Unable to parse statement file: %v", path)
+		err = fmt.Errorf("Unable to parse file: %v", path)
 	}
 
-	return string(statement), err
+	return taxiiQuery{name: name, query: string(query)}, err
 }
 
 /* read methods */
 
-func (s *sqliteDB) read(query, name string, args []interface{}) (interface{}, error) {
+func (s *sqliteDB) read(tq taxiiQuery, args []interface{}) (interface{}, error) {
 	var result interface{}
 
-	rows, err := s.db.Query(query, args...)
+	rows, err := s.db.Query(tq.query, args...)
 	if err != nil {
-		return result, fmt.Errorf("%v in statement: %v", err, query)
+		return result, fmt.Errorf("%v in statement: %v", err, tq.query)
 	}
 
-	return s.readRows(name, rows)
+	return s.readRows(tq.name, rows)
 }
+
+/* readh helpers */
 
 func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
 	tcs := taxiiCollections{}
@@ -176,10 +183,10 @@ func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
 
 /* writer methods */
 
-func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error) {
+func (s *sqliteDB) write(tq taxiiQuery, toWrite chan interface{}, errs chan error) {
 	defer close(errs)
 
-	tx, stmt, err := batchWriteTx(s, query, errs)
+	tx, stmt, err := batchWriteTx(s, tq.query, errs)
 	if err != nil {
 		return
 	}
@@ -199,7 +206,7 @@ func (s *sqliteDB) write(query string, toWrite chan interface{}, errs chan error
 		i++
 		if i >= maxWrites {
 			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
-			tx, stmt, err = batchWriteTx(s, query, errs)
+			tx, stmt, err = batchWriteTx(s, tq.query, errs)
 			if err != nil {
 				return
 			}
