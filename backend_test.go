@@ -69,8 +69,8 @@ func TestSQLiteParse(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if result != string(expected) {
-			t.Error("Got:", result, "Expected:", string(expected))
+		if result.query != string(expected) {
+			t.Error("Got:", result.query, "Expected:", string(expected))
 		}
 	}
 }
@@ -91,6 +91,8 @@ func TestSQLiteParseInvalid(t *testing.T) {
 /* sqlite reader functions */
 
 func TestSQLiteRead(t *testing.T) {
+	defer setupSQLite()
+
 	s, err := newSQLiteDB()
 	if err != nil {
 		t.Fatal(err)
@@ -115,42 +117,27 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal("DB Err:", err)
 	}
 
-	// buffered channel
-	results := make(chan interface{}, 10)
-	query, _ := s.parse("read", "taxiiCollection")
-	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
-
-	for r := range results {
-		switch r := r.(type) {
-		case error:
-			t.Fatal(r)
-		}
-		resultCollection := r.(taxiiCollection)
-
-		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", "collection id")
-		}
+	tq, err := s.parse("read", "taxiiCollection")
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := s.read(tq, []interface{}{testUser, tuid.String()})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	// unbuffered channel
-	results = make(chan interface{})
-	go s.read(query, "taxiiCollection", []interface{}{testUser, tuid.String()}, results)
+	tc := result.(taxiiCollections)
 
-	for r := range results {
-		switch r := r.(type) {
-		case error:
-			t.Fatal(r)
-		}
-		resultCollection := r.(taxiiCollection)
-
-		if resultCollection.ID != tuid {
-			t.Error("Got:", resultCollection.ID, "Expected", "collection id")
-		}
+	if len(tc.Collections) == 0 {
+		t.Error("Collections returned should be > 0")
+	}
+	if tc.Collections[0].ID.String() != tuid.String() {
+		t.Error("Got:", tc.Collections[0].ID.String(), "Expected:", tuid.String())
 	}
 }
 
 func TestSQLiteReadFail(t *testing.T) {
-	setupSQLite() // reset state
+	defer setupSQLite()
 
 	s, err := newSQLiteDB()
 	if err != nil {
@@ -163,21 +150,19 @@ func TestSQLiteReadFail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	query, _ := s.parse("read", "taxiiCollection")
-	results := make(chan interface{}, 10)
-	go s.read(query, "taxiiCollection", []interface{}{"user1"}, results)
-
-Loop:
-	for r := range results {
-		switch r := r.(type) {
-		case error:
-			logError.Println(r)
-			break Loop
-		}
-		t.Error("Expected error")
+	tq, err := s.parse("read", "taxiiCollection")
+	if err != nil {
+		t.Fatal(err)
 	}
+	result, err := s.read(tq, []interface{}{"user1"})
 
-	setupSQLite() // reset state
+	switch result := result.(type) {
+	case error:
+		err = result.(error)
+	}
+	if err == nil {
+		t.Error("Expected an error")
+	}
 }
 
 // new readX functions get tested here
@@ -188,35 +173,45 @@ func TestSQLiteReadScanError(t *testing.T) {
 	}
 	defer s.disconnect()
 
-	type readFunction func(*sql.Rows, chan interface{})
+	type readFunction func(*sql.Rows) (interface{}, error)
 
 	tests := []struct {
 		fn readFunction
 	}{
-		{s.readCollection},
+		{s.readCollections},
+		{s.readCollectionAccess},
 		{s.readUser},
 	}
 
-	for _, rf := range tests {
+	for _, test := range tests {
 		rows, err := s.db.Query(`select "fail"`)
 		if err != nil {
 			t.Fatal(err)
 		}
-
-		results := make(chan interface{})
-		go rf.fn(rows, results)
-
-		for r := range results {
-			switch r := r.(type) {
-			case error:
-				logError.Println(r)
-				err = r
-			}
-		}
+		_, err = test.fn(rows)
 
 		if err == nil {
 			t.Error("Expected error")
 		}
+	}
+}
+
+func TestReadRowsInvalid(t *testing.T) {
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	rows, err := s.db.Query("select 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.readRows("invalid", rows)
+
+	if err == nil {
+		t.Error("Expected an error")
 	}
 }
 
@@ -233,12 +228,12 @@ func TestSQLiteWrite(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	query, err := s.parse("create", "taxiiCollection")
+	tq, err := s.parse("create", "taxiiCollection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	go s.write(query, toWrite, errs)
+	go s.write(tq, toWrite, errs)
 	toWrite <- args
 	close(toWrite)
 
@@ -266,7 +261,7 @@ func TestSQLiteWriteFail(t *testing.T) {
 
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
-	go s.write("invalidName", toWrite, errs)
+	go s.write(taxiiQuery{name: "invalidName", query: "invalidQuery"}, toWrite, errs)
 
 	for e := range errs {
 		err = e
@@ -287,7 +282,7 @@ func TestSQLiteWriteFailTransaction(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	defer close(toWrite)
 	errs := make(chan error, 10)
-	go s.write("invalidName", toWrite, errs)
+	go s.write(taxiiQuery{name: "invalidName", query: "invalidQuery"}, toWrite, errs)
 
 	for e := range errs {
 		err = e
@@ -309,12 +304,12 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	query, err := s.parse("create", "taxiiCollection")
+	tq, err := s.parse("create", "taxiiCollection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	go s.write(query, toWrite, errs)
+	go s.write(tq, toWrite, errs)
 	toWrite <- args
 	close(toWrite)
 
@@ -340,17 +335,17 @@ func TestSQLiteWriteMaxWrites(t *testing.T) {
 	defer close(toWrite)
 	errs := make(chan error, 10)
 
-	query, err := s.parse("create", "taxiiCollection")
+	tq, err := s.parse("create", "taxiiCollection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	go s.write(query, toWrite, errs)
+	go s.write(tq, toWrite, errs)
 
 	// check errors while testing
 	go func(t *testing.T) {
 		for e := range errs {
-			logError.Println("Should not have an error during test.  Error:", e)
+			fail.Println("Should not have an error during test.  Error:", e)
 			close(toWrite)
 			t.Fatal(e)
 		}

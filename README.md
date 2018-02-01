@@ -29,23 +29,68 @@ Using Sqlite as a light-weight data store to run this in development mode.  Goal
 (rethinkdb or elasticsearch) in the future.
 `make sqlite`
 
-## API Examples
-Assumes a server is running
+## API Examples with a test user
+The examples below require
+- sqlite
+- jq
+
+On a mac you can install via `brew`
+
+Run a server and set up a user first:
+```sh
+make
+make run
+```
+
+In a new terminal:
+```sh
+make sqlite
+pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
+  sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
+sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('test@cabby.com', '${pass}')"
+```
 
 ##### View TAXII Root
-`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/taxii'`
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/taxii/' | jq .
+# without a trailing slash
+curl -sk --location-trusted -basic -u test@cabby.com:test 'https://localhost:1234/taxii' | jq .
+```
 
 ##### View API Root
-`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root'`
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .`
+```
 
 ##### Create a collection
 Let the server assign an ID:
-`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root/collections?title=a+collection'`
+```sh
+curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/collections/' -d '{
+  "title": "a collection"
+}' | jq .
+```
 
-Assign an ID:
-`curl -k -basic -u <user>:<password> -X POST 'https://localhost:1234/api_root/collections?id=352abc04-a474-4e22-9f4d-944ca508e68c&title=a+collection'`
+Check it:
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/' | jq .
+```
+
+Assign an ID in request:
+```sh
+curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/collections/' -d '{
+  "title": "a collection",
+  "id": "352abc04-a474-4e22-9f4d-944ca508e68c"
+}' | jq .
+```
+
+Check it:
+```sh
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
+```
 
 ## Resources
-- Oasis Docs: https://oasis-open.github.io/cti-documentation/resources.html#taxii-20-specification
+- OASIS Doc: https://oasis-open.github.io/cti-documentation/resources
+- TAXII 2.0 Spec: https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI
+- STIX 2.0 Spec: https://docs.oasis-open.org/cti/stix/v2.0/stix-v2.0-part1-stix-core.html
 - TLS in Golang Examples: https://gist.github.com/denji/12b3a568f092ab951456
 - Perfect SSL Labs Score Article: https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go

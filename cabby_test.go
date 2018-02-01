@@ -5,19 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
 	"time"
 )
 
-const (
-	discoveryURL = "https://localhost:1234/taxii"
-	apiRootURL   = "https://localhost:1234/api_root"
-	testUser     = "test@cabby.com"
-	testPass     = "test"
-)
+func init() {
+	reloadTestConfig()
+}
 
 /* helpers */
 
@@ -27,19 +24,47 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 	for i := 0; i < MaxTries; i++ {
 		res, err := c.Do(r)
 		if err != err {
-			log.Fatal(err)
+			fail.Fatal(err)
 		}
 		if res != nil {
 			return res, err
 		}
-		logWarn.Println("Web server for test not responding, waiting...")
+		warn.Println("Web server for test not responding, waiting...")
 		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 
 	return nil, errors.New("Failed to get request")
 }
 
-func get(u string) string {
+func requestWithBasicAuth(u string) *http.Request {
+	req, err := http.NewRequest("GET", u, nil)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	req.SetBasicAuth(testUser, testPass)
+	return req
+}
+
+func requestFromTestServer(r *http.Request) (*http.Response, string) {
+	server := runTestServer()
+	defer server.Close()
+
+	res, err := attemptRequest(tlsClient(), r)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	defer res.Body.Close()
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != err {
+		fail.Fatal(err)
+	}
+
+	return res, string(body)
+}
+
+// run server in go routine and return it
+func runTestServer() *http.Server {
 	renameFile(configPath, configPath+".testing")
 	renameFile("test/config/testing_config.json", configPath)
 
@@ -52,35 +77,80 @@ func get(u string) string {
 	go func() {
 		server.ListenAndServeTLS(config.SSLCert, config.SSLKey)
 	}()
+	return server
+}
 
-	// set up client with TLS configured
+// set up a http client that uses TLS
+func tlsClient() *http.Client {
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 	}
 	tr := &http.Transport{TLSClientConfig: tlsConfig}
-	client := &http.Client{Transport: tr}
-
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	req.SetBasicAuth(testUser, testPass)
-
-	res, err := attemptRequest(client, req)
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != err {
-		log.Fatal(err)
-	}
-
-	server.Close()
-	return string(body)
+	return &http.Client{Transport: tr}
 }
 
 /* tests */
 
+func TestHSTS(t *testing.T) {
+	req := requestWithBasicAuth(discoveryURL)
+	res, _ := requestFromTestServer(req)
+
+	expected := "max-age=" + sixMonthsOfSeconds + "; includeSubDomains"
+	result := strings.Join(res.Header["Strict-Transport-Security"], "")
+
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestBasicAuth(t *testing.T) {
+	// set up the expected discovery
+	cd := config.Discovery
+
+	cd.Default = insertPort(cd.Default)
+
+	// add port to api roots
+	var apiRootsWithPort []string
+	for _, apiRoot := range cd.APIRoots {
+		apiRootsWithPort = append(apiRootsWithPort, insertPort(apiRoot))
+	}
+	cd.APIRoots = apiRootsWithPort
+
+	expectedDiscovery, err := json.Marshal(cd)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		user           string
+		pass           string
+		expectedStatus int
+		expectedBody   string
+	}{
+		{testUser, testPass, 200, string(expectedDiscovery)},
+		{"invalid", "pass", 401, `{"title":"Unauthorized","description":"Invalid user/pass combination","http_status":"401"}` + "\n"},
+	}
+
+	for _, test := range tests {
+		req, err := http.NewRequest("GET", discoveryURL, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.SetBasicAuth(test.user, test.pass)
+
+		res, body := requestFromTestServer(req)
+
+		if res.StatusCode != test.expectedStatus {
+			t.Error("Got:", res.StatusCode, "Expected:", test.expectedStatus)
+		}
+		if body != test.expectedBody {
+			t.Error("Got:", body, "Expected:", test.expectedBody)
+		}
+	}
+}
+
 func TestMain(t *testing.T) {
+	// use test config
 	renameFile(configPath, configPath+".testing")
 	renameFile("test/config/different_port_config.json", configPath)
 
@@ -93,30 +163,38 @@ func TestMain(t *testing.T) {
 		main()
 	}()
 
-	// rename files back in reverse (order matters or you clobber the files)
-	time.Sleep(100 * time.Millisecond)
-}
+	req := requestWithBasicAuth(discoveryURL)
+	res, _ := attemptRequest(tlsClient(), req)
+	defer res.Body.Close()
 
-func TestMainDiscovery(t *testing.T) {
-	response := get(discoveryURL)
-	config := cabbyConfig{}.parse(configPath)
-	expected, _ := json.Marshal(config.Discovery)
+	body, _ := ioutil.ReadAll(res.Body)
 
-	if response != string(expected) {
-		t.Error("Got:", response, "Expected:", string(expected))
+	var result taxiiDiscovery
+	err := json.Unmarshal(body, &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := config.Discovery
+	expected.Default = insertPort(expected.Default)
+
+	if result.Default != expected.Default {
+		t.Error("Got:", result.Default, "Expected:", expected.Default)
 	}
 }
 
 func TestMainAPIRoot(t *testing.T) {
+	req := requestWithBasicAuth(apiRootURL)
+	_, body := requestFromTestServer(req)
+
 	u, _ := url.Parse(apiRootURL)
 	noPortHost := urlWithNoPort(u)
 
-	response := get(apiRootURL)
 	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
 
-	if response != string(expected) {
-		t.Error("Got:", response, "Expected:", string(expected))
+	if body != string(expected) {
+		t.Error("Got:", body, "Expected:", string(expected))
 	}
 }
 
