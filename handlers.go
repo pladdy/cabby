@@ -24,7 +24,7 @@ const (
 
 func addUserToRequestContext(tu taxiiUser, r *http.Request) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tu.Email)
-	ctx = context.WithValue(context.Background(), userCollections, tu.CollectionAccess)
+	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
 	return r.WithContext(ctx)
 }
 

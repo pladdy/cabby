@@ -8,13 +8,10 @@ import (
 
 func handleTaxiiAPIRoot(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
-
-	u := urlWithNoPort(r.URL)
-	info.Println("API Root requested for", u)
+	info.Println("API Root requested for", r.URL)
 
 	ta := taxiiAPIRoot{}
-	ta.read(u)
-
+	ta.read(urlWithNoPort(r.URL))
 	writeContent(w, taxiiContentType, resourceToJSON(ta))
 }
 

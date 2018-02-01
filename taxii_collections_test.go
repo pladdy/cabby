@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http/httptest"
 	"net/url"
@@ -12,18 +14,14 @@ import (
 func TestHandleTaxiiCollectionsPost(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	q := u.Query()
-	q.Set("title", t.Name())
-	q.Set("description", "a description")
-	u.RawQuery = q.Encode()
-
-	status, _ := handlerTest(handleTaxiiCollections, "POST", u.String())
+	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
+	status, _ := handlerTest(handlePostTaxiiCollection, "POST", u.String(), b)
 
 	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
+		t.Error("Got:", status, "Expected: 200")
 	}
 
 	s, err := newSQLiteDB()
@@ -43,17 +41,42 @@ func TestHandleTaxiiCollectionsPost(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
-	u, err := url.Parse("https://localhost/api_root/collections")
+func TestHandleTaxiiCollectionPostCreateFail(t *testing.T) {
+	defer setupSQLite()
+
+	// remove required table
+	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
+	defer s.disconnect()
 
-	q := u.Query()
-	q.Set("id", "fail")
-	u.RawQuery = q.Encode()
+	_, err = s.db.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	status, _ := handlerTest(handleTaxiiCollections, "POST", u.String())
+	// test a post which should fail
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
+	status, _ := handlerTest(handlePostTaxiiCollection, "POST", u.String(), b)
+
+	if status != 400 {
+		t.Error("Got:", status, "Expected: 400")
+	}
+}
+
+func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, _ := handlerTest(handleTaxiiCollections, "POST", u.String(), nil)
 
 	if status != 400 {
 		t.Error("Got:", status, "Expected:", 400)
@@ -84,12 +107,6 @@ func TestHandleTaxiiCollectionsPostBadParse(t *testing.T) {
 
 	for _, test := range tests {
 		req := httptest.NewRequest(test.method, "https://localhost/api_root/collections", nil)
-
-		// change body to nil to trigger a parse error in handler
-		if test.method == "POST" {
-			req.Body = nil
-		}
-
 		res := httptest.NewRecorder()
 		handleTaxiiCollections(res, req)
 
@@ -114,60 +131,58 @@ func TestHandleTaxiiCollectionsPostInvalidDB(t *testing.T) {
 	q.Set("description", "a description")
 	u.RawQuery = q.Encode()
 
-	status, _ := handlerTest(handleTaxiiCollections, "POST", u.String())
+	status, _ := handlerTest(handleTaxiiCollections, "POST", u.String(), nil)
 
 	if status != 400 {
 		t.Error("Got:", status, "Expected:", 400)
 	}
 }
 
-func TestHandleTaxiiCollectionsPostInvalidUser(t *testing.T) {
-	id, err := newTaxiiID()
+func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
+	u, err := url.Parse("https://localhost/api_root/collections/")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
-	if err != nil {
-		t.Fatal(err)
-	}
+	// set up a request with some data
+	data := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
+	req := httptest.NewRequest("POST", u.String(), data)
 
-	req := httptest.NewRequest("POST", u.String(), nil)
-	// don't set a user in the context before setting up a response
+	// update context to a fake user
+	ctx := context.WithValue(context.Background(), userName, nil)
+	req = req.WithContext(ctx)
+
+	// record response
 	res := httptest.NewRecorder()
 	handleTaxiiCollections(res, req)
-	b, _ := ioutil.ReadAll(res.Body)
 
-	status, result := res.Code, string(b)
-	expected := `{"title":"Bad Request","description":"Invalid user specified","http_status":"400"}` + "\n"
+	byteBody, _ := ioutil.ReadAll(res.Body)
+	status, body := res.Code, string(byteBody)
+
+	expected := `{"title":"Bad Request","description":"No user specified","http_status":"400"}` + "\n"
 
 	if status != 400 {
-		t.Error("Got:", status, "Expected:", 400)
+		t.Error("Got:", status, "Expected: 400")
 	}
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+	if body != expected {
+		t.Error("Got:", body, "Expected:", expected)
 	}
 }
 
 func TestHandleTaxiiCollectionsGetCollection(t *testing.T) {
 	// create a collection
-	u, err := url.Parse("https://localhost/api_root/collections")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	id, err := newTaxiiID()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	q := u.Query()
-	q.Set("id", id.String())
-	q.Set("title", t.Name())
-	q.Set("description", "a description")
-	u.RawQuery = q.Encode()
+	data := bytes.NewBuffer([]byte(`{"id":"` + id.String() + `", "title":"` + t.Name() + `"}`))
+	u, err := url.Parse("https://localhost/api_root/collections/")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	status, result := handlerTest(handleTaxiiCollections, "POST", u.String())
+	status, result := handlerTest(handleTaxiiCollections, "POST", u.String(), data)
 	if status != 200 {
 		t.Fatal(result)
 	}
@@ -178,11 +193,10 @@ func TestHandleTaxiiCollectionsGetCollection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, result = handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, result = handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 
 	expected := `{"id":"` + id.String() + `","can_read":true,"can_write":true,` +
-		`"title":"` + t.Name() + `","description":"a description",` +
-		`"media_types":["` + taxiiContentType + `"]}`
+		`"title":"` + t.Name() + `","media_types":[""]}`
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -200,7 +214,7 @@ func TestHandleTaxiiCollectionsGetCollections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, result := handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, result := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 
 	expected := `{"collections":[{"id":"82407036-edf9-4c75-9a56-e72697c53e99","can_read":true,` +
 		`"can_write":true,"title":"a title","description":"a description","media_types":[""]}]}`
@@ -219,7 +233,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, result := handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, result := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 	expected := `{"title":"Bad Request","description":"uuid: incorrect UUID length: fail","http_status":"400"}` + "\n"
 
 	if status != 400 {
@@ -243,7 +257,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, result := handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, result := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 	expected := `{"title":"Resource not found","description":"Invalid Collection","http_status":"404"}` + "\n"
 
 	if status != 404 {
@@ -306,7 +320,7 @@ func TestHandleTaxiiCollectionsGetReadError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, _ := handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, _ := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 	if status != 400 {
 		t.Error("Got:", status, "Expected:", 400)
 	}
@@ -331,7 +345,7 @@ func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, _ := handlerTest(handleTaxiiCollections, "GET", u.String())
+	status, _ := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 	if status != 404 {
 		t.Error("Got:", status, "Expected:", 404)
 	}

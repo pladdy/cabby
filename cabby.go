@@ -39,9 +39,11 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 		warn.Panic(err)
 	}
 
-	info.Println("Registering API handler for", u)
+	info.Println("Registering handler for", u.String()+"collections/")
+	h.HandleFunc(u.Path+"collections/", handleTaxiiCollections)
+
+	info.Println("Registering handler for", u.String())
 	h.HandleFunc(u.Path, handleTaxiiAPIRoot)
-	h.HandleFunc(u.Path+"/collections/", handleTaxiiCollections)
 }
 
 func setupHandler() *http.ServeMux {
@@ -53,7 +55,7 @@ func setupHandler() *http.ServeMux {
 		}
 	}
 
-	handler.HandleFunc("/taxii", handleTaxiiDiscovery)
+	handler.HandleFunc("/taxii/", handleTaxiiDiscovery)
 	handler.HandleFunc("/", handleUndefinedRequest)
 
 	return handler

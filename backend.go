@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"path"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
@@ -123,24 +125,7 @@ func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
 	return tcs, err
 }
 
-func (s *sqliteDB) readRows(name string, rows *sql.Rows) (result interface{}, err error) {
-	defer rows.Close()
-
-	switch name {
-	case "taxiiCollection":
-		result, err = s.readCollections(rows)
-	case "taxiiCollections":
-		result, err = s.readCollections(rows)
-	case "taxiiUser":
-		result, err = s.readUser(rows)
-	default:
-		err = errors.New("Unknown result name '" + name)
-	}
-
-	return
-}
-
-func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readCollectionAccess(rows *sql.Rows) (interface{}, error) {
 	var tcas []taxiiCollectionAccess
 	var err error
 
@@ -154,6 +139,39 @@ func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
 
 	err = rows.Err()
 	return tcas, err
+}
+
+func (s *sqliteDB) readRows(name string, rows *sql.Rows) (result interface{}, err error) {
+	defer rows.Close()
+
+	switch name {
+	case "taxiiCollection":
+		result, err = s.readCollections(rows)
+	case "taxiiCollections":
+		result, err = s.readCollections(rows)
+	case "taxiiCollectionAccess":
+		result, err = s.readCollectionAccess(rows)
+	case "taxiiUser":
+		result, err = s.readUser(rows)
+	default:
+		err = errors.New("Unknown result name '" + name)
+	}
+
+	return
+}
+
+func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
+	var valid bool
+	var err error
+
+	for rows.Next() {
+		if err := rows.Scan(&valid); err != nil {
+			return valid, err
+		}
+	}
+
+	err = rows.Err()
+	return valid, err
 }
 
 /* writer methods */

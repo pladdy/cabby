@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"io/ioutil"
 	"log"
@@ -17,16 +18,22 @@ type handlerFn func(http.ResponseWriter, *http.Request)
 
 // handle generic testing of handlers.  It takes a handler function to call with a url;
 // it returns the status code and response as a string
-func handlerTest(h handlerFn, m, u string) (int, string) {
-	req := httptest.NewRequest(m, u, nil)
+func handlerTest(h handlerFn, method, url string, b *bytes.Buffer) (int, string) {
+	var req *http.Request
+
+	if b != nil {
+		req = httptest.NewRequest("POST", url, b)
+	} else {
+		req = httptest.NewRequest(method, url, nil)
+	}
+
 	ctx := context.WithValue(context.Background(), userName, testUser)
 	req = req.WithContext(ctx)
-
 	res := httptest.NewRecorder()
 	h(res, req)
 
-	b, _ := ioutil.ReadAll(res.Body)
-	return res.Code, string(b)
+	body, _ := ioutil.ReadAll(res.Body)
+	return res.Code, string(body)
 }
 
 /* auth tests */
@@ -69,7 +76,7 @@ func TestAPIRoot(t *testing.T) {
 /* undefined request */
 
 func TestHandleUndefinedRequest(t *testing.T) {
-	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home")
+	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home", nil)
 	if status != 404 {
 		t.Error("Got:", status, "Expected: 404", "Response:", result)
 	}

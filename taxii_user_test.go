@@ -102,3 +102,39 @@ func TestTaxiiUserReadFail(t *testing.T) {
 		t.Error("Expected an error")
 	}
 }
+
+func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
+	defer setupSQLite()
+
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	_, err = s.db.Exec("drop table taxii_user_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = newTaxiiUser(testUser, testPass)
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+
+func TestTaxiiUserAssignedCollectionsParseFail(t *testing.T) {
+	renameFile("backend/sqlite/read/taxiiCollectionAccess.sql", "backend/sqlite/read/taxiiCollectionAccess.sql.testing")
+	defer renameFile("backend/sqlite/read/taxiiCollectionAccess.sql.testing", "backend/sqlite/read/taxiiCollectionAccess.sql")
+
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
+
+	_, err = assignedCollections(s, "test@test.fail")
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}

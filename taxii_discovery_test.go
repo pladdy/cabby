@@ -7,15 +7,21 @@ import (
 )
 
 func TestHandleDiscovery(t *testing.T) {
-	expected, _ := json.Marshal(config.Discovery)
-	status, result := handlerTest(handleTaxiiDiscovery, "GET", discoveryURL)
+	status, result := handlerTest(handleTaxiiDiscovery, "GET", discoveryURL, nil)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
 	}
 
-	if result != string(expected) {
-		t.Error("Got:", result, "Expected:", string(expected))
+	var resultTC taxiiDiscovery
+	err := json.Unmarshal([]byte(result), &resultTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := "https://localhost:1234/taxii/"
+	if resultTC.Default != expected {
+		t.Error("Got:", resultTC.Default, "Expected:", expected)
 	}
 }
 

@@ -13,7 +13,7 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 
 	config := cabbyConfig{}.parse(configPath)
 	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
-	status, result := handlerTest(handleTaxiiAPIRoot, "GET", noPortHost)
+	status, result := handlerTest(handleTaxiiAPIRoot, "GET", noPortHost, nil)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)

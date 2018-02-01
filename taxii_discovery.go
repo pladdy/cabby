@@ -1,6 +1,10 @@
 package main
 
-import "net/http"
+import (
+	"net/http"
+	"net/url"
+	"strconv"
+)
 
 /* handler */
 
@@ -24,6 +28,14 @@ type taxiiDiscovery struct {
 	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
+func insertPort(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		fail.Panic(err)
+	}
+	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
+}
+
 func (td *taxiiDiscovery) read() {
 	discovery := *td
 
@@ -32,5 +44,13 @@ func (td *taxiiDiscovery) read() {
 	}
 
 	discovery = config.Discovery
+	discovery.Default = insertPort(discovery.Default)
+
+	var apiRootsWithPort []string
+	for _, apiRoot := range discovery.APIRoots {
+		apiRootsWithPort = append(apiRootsWithPort, insertPort(apiRoot))
+	}
+	discovery.APIRoots = apiRootsWithPort
+
 	*td = discovery
 }

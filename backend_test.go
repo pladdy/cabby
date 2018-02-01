@@ -179,6 +179,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 		fn readFunction
 	}{
 		{s.readCollections},
+		{s.readCollectionAccess},
 		{s.readUser},
 	}
 

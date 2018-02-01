@@ -1,7 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
@@ -25,6 +28,8 @@ func handleTaxiiCollections(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleGetTaxiiCollections(w http.ResponseWriter, r *http.Request) {
+	info.Println("Request for GET Collection:", r.URL)
+
 	id := lastURLPathToken(r.URL.Path)
 
 	user, ok := r.Context().Value(userName).(string)
@@ -40,25 +45,52 @@ func handleGetTaxiiCollections(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// TODO: make this function require data to be posted and that data is parsed as JSON to a struct
-func handlePostTaxiiCollection(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+func assignTaxiiID(tc *taxiiCollection) error {
+	var err error
+	tc.ID, err = newTaxiiID()
+	return err
+}
+
+func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
+	var tc taxiiCollection
+
+	err := json.Unmarshal(b, &tc)
 	if err != nil {
-		badRequest(w, err)
-		return
+		return tc, fmt.Errorf("invalid data to POST, error: %v", err)
 	}
 
-	tc, err := newTaxiiCollection(r.Form.Get("id"))
+	if tc.ID.isEmpty() {
+		err = assignTaxiiID(&tc)
+	}
+	if err != nil {
+		return tc, err
+	}
+	tc.CanRead = true
+	tc.CanWrite = true
+
+	return tc, err
+}
+
+func handlePostTaxiiCollection(w http.ResponseWriter, r *http.Request) {
+	info.Println("Request to POST Collection:", r.URL)
+
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		badRequest(w, err)
 		return
 	}
-	tc.Title = r.Form.Get("title")
-	tc.Description = r.Form.Get("description")
+	defer r.Body.Close()
+
+	tc, err := taxiiCollectionFromBytes(body)
+	if err != nil {
+		fail.Println("from bytes failed")
+		badRequest(w, err)
+		return
+	}
 
 	user, ok := r.Context().Value(userName).(string)
 	if !ok {
-		badRequest(w, errors.New("Invalid user specified"))
+		badRequest(w, errors.New("No user specified"))
 		return
 	}
 
@@ -122,6 +154,14 @@ func newTaxiiID(arg ...string) (taxiiID, error) {
 	return taxiiID{id}, err
 }
 
+func (ti taxiiID) isEmpty() bool {
+	empty := taxiiID{}
+	if ti == empty {
+		return true
+	}
+	return false
+}
+
 type taxiiCollection struct {
 	ID          taxiiID  `json:"id"`
 	CanRead     bool     `json:"can_read"`
@@ -147,7 +187,10 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 // creating a collection is a two step process: create the collection then create the association of the collection
 // to the api root
 func (tc taxiiCollection) create(user, apiRoot string) error {
-	var err error
+	ts, err := newTaxiiStorer()
+	if err != nil {
+		return err
+	}
 
 	parts := []struct {
 		name string
@@ -159,7 +202,7 @@ func (tc taxiiCollection) create(user, apiRoot string) error {
 	}
 
 	for _, p := range parts {
-		err := createTaxiiCollectionPart(p.name, p.args)
+		err := createTaxiiCollectionPart(ts, p.name, p.args)
 		if err != nil {
 			return err
 		}
@@ -168,13 +211,8 @@ func (tc taxiiCollection) create(user, apiRoot string) error {
 	return err
 }
 
-func createTaxiiCollectionPart(part string, args []interface{}) error {
-	t, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
-
-	query, err := t.parse("create", part)
+func createTaxiiCollectionPart(ts taxiiStorer, part string, args []interface{}) error {
+	query, err := ts.parse("create", part)
 	if err != nil {
 		return err
 	}
@@ -182,7 +220,7 @@ func createTaxiiCollectionPart(part string, args []interface{}) error {
 	toWrite := make(chan interface{}, minBuffer)
 	errs := make(chan error, minBuffer)
 
-	go t.write(query, toWrite, errs)
+	go ts.write(query, toWrite, errs)
 	toWrite <- args
 	close(toWrite)
 

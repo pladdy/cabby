@@ -20,10 +20,6 @@ type taxiiUser struct {
 func newTaxiiUser(u, p string) (taxiiUser, error) {
 	tu := taxiiUser{Email: u, CollectionAccess: make(map[taxiiID]taxiiCollectionAccess)}
 	err := tu.read(fmt.Sprintf("%x", sha256.Sum256([]byte(p))))
-
-	if len(tu.CollectionAccess) <= 0 {
-		err = errors.New("No access to any collections")
-	}
 	return tu, err
 }
 
@@ -32,21 +28,64 @@ func (tu *taxiiUser) read(pass string) error {
 
 	ts, err := newTaxiiStorer()
 	if err != nil {
+		fail.Println(err)
 		return err
 	}
 
-	query, err := ts.parse("read", "taxiiUser")
+	valid, err := verifyValidUser(ts, tu.Email, pass)
+	if !valid || err != nil {
+		fail.Println(err)
+		return err
+	}
+
+	tcas, err := assignedCollections(ts, tu.Email)
 	if err != nil {
+		fail.Println(err)
 		return err
 	}
 
-	result, err := ts.read(query, "taxiiUser", []interface{}{tu.Email, pass})
-	tcas := result.([]taxiiCollectionAccess)
-
+	// add collections to user object
 	for _, tca := range tcas {
 		user.CollectionAccess[tca.ID] = tca
 	}
-	*tu = user
 
+	*tu = user
 	return err
+}
+
+func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, error) {
+	var tcas []taxiiCollectionAccess
+
+	query, err := ts.parse("read", "taxiiCollectionAccess")
+	if err != nil {
+		fail.Println(err)
+		return tcas, err
+	}
+
+	result, err := ts.read(query, "taxiiCollectionAccess", []interface{}{e})
+	if err != nil {
+		return tcas, err
+	}
+
+	tcas = result.([]taxiiCollectionAccess)
+	return tcas, err
+}
+
+func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
+	var valid bool
+
+	query, err := ts.parse("read", "taxiiUser")
+	if err != nil {
+		fail.Println(err)
+		return valid, err
+	}
+
+	result, err := ts.read(query, "taxiiUser", []interface{}{e, p})
+	valid = result.(bool)
+
+	if valid != true {
+		fail.Println(err)
+		err = errors.New("Invalid user")
+	}
+	return valid, err
 }

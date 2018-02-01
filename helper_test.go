@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	testUser = "test@cabby.com"
-	testPass = "test"
+	testUser     = "test@cabby.com"
+	testPass     = "test"
+	discoveryURL = "https://localhost:1234/taxii/"
+	apiRootURL   = "https://localhost:1234/api_root/"
 )
 
 var testDB = "test/test.db"
