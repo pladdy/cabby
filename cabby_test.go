@@ -183,18 +183,6 @@ func TestMain(t *testing.T) {
 	}
 }
 
-// func TestMainDiscovery(t *testing.T) {
-// 	req := requestWithBasicAuth(discoveryURL)
-// 	_, body := requestFromTestServer(req)
-//
-// 	expected := config.Discovery
-// 	expected.Default = insertPort(expected.Default)
-//
-// 	if body != string(expected) {
-// 		t.Error("Got:", body, "Expected:", string(expected))
-// 	}
-// }
-
 func TestMainAPIRoot(t *testing.T) {
 	req := requestWithBasicAuth(apiRootURL)
 	_, body := requestFromTestServer(req)
