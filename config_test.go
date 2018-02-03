@@ -10,7 +10,7 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	config = cabbyConfig{}.parse("config/cabby.example.json")
-	defer reloadTestConfig()
+	defer loadTestConfig()
 
 	if config.Host != "localhost" {
 		t.Error("Got:", "localhost", "Expected:", "localhost")

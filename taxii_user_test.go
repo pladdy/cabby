@@ -43,9 +43,7 @@ func TestNewTaxiiUser(t *testing.T) {
 		t.Error("Got:", user.Email, "Expected:", testUser)
 	}
 
-	for k, v := range user.CollectionAccess {
-		info.Println("Got collection id of", k)
-
+	for _, v := range user.CollectionAccess {
 		if v.CanRead != true {
 			t.Error("Got:", v.CanRead, "Expected:", true)
 		}
@@ -85,7 +83,7 @@ func TestNewTaxiiUserNoAccess(t *testing.T) {
 
 func TestNewTaxiiUserFail(t *testing.T) {
 	config = cabbyConfig{}
-	defer reloadTestConfig()
+	defer loadTestConfig()
 
 	_, err := newTaxiiUser("test@test.fail", "nopass")
 	if err == nil {
@@ -136,5 +134,16 @@ func TestTaxiiUserAssignedCollectionsParseFail(t *testing.T) {
 	_, err = assignedCollections(s, "test@test.fail")
 	if err == nil {
 		t.Error("Expected an error")
+	}
+}
+
+func TestTaxiiUserCreateFail(t *testing.T) {
+	renameFile("backend/sqlite/create/taxiiUser.sql", "backend/sqlite/create/taxiiUser.sql.testing")
+	defer renameFile("backend/sqlite/create/taxiiUser.sql.testing", "backend/sqlite/create/taxiiUser.sql")
+
+	tu := taxiiUser{}
+	err := tu.create("fail")
+	if err == nil {
+		t.Error("Expected error")
 	}
 }

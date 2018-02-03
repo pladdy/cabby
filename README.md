@@ -34,7 +34,11 @@ The examples below require
 - sqlite
 - jq
 
-On a mac you can install via `brew`
+On a mac you can install via `brew`:
+```sh
+brew install sqlite
+brew install jq
+```
 
 Run a server and set up a user first:
 ```sh
@@ -45,9 +49,23 @@ make run
 In a new terminal:
 ```sh
 make sqlite
+
+# set up user
 pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
-  sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
+sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
 sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('test@cabby.com', '${pass}')"
+
+# set up discovery
+sqlite3 db/cabby.db '
+insert into taxii_discovery (title, description, contact, default_url) values(
+  "a local taxii 2 server",
+  "this is a test taxii2 server written in golang",
+  "github.com/pladdy",
+  "https:/localhost/taxii/"
+)'
+
+# set up api root
+
 ```
 
 ##### View TAXII Root
@@ -59,7 +77,7 @@ curl -sk --location-trusted -basic -u test@cabby.com:test 'https://localhost:123
 
 ##### View API Root
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .`
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .
 ```
 
 ##### Create a collection

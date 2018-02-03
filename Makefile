@@ -55,3 +55,6 @@ run:
 
 test:
 	go test -v -cover ./...
+
+test_failures:
+	go test -v ./... 2>&1 | grep FAIL

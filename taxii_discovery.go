@@ -1,9 +1,8 @@
 package main
 
 import (
+	"errors"
 	"net/http"
-	"net/url"
-	"strconv"
 )
 
 /* handler */
@@ -13,9 +12,18 @@ func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
 	td := taxiiDiscovery{}
-	td.read()
 
-	writeContent(w, taxiiContentType, resourceToJSON(td))
+	err := td.read()
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	if td.Title == "" {
+		resourceNotFound(w, errors.New("Discovery not defined"))
+	} else {
+		writeContent(w, taxiiContentType, resourceToJSON(td))
+	}
 }
 
 /* model */
@@ -28,29 +36,20 @@ type taxiiDiscovery struct {
 	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
-func insertPort(s string) string {
-	u, err := url.Parse(s)
-	if err != nil {
-		fail.Panic(err)
-	}
-	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
+func (td *taxiiDiscovery) create() error {
+	err := createResource("taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
+	return err
 }
 
-func (td *taxiiDiscovery) read() {
+func (td *taxiiDiscovery) read() error {
 	discovery := *td
 
-	if config.discoveryDefined() == false {
-		fail.Panic("Discovery Resource not defined in config")
+	result, err := readResource("taxiiDiscovery", []interface{}{})
+	if err != nil {
+		return err
 	}
-
-	discovery = config.Discovery
-	discovery.Default = insertPort(discovery.Default)
-
-	var apiRootsWithPort []string
-	for _, apiRoot := range discovery.APIRoots {
-		apiRootsWithPort = append(apiRootsWithPort, insertPort(apiRoot))
-	}
-	discovery.APIRoots = apiRootsWithPort
+	discovery = result.(taxiiDiscovery)
 
 	*td = discovery
+	return err
 }

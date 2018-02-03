@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"path"
+	"strconv"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -22,20 +24,20 @@ type taxiiConnector interface {
 }
 
 type taxiiParser interface {
-	parse(command, name string) (taxiiQuery, error)
+	parse(command, resource string) (taxiiQuery, error)
 }
 
 type taxiiQuery struct {
-	name  string
-	query string
+	resource string
+	query    string
 }
 
 type taxiiReader interface {
-	read(tq taxiiQuery, args []interface{}) (interface{}, error)
+	read(resource string, args []interface{}) (interface{}, error)
 }
 
 type taxiiWriter interface {
-	write(tq taxiiQuery, toWrite chan interface{}, errors chan error)
+	create(resource string, toWrite chan interface{}, errors chan error)
 }
 
 type taxiiStorer interface {
@@ -45,6 +47,8 @@ type taxiiStorer interface {
 	taxiiWriter
 }
 
+/* helpers */
+
 func newTaxiiStorer() (t taxiiStorer, err error) {
 	if config.DataStore["name"] == "sqlite" {
 		t, err = newSQLiteDB()
@@ -52,6 +56,14 @@ func newTaxiiStorer() (t taxiiStorer, err error) {
 		err = errors.New("Unsupported data store specified in config")
 	}
 	return
+}
+
+func insertPort(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		fail.Panic(err)
+	}
+	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
 }
 
 /* sqlite */
@@ -76,8 +88,10 @@ func newSQLiteDB() (*sqliteDB, error) {
 /* connector methods */
 
 func (s *sqliteDB) connect(connection string) (err error) {
-	info.Println("Opening connection to", connection)
 	s.db, err = sql.Open(s.driver, connection)
+	if err != nil {
+		fail.Println(err)
+	}
 	return
 }
 
@@ -87,31 +101,68 @@ func (s *sqliteDB) disconnect() {
 
 /* parser methods */
 
-func (s *sqliteDB) parse(command, name string) (taxiiQuery, error) {
-	path := path.Join(backendDir, s.dbName, command, name+"."+s.extension)
+func (s *sqliteDB) parse(command, resource string) (taxiiQuery, error) {
+	path := path.Join(backendDir, s.dbName, command, resource+"."+s.extension)
 
 	query, err := ioutil.ReadFile(path)
 	if err != nil {
 		err = fmt.Errorf("Unable to parse file: %v", path)
 	}
 
-	return taxiiQuery{name: name, query: string(query)}, err
+	return taxiiQuery{resource: resource, query: string(query)}, err
 }
 
 /* read methods */
 
-func (s *sqliteDB) read(tq taxiiQuery, args []interface{}) (interface{}, error) {
+func (s *sqliteDB) read(resource string, args []interface{}) (interface{}, error) {
 	var result interface{}
+
+	tq, err := s.parse("read", resource)
+	if err != nil {
+		return result, err
+	}
 
 	rows, err := s.db.Query(tq.query, args...)
 	if err != nil {
 		return result, fmt.Errorf("%v in statement: %v", err, tq.query)
 	}
 
-	return s.readRows(tq.name, rows)
+	return s.readRows(tq.resource, rows)
 }
 
-/* readh helpers */
+/* read helpers */
+
+func (s *sqliteDB) readAPIRoot(rows *sql.Rows) (interface{}, error) {
+	var apiRoot taxiiAPIRoot
+	var err error
+
+	for rows.Next() {
+		var versions string
+		if err := rows.Scan(&apiRoot.Title, &apiRoot.Description, &versions, &apiRoot.MaxContentLength); err != nil {
+			return apiRoot, err
+		}
+		apiRoot.Versions = strings.Split(versions, ",")
+	}
+
+	err = rows.Err()
+	return apiRoot, err
+}
+
+func (s *sqliteDB) readAPIRoots(rows *sql.Rows) (interface{}, error) {
+	var paths []string
+	var err error
+
+	for rows.Next() {
+		var path string
+		if err := rows.Scan(&path); err != nil {
+			return paths, err
+		}
+		paths = append(paths, path)
+	}
+
+	err = rows.Err()
+	return paths, err
+}
 
 func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
 	tcs := taxiiCollections{}
@@ -148,20 +199,47 @@ func (s *sqliteDB) readCollectionAccess(rows *sql.Rows) (interface{}, error) {
 	return tcas, err
 }
 
-func (s *sqliteDB) readRows(name string, rows *sql.Rows) (result interface{}, err error) {
+func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
+	td := taxiiDiscovery{}
+	var apiRoots []string
+	var err error
+
+	for rows.Next() {
+		var apiRoot string
+		if err := rows.Scan(&td.Title, &td.Description, &td.Contact, &td.Default, &apiRoot); err != nil {
+			return td, err
+		}
+		td.Default = insertPort(td.Default)
+		if apiRoot != "No API Roots defined" {
+			apiRoots = append(apiRoots, td.Default+apiRoot)
+		}
+	}
+
+	err = rows.Err()
+	td.APIRoots = apiRoots
+	return td, err
+}
+
+func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
 
-	switch name {
+	switch resource {
+	case "taxiiAPIRoot":
+		result, err = s.readAPIRoot(rows)
+	case "taxiiAPIRoots":
+		result, err = s.readAPIRoots(rows)
 	case "taxiiCollection":
 		result, err = s.readCollections(rows)
 	case "taxiiCollections":
 		result, err = s.readCollections(rows)
 	case "taxiiCollectionAccess":
 		result, err = s.readCollectionAccess(rows)
+	case "taxiiDiscovery":
+		result, err = s.readDiscovery(rows)
 	case "taxiiUser":
 		result, err = s.readUser(rows)
 	default:
-		err = errors.New("Unknown result name '" + name)
+		err = errors.New("Unknown resource name '" + resource)
 	}
 
 	return
@@ -181,10 +259,17 @@ func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
 	return valid, err
 }
 
-/* writer methods */
+/* create methods */
 
-func (s *sqliteDB) write(tq taxiiQuery, toWrite chan interface{}, errs chan error) {
+func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan error) {
 	defer close(errs)
+
+	tq, err := s.parse("create", resource)
+	if err != nil {
+		fail.Println(err)
+		errs <- err
+		return
+	}
 
 	tx, stmt, err := batchWriteTx(s, tq.query, errs)
 	if err != nil {
@@ -224,7 +309,7 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt 
 
 	stmt, err = tx.Prepare(query)
 	if err != nil {
-		fail.Printf("%v in statement: %v\n", query, err)
+		fail.Printf("%v in statement: %v\n", err, query)
 		errs <- err
 	}
 
