@@ -146,8 +146,8 @@ func newTaxiiID(arg ...string) (taxiiID, error) {
 	return taxiiID{id}, err
 }
 
-func (ti taxiiID) isEmpty() bool {
-	empty := taxiiID{}
+func (ti *taxiiID) isEmpty() bool {
+	empty := &taxiiID{}
 	if ti == empty {
 		return true
 	}
@@ -177,7 +177,7 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 }
 
 // creating a collection is a multi-step process, multiple "parts" have to be created as part of the associations
-func (tc taxiiCollection) create(user, apiRoot string) error {
+func (tc *taxiiCollection) create(user, apiRoot string) error {
 	var err error
 
 	parts := []struct {
