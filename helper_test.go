@@ -12,19 +12,68 @@ import (
 )
 
 const (
-	testUser     = "test@cabby.com"
-	testPass     = "test"
-	discoveryURL = "https://localhost:1234/taxii/"
-	apiRootURL   = "https://localhost:1234/api_root/"
+	testAPIRootPath = "cabby_test_root"
+	testID          = "82407036-edf9-4c75-9a56-e72697c53e99"
+	testUser        = "test@cabby.com"
+	testPass        = "test"
+	discoveryURL    = "https://localhost:1234/taxii/"
+	eightMB         = 8388608
 )
 
-var testDB = "test/test.db"
+var (
+	apiRootURL  = "https://localhost:1234/" + testAPIRootPath + "/"
+	testAPIRoot = taxiiAPIRoot{Title: "test api root",
+		Description:      "test api root description",
+		Versions:         []string{"taxii-2.0"},
+		MaxContentLength: eightMB}
+	testDB        = "test/test.db"
+	testDiscovery = taxiiDiscovery{Title: "test discovery",
+		Description: "test discovery description",
+		Contact:     "cabby test",
+		Default:     "https://localhost/taxii/"}
+)
 
 func init() {
 	setupSQLite()
 }
 
-func reloadTestConfig() {
+func createAPIRoot() {
+	err := testAPIRoot.create(testAPIRootPath)
+	if err != nil {
+		fail.Fatal(err)
+	}
+}
+
+func createCollection() {
+	id, err := newTaxiiID(testID)
+	if err != nil {
+		fail.Fatal(err)
+	}
+
+	tc := taxiiCollection{ID: id, Title: "a title", Description: "a description"}
+	err = tc.create(testUser, testAPIRootPath)
+
+	if err != nil {
+		fail.Fatal("DB Err:", err)
+	}
+}
+
+func createDiscovery() {
+	err := testDiscovery.create()
+	if err != nil {
+		fail.Fatal(err)
+	}
+}
+
+func createUser() {
+	tu := taxiiUser{Email: testUser}
+	err := tu.create(fmt.Sprintf("%x", sha256.Sum256([]byte(testPass))))
+	if err != nil {
+		fail.Fatal(err)
+	}
+}
+
+func loadTestConfig() {
 	var testConfig = "test/config/testing_config.json"
 	config = cabbyConfig{}.parse(testConfig)
 }
@@ -38,6 +87,7 @@ func renameFile(from, to string) {
 
 func setupSQLite() {
 	tearDownSQLite()
+	info.Println("Setting up a test sqlite db:", testDB)
 
 	var sqlDriver = "sqlite3"
 
@@ -61,32 +111,11 @@ func setupSQLite() {
 		fail.Fatal("Couldn't load schema")
 	}
 
-	// create a user
-	_, err = db.Exec(`insert into taxii_user (email) values('` + testUser + `')`)
-	if err != nil {
-		fail.Fatal("Couldn't add user")
-	}
-
-	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
-	_, err = db.Exec(`insert into taxii_user_pass (email, pass) values('` + testUser + `', '` + pass + `')`)
-	if err != nil {
-		fail.Fatalf("Couldn't add password: %v", err)
-	}
-
-	// create a collection
-	testID := "82407036-edf9-4c75-9a56-e72697c53e99"
-	_, err = db.Exec(`insert into taxii_collection (id, title, description, media_types)
-											values ('` + testID + `', "a title", "a description", "")`)
-	if err != nil {
-		fail.Fatal("DB Err:", err)
-	}
-
-	// associate user to collection
-	_, err = db.Exec(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
-											values ('` + testUser + `', '` + testID + `', 1, 1)`)
-	if err != nil {
-		fail.Fatal("DB Err:", err)
-	}
+	loadTestConfig()
+	createDiscovery()
+	createAPIRoot()
+	createUser()
+	createCollection()
 }
 
 func tearDownSQLite() {

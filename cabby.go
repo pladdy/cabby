@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	minBuffer          = 10
 	configPath         = "config/cabby.json"
 	stixContentType20  = "application/vnd.oasis.stix+json; version=2.0"
 	stixContentType    = "application/vnd.oasis.stix+json"
@@ -28,9 +27,12 @@ func init() {
 	config = cabbyConfig{}.parse(configPath)
 }
 
-func newCabby() *http.Server {
-	handler := setupHandler()
-	return setupServer(handler)
+func newCabby() (*http.Server, error) {
+	handler, err := setupHandler()
+	if err != nil {
+		fail.Println(err)
+	}
+	return setupServer(handler), err
 }
 
 func registerAPIRoot(apiRoot string, h *http.ServeMux) {
@@ -39,26 +41,31 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 		warn.Panic(err)
 	}
 
-	info.Println("Registering handler for", u.String()+"collections/")
-	h.HandleFunc(u.Path+"collections/", handleTaxiiCollections)
+	path := "/" + u.String() + "/"
+	info.Println("Registering handler for", path+"collections/")
+	h.HandleFunc(path+"collections/", handleTaxiiCollections)
 
-	info.Println("Registering handler for", u.String())
-	h.HandleFunc(u.Path, handleTaxiiAPIRoot)
+	info.Println("Registering handler for", path)
+	h.HandleFunc(path, handleTaxiiAPIRoot)
 }
 
-func setupHandler() *http.ServeMux {
+func setupHandler() (*http.ServeMux, error) {
 	handler := http.NewServeMux()
 
-	for _, apiRoot := range config.Discovery.APIRoots {
-		if config.validAPIRoot(apiRoot) {
-			registerAPIRoot(apiRoot, handler)
-		}
+	result, err := readResource("taxiiAPIRoots", []interface{}{})
+	if err != nil {
+		return handler, err
+	}
+	roots := result.([]string)
+
+	for _, apiRoot := range roots {
+		registerAPIRoot(apiRoot, handler)
 	}
 
 	handler.HandleFunc("/taxii/", handleTaxiiDiscovery)
 	handler.HandleFunc("/", handleUndefinedRequest)
 
-	return handler
+	return handler, err
 }
 
 // server is set up with basicAuth and HSTS applied to each handler
@@ -89,6 +96,9 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
-	server := newCabby()
+	server, err := newCabby()
+	if err != nil {
+		fail.Fatal("Can't start server:", err)
+	}
 	fail.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

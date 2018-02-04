@@ -23,24 +23,42 @@ func newTaxiiUser(u, p string) (taxiiUser, error) {
 	return tu, err
 }
 
+func (tu *taxiiUser) create(p string) error {
+	var err error
+
+	parts := []struct {
+		resource string
+		args     []interface{}
+	}{
+		{"taxiiUser", []interface{}{tu.Email}},
+		{"taxiiUserPass", []interface{}{tu.Email, p}},
+	}
+
+	for _, p := range parts {
+		err = createResource(p.resource, p.args)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
+}
+
 func (tu *taxiiUser) read(pass string) error {
 	user := *tu
 
 	ts, err := newTaxiiStorer()
 	if err != nil {
-		fail.Println(err)
 		return err
 	}
 
 	valid, err := verifyValidUser(ts, tu.Email, pass)
 	if !valid || err != nil {
-		fail.Println(err)
 		return err
 	}
 
 	tcas, err := assignedCollections(ts, tu.Email)
 	if err != nil {
-		fail.Println(err)
 		return err
 	}
 
@@ -56,13 +74,7 @@ func (tu *taxiiUser) read(pass string) error {
 func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, error) {
 	var tcas []taxiiCollectionAccess
 
-	tq, err := ts.parse("read", "taxiiCollectionAccess")
-	if err != nil {
-		fail.Println(err)
-		return tcas, err
-	}
-
-	result, err := ts.read(tq, []interface{}{e})
+	result, err := readResource("taxiiCollectionAccess", []interface{}{e})
 	if err != nil {
 		return tcas, err
 	}
@@ -74,17 +86,14 @@ func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, err
 func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
 	var valid bool
 
-	tq, err := ts.parse("read", "taxiiUser")
+	result, err := readResource("taxiiUser", []interface{}{e, p})
 	if err != nil {
-		fail.Println(err)
-		return valid, err
+		return false, err
 	}
 
-	result, err := ts.read(tq, []interface{}{e, p})
 	valid = result.(bool)
 
 	if valid != true {
-		fail.Println(err)
 		err = errors.New("Invalid user")
 	}
 	return valid, err

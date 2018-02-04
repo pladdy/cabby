@@ -1,1 +1,1 @@
-insert into taxii_collection_api_root (id, api_root) values (?, ?)
+insert into taxii_collection_api_root (collection_id, api_root_id) values (?, ?)

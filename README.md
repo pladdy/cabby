@@ -34,20 +34,46 @@ The examples below require
 - sqlite
 - jq
 
-On a mac you can install via `brew`
+On a mac you can install via `brew`:
+```sh
+brew install sqlite
+brew install jq
+```
 
-Run a server and set up a user first:
+Set up the DB:
+```sh
+make sqlite
+
+# set up user
+pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
+sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
+sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('test@cabby.com', '${pass}')"
+
+# set up discovery
+sqlite3 db/cabby.db '
+insert into taxii_discovery (title, description, contact, default_url) values(
+  "a local taxii 2 server",
+  "this is a test taxii2 server written in golang",
+  "github.com/pladdy",
+  "https:/localhost/taxii/"
+)'
+
+# set up api root
+sqlite3 db/cabby.db '
+insert into taxii_api_root (id, api_root_path, title, description, versions, max_content_length) values (
+  "testId",
+  "cabby_test_root",
+  "a title",
+  "a description",
+  "application/vnd.oasis.stix+json; version=2.0",
+  8388608 /* 8 MB */
+)'
+```
+
+In another terminal, run a server:
 ```sh
 make
 make run
-```
-
-In a new terminal:
-```sh
-make sqlite
-pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
-  sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
-sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('test@cabby.com', '${pass}')"
 ```
 
 ##### View TAXII Root
@@ -59,25 +85,25 @@ curl -sk --location-trusted -basic -u test@cabby.com:test 'https://localhost:123
 
 ##### View API Root
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/' | jq .`
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/' | jq .
 ```
 
-##### Create a collection
+##### Create a collection in API Root
 Let the server assign an ID:
 ```sh
-curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "a collection"
 }' | jq .
 ```
 
 Check it:
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/' | jq .
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-Assign an ID in request:
+##### Create a collection with an ID in API Root
 ```sh
-curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "a collection",
   "id": "352abc04-a474-4e22-9f4d-944ca508e68c"
 }' | jq .
@@ -85,7 +111,7 @@ curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/api_root/
 
 Check it:
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/api_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
+curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
 ```
 
 ## Resources

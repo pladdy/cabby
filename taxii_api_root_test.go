@@ -2,79 +2,51 @@ package main
 
 import (
 	"encoding/json"
-	"net/http/httptest"
-	"net/url"
 	"testing"
 )
 
 func TestHandleTaxiiAPIRoot(t *testing.T) {
-	u, _ := url.Parse(apiRootURL)
-	noPortHost := urlWithNoPort(u)
-
-	config := cabbyConfig{}.parse(configPath)
-	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
-	status, result := handlerTest(handleTaxiiAPIRoot, "GET", noPortHost, nil)
+	status, result := handlerTest(handleTaxiiAPIRoot, "GET", apiRootURL, nil)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
 	}
 
-	if result != string(expected) {
-		t.Error("Got:", result, "Expected:", string(expected))
+	var ta taxiiAPIRoot
+	err := json.Unmarshal([]byte(result), &ta)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ta.Title != testAPIRoot.Title {
+		t.Error("Got:", ta.Title, "Expected:", testAPIRoot.Title)
 	}
 }
 
-func TestHandleTaxiiAPIRootNoconfig(t *testing.T) {
-	config = cabbyConfig{}
-	defer reloadTestConfig()
+func TestHandleTaxiiAPIRootFailRead(t *testing.T) {
+	renameFile("backend/sqlite/read/taxiiAPIRoot.sql", "backend/sqlite/read/taxiiAPIRoot.sql.testing")
+	defer renameFile("backend/sqlite/read/taxiiAPIRoot.sql.testing", "backend/sqlite/read/taxiiAPIRoot.sql")
 
-	req := httptest.NewRequest("GET", apiRootURL, nil)
-	res := httptest.NewRecorder()
-	handleTaxiiAPIRoot(res, req)
+	status, _ := handlerTest(handleTaxiiAPIRoot, "GET", apiRootURL, nil)
 
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
+	if status != 400 {
+		t.Error("Got:", status, "Expected: 400")
 	}
 }
 
-func TestHandleTaxiiAPIRootNotDefined(t *testing.T) {
-	config = cabbyConfig{}.parse("test/config/no_discovery_config.json")
-	defer reloadTestConfig()
+func TestHandleTaxiiAPIRootNotFound(t *testing.T) {
+	defer setupSQLite()
 
-	req := httptest.NewRequest("GET", apiRootURL, nil)
-	res := httptest.NewRecorder()
-	handleTaxiiAPIRoot(res, req)
-
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-}
-
-func TestAPIRootVerify(t *testing.T) {
-	tests := []struct {
-		apiRoot      string
-		rootMapEntry string
-		expected     bool
-	}{
-		{"https://localhost/api_test", "https://localhost/api_test", true},
-		{"https://localhost/api_fail", "https://localhost/api_test", false},
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	for _, test := range tests {
-		// create a config struct with an API Root and corresponding API Root Map
-		a := taxiiAPIRoot{
-			Title:            "test",
-			Description:      "test api root",
-			Versions:         []string{"taxii-2.0"},
-			MaxContentLength: 1}
+	_, err = s.db.Exec("delete from taxii_api_root")
 
-		c := cabbyConfig{APIRootMap: map[string]taxiiAPIRoot{test.rootMapEntry: a}}
+	status, _ := handlerTest(handleTaxiiAPIRoot, "GET", apiRootURL, nil)
 
-		c.Discovery = taxiiDiscovery{APIRoots: []string{test.apiRoot}}
-
-		result := c.validAPIRoot(test.apiRoot)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
+	if status != 404 {
+		t.Error("Got:", status, "Expected: 400")
 	}
 }

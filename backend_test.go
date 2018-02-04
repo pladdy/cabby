@@ -30,12 +30,14 @@ func TestSQLiteConnect(t *testing.T) {
 }
 
 func TestSQLiteConnectFail(t *testing.T) {
-	config = cabbyConfig{}
-	defer reloadTestConfig()
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	config.DataStore = map[string]string{"name": "sqlite"}
+	s.driver = "sqlite"
 
-	_, err := newSQLiteDB()
+	err = s.connect("doesn't matter")
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -117,11 +119,7 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal("DB Err:", err)
 	}
 
-	tq, err := s.parse("read", "taxiiCollection")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := s.read(tq, []interface{}{testUser, tuid.String()})
+	result, err := s.read("taxiiCollection", []interface{}{testUser, tuid.String()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,11 +148,7 @@ func TestSQLiteReadFail(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tq, err := s.parse("read", "taxiiCollection")
-	if err != nil {
-		t.Fatal(err)
-	}
-	result, err := s.read(tq, []interface{}{"user1"})
+	result, err := s.read("taxiiCollection", []interface{}{"user1"})
 
 	switch result := result.(type) {
 	case error:
@@ -165,7 +159,7 @@ func TestSQLiteReadFail(t *testing.T) {
 	}
 }
 
-// new readX functions get tested here
+// new read* functions get tested here
 func TestSQLiteReadScanError(t *testing.T) {
 	s, err := newSQLiteDB()
 	if err != nil {
@@ -178,13 +172,16 @@ func TestSQLiteReadScanError(t *testing.T) {
 	tests := []struct {
 		fn readFunction
 	}{
+		{s.readAPIRoot},
+		{s.readAPIRoots},
 		{s.readCollections},
 		{s.readCollectionAccess},
 		{s.readUser},
+		{s.readDiscovery},
 	}
 
 	for _, test := range tests {
-		rows, err := s.db.Query(`select "fail"`)
+		rows, err := s.db.Query(`select null`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -215,27 +212,44 @@ func TestReadRowsInvalid(t *testing.T) {
 	}
 }
 
-/* sqlite writer interface */
+func TestSQLiteReadDiscoveryNoAPIRoot(t *testing.T) {
+	s, err := newSQLiteDB()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.disconnect()
 
-func TestSQLiteWrite(t *testing.T) {
+	rows, err := s.db.Query("select title, description, contact, default_url, 'test_api_root' from taxii_discovery")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	td, err := s.readDiscovery(rows)
+	if err != nil {
+		t.Fatal(err)
+	}
+	discovery := td.(taxiiDiscovery)
+
+	if len(discovery.APIRoots) == 0 {
+		t.Error("Got:", discovery.APIRoots, "Expected a non-empty API Roots")
+	}
+}
+
+/* sqlite creator interface */
+
+func TestSQLiteCreate(t *testing.T) {
 	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	args := []interface{}{"test", "test collection", "this is a test collection", "media type"}
-	toWrite := make(chan interface{}, 10)
+	toCreate := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	tq, err := s.parse("create", "taxiiCollection")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go s.write(tq, toWrite, errs)
-	toWrite <- args
-	close(toWrite)
+	go s.create("taxiiCollection", toCreate, errs)
+	toCreate <- []interface{}{"test", "test collection", "this is a test collection", "media type"}
+	close(toCreate)
 
 	for e := range errs {
 		t.Fatal(e)
@@ -252,16 +266,16 @@ func TestSQLiteWrite(t *testing.T) {
 	}
 }
 
-func TestSQLiteWriteFail(t *testing.T) {
+func TestSQLiteCreateFail(t *testing.T) {
 	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	toWrite := make(chan interface{}, 10)
+	toCreate := make(chan interface{}, 10)
 	errs := make(chan error, 10)
-	go s.write(taxiiQuery{name: "invalidName", query: "invalidQuery"}, toWrite, errs)
+	go s.create("invalidQuery", toCreate, errs)
 
 	for e := range errs {
 		err = e
@@ -272,17 +286,17 @@ func TestSQLiteWriteFail(t *testing.T) {
 	}
 }
 
-func TestSQLiteWriteFailTransaction(t *testing.T) {
+func TestSQLiteCreateFailTransaction(t *testing.T) {
 	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	toWrite := make(chan interface{}, 10)
-	defer close(toWrite)
+	toCreate := make(chan interface{}, 10)
+	defer close(toCreate)
 	errs := make(chan error, 10)
-	go s.write(taxiiQuery{name: "invalidName", query: "invalidQuery"}, toWrite, errs)
+	go s.create("invalidQuery", toCreate, errs)
 
 	for e := range errs {
 		err = e
@@ -293,25 +307,19 @@ func TestSQLiteWriteFailTransaction(t *testing.T) {
 	}
 }
 
-func TestSQLiteWriteFailExec(t *testing.T) {
+func TestSQLiteCreateFailExec(t *testing.T) {
 	s, err := newSQLiteDB()
 	if err != nil {
 		t.Error(err)
 	}
 	defer s.disconnect()
 
-	args := []interface{}{"not enough params"}
-	toWrite := make(chan interface{}, 10)
+	toCreate := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	tq, err := s.parse("create", "taxiiCollection")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go s.write(tq, toWrite, errs)
-	toWrite <- args
-	close(toWrite)
+	go s.create("taxiiCollection", toCreate, errs)
+	toCreate <- []interface{}{"not enough params"}
+	close(toCreate)
 
 	for e := range errs {
 		err = e
@@ -322,7 +330,7 @@ func TestSQLiteWriteFailExec(t *testing.T) {
 	}
 }
 
-func TestSQLiteWriteMaxWrites(t *testing.T) {
+func TestSQLiteCreateMaxWrites(t *testing.T) {
 	setupSQLite()
 
 	s, err := newSQLiteDB()
@@ -331,22 +339,17 @@ func TestSQLiteWriteMaxWrites(t *testing.T) {
 	}
 	defer s.disconnect()
 
-	toWrite := make(chan interface{}, 10)
-	defer close(toWrite)
+	toCreate := make(chan interface{}, 10)
+	defer close(toCreate)
 	errs := make(chan error, 10)
 
-	tq, err := s.parse("create", "taxiiCollection")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go s.write(tq, toWrite, errs)
+	go s.create("taxiiCollection", toCreate, errs)
 
 	// check errors while testing
 	go func(t *testing.T) {
 		for e := range errs {
 			fail.Println("Should not have an error during test.  Error:", e)
-			close(toWrite)
+			close(toCreate)
 			t.Fatal(e)
 		}
 	}(t)
@@ -355,7 +358,7 @@ func TestSQLiteWriteMaxWrites(t *testing.T) {
 	for i := 0; i < writes; i++ {
 		iStr := strconv.FormatInt(int64(i), 10)
 		args := []interface{}{"test" + iStr, t.Name(), "description", "media_type"}
-		toWrite <- args
+		toCreate <- args
 	}
 
 	var collections int

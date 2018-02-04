@@ -11,7 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func TestHandleTaxiiCollectionsPost(t *testing.T) {
+func TestHandlePostTaxiiCollections(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
 		t.Fatal(err)
@@ -41,7 +41,7 @@ func TestHandleTaxiiCollectionsPost(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionPostCreateFail(t *testing.T) {
+func TestHandlePostTaxiiCollectionCreateFail(t *testing.T) {
 	defer setupSQLite()
 
 	// remove required table
@@ -70,7 +70,7 @@ func TestHandleTaxiiCollectionPostCreateFail(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
+func TestHandlePostTaxiiCollectionsBadID(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections")
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsPostBadParse(t *testing.T) {
+func TestHandlePostTaxiiCollectionsBadParse(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected int
@@ -116,9 +116,9 @@ func TestHandleTaxiiCollectionsPostBadParse(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsPostInvalidDB(t *testing.T) {
+func TestHandlePostTaxiiCollectionsnvalidDB(t *testing.T) {
 	config = cabbyConfig{}.parse("test/config/no_datastore_config.json")
-	defer reloadTestConfig()
+	defer loadTestConfig()
 
 	// set up URL
 	u, err := url.Parse("https://localhost/api_root/collections")
@@ -138,7 +138,7 @@ func TestHandleTaxiiCollectionsPostInvalidDB(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
+func TestHandlePostTaxiiCollectionsNoUser(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections/")
 	if err != nil {
 		t.Fatal(err)
@@ -169,44 +169,7 @@ func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetCollection(t *testing.T) {
-	// create a collection
-	id, err := newTaxiiID()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	data := bytes.NewBuffer([]byte(`{"id":"` + id.String() + `", "title":"` + t.Name() + `"}`))
-	u, err := url.Parse("https://localhost/api_root/collections/")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, result := handlerTest(handleTaxiiCollections, "POST", u.String(), data)
-	if status != 200 {
-		t.Fatal(result)
-	}
-
-	// test reading it
-	u, err = url.Parse("https://localhost/api_root/collections/" + id.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, result = handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
-
-	expected := `{"id":"` + id.String() + `","can_read":true,"can_write":true,` +
-		`"title":"` + t.Name() + `","media_types":[""]}`
-
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
-	}
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
-	}
-}
-
-func TestHandleTaxiiCollectionsGetCollections(t *testing.T) {
+func TestHandleGetTaxiiCollections(t *testing.T) {
 	setupSQLite()
 
 	u, err := url.Parse("https://localhost/api_root/collections/")
@@ -227,7 +190,7 @@ func TestHandleTaxiiCollectionsGetCollections(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
+func TestHandleGetTaxiiCollectionsBadID(t *testing.T) {
 	u, err := url.Parse("https://localhost/api_root/collections/fail")
 	if err != nil {
 		t.Fatal(err)
@@ -244,7 +207,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
+func TestHandleGetTaxiiCollectionsUnknownID(t *testing.T) {
 	defer setupSQLite()
 
 	id, err := newTaxiiID()
@@ -268,7 +231,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
+func TestHandleGetTaxiiCollectionsInvalidUser(t *testing.T) {
 	id, err := newTaxiiID()
 	if err != nil {
 		t.Fatal(err)
@@ -296,7 +259,7 @@ func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetReadError(t *testing.T) {
+func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
 	defer setupSQLite()
 
 	id, err := newTaxiiID()
@@ -326,7 +289,7 @@ func TestHandleTaxiiCollectionsGetReadError(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
+func TestHandleGetTaxiiCollectionsNoResults(t *testing.T) {
 	defer setupSQLite()
 
 	u, err := url.Parse("https://localhost/api_root/collections/")
@@ -348,6 +311,16 @@ func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 	status, _ := handlerTest(handleTaxiiCollections, "GET", u.String(), nil)
 	if status != 404 {
 		t.Error("Got:", status, "Expected:", 404)
+	}
+}
+
+func TestReadTaxiiCollection(t *testing.T) {
+	w := httptest.NewRecorder()
+
+	readTaxiiCollection(w, testID, testUser)
+
+	if w.Code != 200 {
+		t.Error("Got:", w.Code, "Expected: 200")
 	}
 }
 
@@ -467,7 +440,10 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	}
 
 	// check for collection api root association
-	err = s.db.QueryRow("select id from taxii_collection_api_root where id = '" + cid.String() + "'").Scan(&uid)
+	info.Println("Looking for ID:", cid.String())
+
+	err = s.db.QueryRow(`select collection_id from taxii_collection_api_root where collection_id = '` +
+		cid.String() + "'").Scan(&uid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -479,7 +455,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 
 func TestTaxiiCollectionCreateFailTaxiiStorer(t *testing.T) {
 	config = cabbyConfig{}
-	defer reloadTestConfig()
+	defer loadTestConfig()
 
 	id, err := newTaxiiID()
 	if err != nil {
@@ -596,7 +572,7 @@ func TestTaxiiCollectionRead(t *testing.T) {
 }
 
 func TestTaxiiCollectionReadFail(t *testing.T) {
-	defer reloadTestConfig()
+	defer loadTestConfig()
 	config = cabbyConfig{}
 	config.DataStore = map[string]string{"name": "sqlite"}
 
@@ -615,7 +591,7 @@ func TestTaxiiCollectionReadFail(t *testing.T) {
 	defer renameFile("backend/sqlite/read/taxiiCollection.sql.testing", "backend/sqlite/read/taxiiCollection.sql")
 	renameFile("backend/sqlite/read/taxiiCollection.sql", "backend/sqlite/read/taxiiCollection.sql.testing")
 
-	reloadTestConfig()
+	loadTestConfig()
 	err = tc.read("user")
 	if err == nil {
 		t.Error("Expected error")
@@ -655,7 +631,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 
 func TestTaxiiCollectionsReadFailTaxiiStorer(t *testing.T) {
 	config = cabbyConfig{}
-	defer reloadTestConfig()
+	defer loadTestConfig()
 
 	tcs := taxiiCollections{}
 	err := tcs.read(testUser)
@@ -694,5 +670,16 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 	err = tcs.read(testUser)
 	if err == nil {
 		t.Error("Expected a write error")
+	}
+}
+
+func TestTaxiiIDIsEmpty(t *testing.T) {
+	id, err := newTaxiiID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if id.isEmpty() != false {
+		t.Error("Expected to be empty")
 	}
 }

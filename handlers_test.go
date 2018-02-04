@@ -118,6 +118,12 @@ func TestLastURLPathToken(t *testing.T) {
 	}
 }
 
+func TestRecoverFromPanic(t *testing.T) {
+	w := httptest.NewRecorder()
+	defer recoverFromPanic(w)
+	panic("test")
+}
+
 func TestResourceToJSON(t *testing.T) {
 	tests := []struct {
 		resource interface{}

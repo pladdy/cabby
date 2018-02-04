@@ -6,14 +6,13 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
 )
 
 func init() {
-	reloadTestConfig()
+	loadTestConfig()
 }
 
 /* helpers */
@@ -73,7 +72,11 @@ func runTestServer() *http.Server {
 		renameFile(configPath+".testing", configPath)
 	}()
 
-	server := newCabby()
+	server, err := newCabby()
+	if err != nil {
+		fail.Fatal(err)
+	}
+
 	go func() {
 		server.ListenAndServeTLS(config.SSLCert, config.SSLKey)
 	}()
@@ -104,31 +107,13 @@ func TestHSTS(t *testing.T) {
 }
 
 func TestBasicAuth(t *testing.T) {
-	// set up the expected discovery
-	cd := config.Discovery
-
-	cd.Default = insertPort(cd.Default)
-
-	// add port to api roots
-	var apiRootsWithPort []string
-	for _, apiRoot := range cd.APIRoots {
-		apiRootsWithPort = append(apiRootsWithPort, insertPort(apiRoot))
-	}
-	cd.APIRoots = apiRootsWithPort
-
-	expectedDiscovery, err := json.Marshal(cd)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	tests := []struct {
 		user           string
 		pass           string
 		expectedStatus int
-		expectedBody   string
 	}{
-		{testUser, testPass, 200, string(expectedDiscovery)},
-		{"invalid", "pass", 401, `{"title":"Unauthorized","description":"Invalid user/pass combination","http_status":"401"}` + "\n"},
+		{testUser, testPass, 200},
+		{"invalid", "pass", 401},
 	}
 
 	for _, test := range tests {
@@ -138,24 +123,20 @@ func TestBasicAuth(t *testing.T) {
 		}
 		req.SetBasicAuth(test.user, test.pass)
 
-		res, body := requestFromTestServer(req)
+		res, _ := requestFromTestServer(req)
 
 		if res.StatusCode != test.expectedStatus {
 			t.Error("Got:", res.StatusCode, "Expected:", test.expectedStatus)
-		}
-		if body != test.expectedBody {
-			t.Error("Got:", body, "Expected:", test.expectedBody)
 		}
 	}
 }
 
 func TestMain(t *testing.T) {
-	// use test config
 	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/different_port_config.json", configPath)
+	renameFile("test/config/main_test_config.json", configPath)
 
 	defer func() {
-		renameFile(configPath, "test/config/different_port_config.json")
+		renameFile(configPath, "test/config/main_test_config.json")
 		renameFile(configPath+".testing", configPath)
 	}()
 
@@ -175,7 +156,7 @@ func TestMain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := config.Discovery
+	expected := testDiscovery
 	expected.Default = insertPort(expected.Default)
 
 	if result.Default != expected.Default {
@@ -187,14 +168,26 @@ func TestMainAPIRoot(t *testing.T) {
 	req := requestWithBasicAuth(apiRootURL)
 	_, body := requestFromTestServer(req)
 
-	u, _ := url.Parse(apiRootURL)
-	noPortHost := urlWithNoPort(u)
+	var result taxiiAPIRoot
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	config := cabbyConfig{}.parse(configPath)
-	expected, _ := json.Marshal(config.APIRootMap[noPortHost])
+	expected := testAPIRoot
 
-	if body != string(expected) {
-		t.Error("Got:", body, "Expected:", string(expected))
+	if result.Title != expected.Title {
+		t.Error("Got:", result.Title, "Expected:", expected.Title)
+	}
+}
+
+func TestNewCabbyFail(t *testing.T) {
+	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
+	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
+
+	_, err := newCabby()
+	if err == nil {
+		t.Error("Expected an error")
 	}
 }
 
@@ -213,5 +206,15 @@ func TestRegisterAPIRootInvalidURL(t *testing.T) {
 
 	if recovered != true {
 		t.Error("Expected: 'recovered' to be true")
+	}
+}
+
+func TestSetupHandlerFail(t *testing.T) {
+	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
+	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
+
+	_, err := setupHandler()
+	if err == nil {
+		t.Error("Expected an error")
 	}
 }

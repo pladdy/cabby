@@ -178,14 +178,11 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 
 // creating a collection is a multi-step process, multiple "parts" have to be created as part of the associations
 func (tc taxiiCollection) create(user, apiRoot string) error {
-	ts, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
+	var err error
 
 	parts := []struct {
-		name string
-		args []interface{}
+		resource string
+		args     []interface{}
 	}{
 		{"taxiiCollection", []interface{}{tc.ID.String(), tc.Title, tc.Description, strings.Join(tc.MediaTypes, ",")}},
 		{"taxiiCollectionAPIRoot", []interface{}{tc.ID.String(), apiRoot}},
@@ -193,7 +190,7 @@ func (tc taxiiCollection) create(user, apiRoot string) error {
 	}
 
 	for _, p := range parts {
-		err := createTaxiiCollectionPart(ts, p.name, p.args)
+		err = createResource(p.resource, p.args)
 		if err != nil {
 			return err
 		}
@@ -213,17 +210,7 @@ func (tc *taxiiCollection) ensureID() error {
 func (tc *taxiiCollection) read(u string) error {
 	collection := *tc
 
-	ts, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
-
-	tq, err := ts.parse("read", "taxiiCollection")
-	if err != nil {
-		return err
-	}
-
-	result, err := ts.read(tq, []interface{}{u, tc.ID.String()})
+	result, err := readResource("taxiiCollection", []interface{}{u, tc.ID.String()})
 	if err != nil {
 		return err
 	}
@@ -236,26 +223,6 @@ func (tc *taxiiCollection) read(u string) error {
 }
 
 /* taxiiCollection helpers */
-
-func createTaxiiCollectionPart(ts taxiiStorer, part string, args []interface{}) error {
-	tq, err := ts.parse("create", part)
-	if err != nil {
-		return err
-	}
-
-	toWrite := make(chan interface{}, minBuffer)
-	errs := make(chan error, minBuffer)
-
-	go ts.write(tq, toWrite, errs)
-	toWrite <- args
-	close(toWrite)
-
-	for e := range errs {
-		err = e
-	}
-
-	return err
-}
 
 func firstTaxiiCollection(tcs taxiiCollections) taxiiCollection {
 	if len(tcs.Collections) > 0 {
@@ -271,18 +238,7 @@ type taxiiCollections struct {
 func (tcs *taxiiCollections) read(u string) error {
 	collections := *tcs
 
-	ts, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
-
-	tq, err := ts.parse("read", "taxiiCollections")
-	if err != nil {
-		return err
-	}
-
-	args := []interface{}{u}
-	result, err := ts.read(tq, args)
+	result, err := readResource("taxiiCollections", []interface{}{u})
 	if err != nil {
 		return err
 	}
