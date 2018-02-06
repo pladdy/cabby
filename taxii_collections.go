@@ -17,12 +17,12 @@ func handleTaxiiCollections(w http.ResponseWriter, r *http.Request) {
 	defer recoverFromPanic(w)
 
 	switch r.Method {
-	case "GET":
+	case http.MethodGet:
 		handleGetTaxiiCollections(w, r)
-	case "POST":
+	case http.MethodPost:
 		handlePostTaxiiCollection(w, r)
 	default:
-		badRequest(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 		return
 	}
 }
@@ -148,7 +148,7 @@ func newTaxiiID(arg ...string) (taxiiID, error) {
 
 func (ti *taxiiID) isEmpty() bool {
 	empty := &taxiiID{}
-	if ti == empty {
+	if ti.String() == empty.String() {
 		return true
 	}
 	return false

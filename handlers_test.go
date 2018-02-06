@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -52,6 +54,39 @@ func TestValidateUser(t *testing.T) {
 		_, actual := validateUser(test.user, test.pass)
 		if actual != test.expected {
 			t.Error("Got:", actual, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestRequireAcceptTaxii(t *testing.T) {
+	mockHandler := func(w http.ResponseWriter, r *http.Request) {
+		accept := r.Header.Get("Accept")
+		io.WriteString(w, fmt.Sprintln("Accept Header: %v", accept))
+	}
+	mockHandler = requireAcceptTaxii(mockHandler)
+
+	tests := []struct {
+		acceptHeader string
+		responseCode int
+	}{
+		{"application/vnd.oasis.taxii+json; version=2.0", 200},
+		{"application/vnd.oasis.taxii+json", 200},
+		{"application/vnd.oasis.taxii+json;verion=2.0", 200},
+		{"", 415},
+		{"application/vnd.oasis.taxii+jsonp", 415},
+		{"application/vnd.oasis.taxii+jsonp; version=3.0", 415},
+	}
+
+	for _, test := range tests {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.Header.Add("Accept", test.acceptHeader)
+		res := httptest.NewRecorder()
+
+		mockHandler(res, req)
+		body, _ := ioutil.ReadAll(res.Body)
+
+		if res.Code != test.responseCode {
+			t.Error("Got:", res.Code, string(body), "Expected: 200")
 		}
 	}
 }

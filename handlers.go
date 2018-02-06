@@ -15,9 +15,15 @@ import (
 type key int
 
 const (
-	sixMonthsOfSeconds     = "63072000"
-	userName           key = 0
-	userCollections    key = 1
+	sixMonthsOfSeconds = "63072000"
+
+	stixContentType20  = "application/vnd.oasis.stix+json; version=2.0"
+	stixContentType    = "application/vnd.oasis.stix+json"
+	taxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
+	taxiiContentType   = "application/vnd.oasis.taxii+json"
+
+	userName        key = 0
+	userCollections key = 1
 )
 
 /* auth functions */
@@ -50,6 +56,30 @@ func hsts(w http.ResponseWriter) http.ResponseWriter {
 	return w
 }
 
+func splitAcceptHeader(h string) (string, string) {
+	parts := strings.Split(h, ";")
+	first := parts[0]
+
+	var second string
+	if len(parts) > 1 {
+		second = parts[1]
+	}
+
+	return first, second
+}
+
+func requireAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
+
+		if contentType != taxiiContentType {
+			unsupportedMediaType(w, fmt.Errorf("Invalid 'Accept' Header: %v", contentType))
+			return
+		}
+		h(w, r)
+	}
+}
+
 func validateUser(u, p string) (taxiiUser, bool) {
 	tu, err := newTaxiiUser(u, p)
 	if err != nil {
@@ -71,29 +101,37 @@ func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 	http.Error(w, resourceToJSON(te), status)
 }
 
-func unauthorized(w http.ResponseWriter, err error) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
-}
-
 func badRequest(w http.ResponseWriter, err error) {
 	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
+}
+
+func methodNotAllowed(w http.ResponseWriter, err error) {
+	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
 }
 
 func resourceNotFound(w http.ResponseWriter, err error) {
 	errorStatus(w, "Resource not found", err, http.StatusNotFound)
 }
 
-func recoverFromPanic(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		resourceNotFound(w, errors.New("Resource not found"))
-	}
+func unauthorized(w http.ResponseWriter, err error) {
+	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
+	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
+}
+
+func unsupportedMediaType(w http.ResponseWriter, err error) {
+	errorStatus(w, "Unsupported Media Type", err, http.StatusUnsupportedMediaType)
 }
 
 /* catch undefined route */
 
 func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
+}
+
+func recoverFromPanic(w http.ResponseWriter) {
+	if r := recover(); r != nil {
+		resourceNotFound(w, errors.New("Resource not found"))
+	}
 }
 
 /* helpers */

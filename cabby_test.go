@@ -40,6 +40,7 @@ func requestWithBasicAuth(u string) *http.Request {
 	if err != nil {
 		fail.Fatal(err)
 	}
+	req.Header.Add("Accept", taxiiContentType)
 	req.SetBasicAuth(testUser, testPass)
 	return req
 }
@@ -121,6 +122,7 @@ func TestBasicAuth(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		req.Header.Add("Accept", taxiiContentType)
 		req.SetBasicAuth(test.user, test.pass)
 
 		res, _ := requestFromTestServer(req)

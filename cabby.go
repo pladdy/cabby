@@ -9,13 +9,7 @@ import (
 	"strconv"
 )
 
-const (
-	configPath         = "config/cabby.json"
-	stixContentType20  = "application/vnd.oasis.stix+json; version=2.0"
-	stixContentType    = "application/vnd.oasis.stix+json"
-	taxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
-	taxiiContentType   = "application/vnd.oasis.taxii+json"
-)
+const configPath = "config/cabby.json"
 
 var (
 	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
@@ -43,10 +37,10 @@ func registerAPIRoot(apiRoot string, h *http.ServeMux) {
 
 	path := "/" + u.String() + "/"
 	info.Println("Registering handler for", path+"collections/")
-	h.HandleFunc(path+"collections/", handleTaxiiCollections)
+	h.HandleFunc(path+"collections/", requireAcceptTaxii(handleTaxiiCollections))
 
 	info.Println("Registering handler for", path)
-	h.HandleFunc(path, handleTaxiiAPIRoot)
+	h.HandleFunc(path, requireAcceptTaxii(handleTaxiiAPIRoot))
 }
 
 func setupHandler() (*http.ServeMux, error) {
@@ -62,8 +56,8 @@ func setupHandler() (*http.ServeMux, error) {
 		registerAPIRoot(apiRoot, handler)
 	}
 
-	handler.HandleFunc("/taxii/", handleTaxiiDiscovery)
-	handler.HandleFunc("/", handleUndefinedRequest)
+	handler.HandleFunc("/taxii/", requireAcceptTaxii(handleTaxiiDiscovery))
+	handler.HandleFunc("/", requireAcceptTaxii(handleUndefinedRequest))
 
 	return handler, err
 }

@@ -96,13 +96,13 @@ func TestHandlePostTaxiiCollectionsBadID(t *testing.T) {
 	}
 }
 
-func TestHandlePostTaxiiCollectionsBadParse(t *testing.T) {
+func TestHandlePostTaxiiCollectionsMethod(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected int
 	}{
 		{"POST", 400},
-		{"CUSTOM", 400},
+		{"CUSTOM", 405},
 	}
 
 	for _, test := range tests {
@@ -679,7 +679,12 @@ func TestTaxiiIDIsEmpty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if id.isEmpty() != false {
-		t.Error("Expected to be empty")
+	if id.isEmpty() == true {
+		t.Error("Expected to NOT be empty")
+	}
+
+	emptyID := taxiiID{}
+	if emptyID.isEmpty() == false {
+		t.Error("Expected ID to be empty")
 	}
 }
