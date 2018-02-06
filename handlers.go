@@ -26,11 +26,6 @@ const (
 	userCollections key = 1
 )
 
-var acceptTypes = []string{
-	taxiiContentType,
-	taxiiContentType20,
-}
-
 /* auth functions */
 
 func addTaxiiUserToRequest(tu taxiiUser, r *http.Request) *http.Request {
