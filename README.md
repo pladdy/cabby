@@ -78,32 +78,32 @@ make run
 
 ##### View TAXII Root
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/taxii/' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 # without a trailing slash
-curl -sk --location-trusted -basic -u test@cabby.com:test 'https://localhost:1234/taxii' | jq .
+curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
 ```
 
 ##### View API Root
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
 ```
 
 ##### Create a collection in API Root
 Let the server assign an ID:
 ```sh
-curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "a collection"
 }' | jq .
 ```
 
 Check it:
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/collections/' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
 ##### Create a collection with an ID in API Root
 ```sh
-curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "a collection",
   "id": "352abc04-a474-4e22-9f4d-944ca508e68c"
 }' | jq .
@@ -111,7 +111,7 @@ curl -sk -basic -u test@cabby.com:test -X POST 'https://localhost:1234/cabby_tes
 
 Check it:
 ```sh
-curl -sk -basic -u test@cabby.com:test 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
 ```
 
 ## Resources
