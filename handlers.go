@@ -1,60 +1,22 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
-// per context docuentation, use a key type for context keys
-type key int
-
 const (
-	sixMonthsOfSeconds = "63072000"
-
 	stixContentType20  = "application/vnd.oasis.stix+json; version=2.0"
 	stixContentType    = "application/vnd.oasis.stix+json"
 	taxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
 	taxiiContentType   = "application/vnd.oasis.taxii+json"
-
-	userName        key = 0
-	userCollections key = 1
 )
-
-/* auth functions */
-
-func addTaxiiUserToRequest(tu taxiiUser, r *http.Request) *http.Request {
-	ctx := context.WithValue(context.Background(), userName, tu.Email)
-	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
-	return r.WithContext(ctx)
-}
-
-// decorate a handler with basic authentication
-func basicAuth(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, p, ok := r.BasicAuth()
-		tu, validated := validateUser(u, p)
-
-		if !ok || !validated {
-			unauthorized(w, errors.New("Invalid user/pass combination"))
-			return
-		}
-		info.Println("Basic Auth validated for", u)
-
-		r = addTaxiiUserToRequest(tu, r)
-		h.ServeHTTP(hsts(w), r)
-	})
-}
-
-func hsts(w http.ResponseWriter) http.ResponseWriter {
-	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
-	return w
-}
 
 func splitAcceptHeader(h string) (string, string) {
 	parts := strings.Split(h, ";")
@@ -68,7 +30,7 @@ func splitAcceptHeader(h string) (string, string) {
 	return first, second
 }
 
-func requireAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
+func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
 
@@ -78,16 +40,6 @@ func requireAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 		}
 		h(w, r)
 	}
-}
-
-func validateUser(u, p string) (taxiiUser, bool) {
-	tu, err := newTaxiiUser(u, p)
-	if err != nil {
-		fail.Println(err)
-		return tu, false
-	}
-
-	return tu, true
 }
 
 /* http status functions */
@@ -140,6 +92,14 @@ func apiRoot(u string) string {
 	var rootIndex = 1
 	tokens := strings.Split(u, "/")
 	return tokens[rootIndex]
+}
+
+func insertPort(s string) string {
+	u, err := url.Parse(s)
+	if err != nil {
+		fail.Panic(err)
+	}
+	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
 }
 
 func lastURLPathToken(u string) string {

@@ -13,21 +13,23 @@ import (
 
 /* handlers */
 
-func handleTaxiiCollections(w http.ResponseWriter, r *http.Request) {
-	defer recoverFromPanic(w)
+func handleTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
 
-	switch r.Method {
-	case http.MethodGet:
-		handleGetTaxiiCollections(w, r)
-	case http.MethodPost:
-		handlePostTaxiiCollection(w, r)
-	default:
-		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
-		return
-	}
+		switch r.Method {
+		case http.MethodGet:
+			handleGetTaxiiCollections(ts, w, r)
+		case http.MethodPost:
+			handlePostTaxiiCollection(ts, w, r)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
 }
 
-func handleGetTaxiiCollections(w http.ResponseWriter, r *http.Request) {
+func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
 	info.Println("Request for GET Collection:", r.URL)
 
 	id := lastURLPathToken(r.URL.Path)
@@ -39,9 +41,9 @@ func handleGetTaxiiCollections(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if id == "collections" {
-		readTaxiiCollections(w, user)
+		readTaxiiCollections(ts, w, user)
 	} else {
-		readTaxiiCollection(w, id, user)
+		readTaxiiCollection(ts, w, id, user)
 	}
 }
 
@@ -63,7 +65,7 @@ func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
 	return tc, err
 }
 
-func handlePostTaxiiCollection(w http.ResponseWriter, r *http.Request) {
+func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
 	info.Println("Request to POST Collection:", r.URL)
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -86,7 +88,7 @@ func handlePostTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = tc.create(user, apiRoot(r.URL.Path))
+	err = tc.create(ts, user, apiRoot(r.URL.Path))
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -95,14 +97,14 @@ func handlePostTaxiiCollection(w http.ResponseWriter, r *http.Request) {
 	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
-func readTaxiiCollection(w http.ResponseWriter, id, user string) {
+func readTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, id, user string) {
 	tc, err := newTaxiiCollection(id)
 	if err != nil {
 		badRequest(w, err)
 		return
 	}
 
-	err = tc.read(user)
+	err = tc.read(ts, user)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -115,9 +117,9 @@ func readTaxiiCollection(w http.ResponseWriter, id, user string) {
 	}
 }
 
-func readTaxiiCollections(w http.ResponseWriter, user string) {
+func readTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, user string) {
 	tcs := taxiiCollections{}
-	err := tcs.read(user)
+	err := tcs.read(ts, user)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -177,7 +179,7 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 }
 
 // creating a collection is a multi-step process, multiple "parts" have to be created as part of the associations
-func (tc *taxiiCollection) create(user, apiRoot string) error {
+func (tc *taxiiCollection) create(ts taxiiStorer, user, apiRoot string) error {
 	var err error
 
 	parts := []struct {
@@ -190,7 +192,7 @@ func (tc *taxiiCollection) create(user, apiRoot string) error {
 	}
 
 	for _, p := range parts {
-		err = createResource(p.resource, p.args)
+		err = createResource(ts, p.resource, p.args)
 		if err != nil {
 			return err
 		}
@@ -207,10 +209,10 @@ func (tc *taxiiCollection) ensureID() error {
 	return err
 }
 
-func (tc *taxiiCollection) read(u string) error {
+func (tc *taxiiCollection) read(ts taxiiStorer, u string) error {
 	collection := *tc
 
-	result, err := readResource("taxiiCollection", []interface{}{u, tc.ID.String()})
+	result, err := ts.read("taxiiCollection", []interface{}{u, tc.ID.String()})
 	if err != nil {
 		return err
 	}
@@ -235,10 +237,10 @@ type taxiiCollections struct {
 	Collections []taxiiCollection `json:"collections"`
 }
 
-func (tcs *taxiiCollections) read(u string) error {
+func (tcs *taxiiCollections) read(ts taxiiStorer, u string) error {
 	collections := *tcs
 
-	result, err := readResource("taxiiCollections", []interface{}{u})
+	result, err := ts.read("taxiiCollections", []interface{}{u})
 	if err != nil {
 		return err
 	}

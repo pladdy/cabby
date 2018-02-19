@@ -13,6 +13,8 @@ import (
 
 const (
 	testAPIRootPath = "cabby_test_root"
+	testConfig      = "test/config/testing_config.json"
+	testDB          = "test/test.db"
 	testID          = "82407036-edf9-4c75-9a56-e72697c53e99"
 	testUser        = "test@cabby.com"
 	testPass        = "test"
@@ -21,60 +23,54 @@ const (
 )
 
 var (
-	apiRootURL  = "https://localhost:1234/" + testAPIRootPath + "/"
-	testAPIRoot = taxiiAPIRoot{Title: "test api root",
+	testAPIRootURL = "https://localhost:1234/" + testAPIRootPath + "/"
+	testAPIRoot    = taxiiAPIRoot{Title: "test api root",
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
 		MaxContentLength: eightMB}
-	testDB        = "test/test.db"
 	testDiscovery = taxiiDiscovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
 )
 
-func init() {
-	setupSQLite()
-}
-
-func createAPIRoot() {
-	err := testAPIRoot.create(testAPIRootPath)
+func createAPIRoot(testStorer taxiiStorer) {
+	err := testAPIRoot.create(testStorer, testAPIRootPath)
 	if err != nil {
 		fail.Fatal(err)
 	}
 }
 
-func createCollection() {
+func createCollection(testStorer taxiiStorer) {
 	id, err := newTaxiiID(testID)
 	if err != nil {
 		fail.Fatal(err)
 	}
 
 	tc := taxiiCollection{ID: id, Title: "a title", Description: "a description"}
-	err = tc.create(testUser, testAPIRootPath)
+	err = tc.create(testStorer, testUser, testAPIRootPath)
 
 	if err != nil {
 		fail.Fatal("DB Err:", err)
 	}
 }
 
-func createDiscovery() {
-	err := testDiscovery.create()
+func createDiscovery(testStorer taxiiStorer) {
+	err := testDiscovery.create(testStorer)
 	if err != nil {
 		fail.Fatal(err)
 	}
 }
 
-func createUser() {
+func createUser(testStorer taxiiStorer) {
 	tu := taxiiUser{Email: testUser}
-	err := tu.create(fmt.Sprintf("%x", sha256.Sum256([]byte(testPass))))
+	err := tu.create(testStorer, fmt.Sprintf("%x", sha256.Sum256([]byte(testPass))))
 	if err != nil {
 		fail.Fatal(err)
 	}
 }
 
 func loadTestConfig() {
-	var testConfig = "test/config/testing_config.json"
 	config = cabbyConfig{}.parse(testConfig)
 }
 
@@ -87,8 +83,8 @@ func renameFile(from, to string) {
 
 func setupSQLite() {
 	tearDownSQLite()
-	info.Println("Setting up a test sqlite db:", testDB)
 
+	info.Println("Setting up a test sqlite db:", testDB)
 	var sqlDriver = "sqlite3"
 
 	db, err := sql.Open(sqlDriver, testDB)
@@ -96,6 +92,7 @@ func setupSQLite() {
 		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
+	info.Println("Reading in schema")
 	f, err := os.Open("backend/sqlite/schema.sql")
 	if err != nil {
 		fail.Fatal("Couldn't open schema file")
@@ -112,10 +109,18 @@ func setupSQLite() {
 	}
 
 	loadTestConfig()
-	createDiscovery()
-	createAPIRoot()
-	createUser()
-	createCollection()
+
+	info.Println("Creating resources")
+	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	if err != nil {
+		fail.Fatal(err)
+	}
+	defer ts.disconnect()
+
+	createDiscovery(ts)
+	createAPIRoot(ts)
+	createUser(ts)
+	createCollection(ts)
 }
 
 func tearDownSQLite() {

@@ -15,12 +15,9 @@ import (
 
 /* helpers */
 
-// define a handler function type for handler testing
-type handlerFn func(http.ResponseWriter, *http.Request)
-
 // handle generic testing of handlers.  It takes a handler function to call with a url;
 // it returns the status code and response as a string
-func handlerTest(h handlerFn, method, url string, b *bytes.Buffer) (int, string) {
+func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
 	var req *http.Request
 
 	if b != nil {
@@ -38,32 +35,12 @@ func handlerTest(h handlerFn, method, url string, b *bytes.Buffer) (int, string)
 	return res.Code, string(body)
 }
 
-/* auth tests */
-
-func TestValidateUser(t *testing.T) {
-	tests := []struct {
-		user     string
-		pass     string
-		expected bool
-	}{
-		{testUser, testPass, true},
-		{"simon", "says", false},
-	}
-
-	for _, test := range tests {
-		_, actual := validateUser(test.user, test.pass)
-		if actual != test.expected {
-			t.Error("Got:", actual, "Expected:", test.expected)
-		}
-	}
-}
-
 func TestRequireAcceptTaxii(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
 		accept := r.Header.Get("Accept")
 		io.WriteString(w, fmt.Sprintln("Accept Header: %v", accept))
 	}
-	mockHandler = requireAcceptTaxii(mockHandler)
+	mockHandler = withAcceptTaxii(mockHandler)
 
 	tests := []struct {
 		acceptHeader string
@@ -118,10 +95,17 @@ func TestHandleUndefinedRequest(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(handleTaxiiDiscovery))
-	defer ts.Close()
+	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ts.disconnect()
 
-	res, err := http.Get(ts.URL)
+	h := handleTaxiiDiscovery(ts)
+	s := httptest.NewServer(http.HandlerFunc(h))
+	defer s.Close()
+
+	res, err := http.Get(s.URL)
 	if err != nil {
 		log.Fatal(err)
 	}
