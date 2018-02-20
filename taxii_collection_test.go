@@ -155,7 +155,7 @@ func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollections(t *testing.T) {
+func TestHandleTaxiiCollectionsGet(t *testing.T) {
 	setupSQLite()
 
 	ts := getStorer()
@@ -179,7 +179,7 @@ func TestHandleGetTaxiiCollections(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollectionsBadID(t *testing.T) {
+func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -199,7 +199,7 @@ func TestHandleGetTaxiiCollectionsBadID(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollectionsUnknownID(t *testing.T) {
+func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 	defer setupSQLite()
 
 	ts := getStorer()
@@ -226,7 +226,7 @@ func TestHandleGetTaxiiCollectionsUnknownID(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollectionsInvalidUser(t *testing.T) {
+func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -258,7 +258,7 @@ func TestHandleGetTaxiiCollectionsInvalidUser(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
+func TestHandleTaxiiCollectionsGetReadError(t *testing.T) {
 	defer setupSQLite()
 
 	ts := getStorer()
@@ -288,7 +288,7 @@ func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiCollectionsNoResults(t *testing.T) {
+func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 	defer setupSQLite()
 
 	ts := getStorer()
