@@ -69,7 +69,7 @@ func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
 	port := strconv.Itoa(config.Port)
 	log.WithFields(log.Fields{
 		"port": port,
-	}).Info("Configured port to listen on")
+	}).Info("Configuring port to listen on")
 
 	return &http.Server{
 		Addr:         ":" + port,
@@ -98,8 +98,8 @@ func main() {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
-		}).Panic("Can't start server:")
+		}).Panic("Can't start server")
 	}
 
-	fail.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
+	log.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

@@ -37,10 +37,7 @@ sqlite:
 	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
 dependencies:
-	go get github.com/fzipp/gocyclo
-	go get github.com/golang/lint
-	go get github.com/mattn/go-sqlite3
-	go get github.com/satori/go.uuid
+	go get
 
 fmt:
 	go fmt -x

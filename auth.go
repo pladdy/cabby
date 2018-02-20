@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // per context docuentation, use a key type for context keys
@@ -31,7 +33,10 @@ func withBasicAuth(ts taxiiStorer, h http.Handler) http.Handler {
 			unauthorized(w, errors.New("Invalid user/pass combination"))
 			return
 		}
-		info.Println("Basic Auth validated for", u)
+
+		log.WithFields(log.Fields{
+			"user": u,
+		}).Info("Basic Auth validated")
 
 		r = addTaxiiUserToRequest(tu, r)
 		h.ServeHTTP(withHSTS(w), r)
@@ -46,7 +51,7 @@ func withHSTS(w http.ResponseWriter) http.ResponseWriter {
 func validateUser(ts taxiiStorer, u, p string) (taxiiUser, bool) {
 	tu, err := newTaxiiUser(ts, u, p)
 	if err != nil {
-		fail.Println(err)
+		log.Error(err)
 		return tu, false
 	}
 
