@@ -47,10 +47,7 @@ func TestSQLiteParse(t *testing.T) {
 		{"create", "taxiiCollection", "backend/sqlite/create/taxiiCollection.sql"},
 	}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	for _, test := range tests {
@@ -71,13 +68,10 @@ func TestSQLiteParse(t *testing.T) {
 }
 
 func TestSQLiteParseInvalid(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.parse("noCommand", "fail")
+	_, err := s.parse("noCommand", "fail")
 	if err == nil {
 		t.Fatal("Expected error")
 	}
@@ -88,10 +82,7 @@ func TestSQLiteParseInvalid(t *testing.T) {
 func TestSQLiteRead(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// create a collection record and add a user to access it
@@ -130,13 +121,10 @@ func TestSQLiteRead(t *testing.T) {
 func TestSQLiteReadFail(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_user_collection")
+	_, err := s.db.Exec("drop table taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,10 +142,7 @@ func TestSQLiteReadFail(t *testing.T) {
 
 // new read* functions get tested here
 func TestSQLiteReadScanError(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	type readFunction func(*sql.Rows) (interface{}, error)
@@ -187,10 +172,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 }
 
 func TestReadRowsInvalid(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	rows, err := s.db.Query("select 1")
@@ -206,10 +188,7 @@ func TestReadRowsInvalid(t *testing.T) {
 }
 
 func TestSQLiteReadDiscoveryNoAPIRoot(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	rows, err := s.db.Query("select title, description, contact, default_url, 'test_api_root' from taxii_discovery")
@@ -231,10 +210,7 @@ func TestSQLiteReadDiscoveryNoAPIRoot(t *testing.T) {
 /* sqlite creator interface */
 
 func TestSQLiteCreate(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
@@ -249,7 +225,7 @@ func TestSQLiteCreate(t *testing.T) {
 	}
 
 	var uid string
-	err = s.db.QueryRow(`select id from taxii_collection where id = 'test'`).Scan(&uid)
+	err := s.db.QueryRow(`select id from taxii_collection where id = 'test'`).Scan(&uid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -260,16 +236,14 @@ func TestSQLiteCreate(t *testing.T) {
 }
 
 func TestSQLiteCreateFail(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 	go s.create("invalidQuery", toCreate, errs)
 
+	var err error
 	for e := range errs {
 		err = e
 	}
@@ -280,10 +254,7 @@ func TestSQLiteCreateFail(t *testing.T) {
 }
 
 func TestSQLiteCreateFailTransaction(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
@@ -291,6 +262,7 @@ func TestSQLiteCreateFailTransaction(t *testing.T) {
 	errs := make(chan error, 10)
 	go s.create("invalidQuery", toCreate, errs)
 
+	var err error
 	for e := range errs {
 		err = e
 	}
@@ -301,10 +273,7 @@ func TestSQLiteCreateFailTransaction(t *testing.T) {
 }
 
 func TestSQLiteCreateFailExec(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
@@ -314,6 +283,7 @@ func TestSQLiteCreateFailExec(t *testing.T) {
 	toCreate <- []interface{}{"not enough params"}
 	close(toCreate)
 
+	var err error
 	for e := range errs {
 		err = e
 	}
@@ -326,10 +296,7 @@ func TestSQLiteCreateFailExec(t *testing.T) {
 func TestSQLiteCreateMaxWrites(t *testing.T) {
 	setupSQLite()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
@@ -355,7 +322,7 @@ func TestSQLiteCreateMaxWrites(t *testing.T) {
 	}
 
 	var collections int
-	err = s.db.QueryRow("select count(*) from taxii_collection where title = '" + t.Name() + "'").Scan(&collections)
+	err := s.db.QueryRow("select count(*) from taxii_collection where title = '" + t.Name() + "'").Scan(&collections)
 	if err != nil {
 		t.Fatal(err)
 	}
