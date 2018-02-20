@@ -4,12 +4,11 @@ import (
 	"crypto/tls"
 	"log"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
 )
 
-const configPath = "config/cabby.json"
+const defaultConfig = "config/cabby.json"
 
 var (
 	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
@@ -17,59 +16,64 @@ var (
 	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 )
 
-func init() {
+func newCabby(configPath string) (*http.Server, error) {
+	var server http.Server
+
 	config = cabbyConfig{}.parse(configPath)
-}
 
-func newCabby() (*http.Server, error) {
-	handler, err := setupHandler()
+	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
 	if err != nil {
-		fail.Println(err)
+		return &server, err
 	}
-	return setupServer(handler), err
+
+	handler, err := setupHandler(ts)
+	if err != nil {
+		return &server, err
+	}
+	return setupServer(ts, handler), err
 }
 
-func registerAPIRoot(apiRoot string, h *http.ServeMux) {
-	u, err := url.Parse(apiRoot)
-	if u.Path == "" || err != nil {
-		warn.Panic(err)
+func registerAPIRoot(ts taxiiStorer, rootPath string, h *http.ServeMux) {
+	if rootPath != "" {
+		path := "/" + rootPath + "/"
+		registerRoute(h, path+"collections/", handleTaxiiCollections(ts))
+		registerRoute(h, path, handleTaxiiAPIRoot(ts))
 	}
+}
 
-	path := "/" + u.String() + "/"
-	info.Println("Registering handler for", path+"collections/")
-	h.HandleFunc(path+"collections/", requireAcceptTaxii(handleTaxiiCollections))
-
+func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	info.Println("Registering handler for", path)
-	h.HandleFunc(path, requireAcceptTaxii(handleTaxiiAPIRoot))
+	sm.HandleFunc(path,
+		withAcceptTaxii(h))
 }
 
-func setupHandler() (*http.ServeMux, error) {
+func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 	handler := http.NewServeMux()
 
-	result, err := readResource("taxiiAPIRoots", []interface{}{})
+	apiRoots := taxiiAPIRoots{}
+	err := apiRoots.read(ts)
 	if err != nil {
+		fail.Println("Unable to register api roots")
 		return handler, err
 	}
-	roots := result.([]string)
 
-	for _, apiRoot := range roots {
-		registerAPIRoot(apiRoot, handler)
+	for _, rootPath := range apiRoots.RootPaths {
+		registerAPIRoot(ts, rootPath, handler)
 	}
 
-	handler.HandleFunc("/taxii/", requireAcceptTaxii(handleTaxiiDiscovery))
-	handler.HandleFunc("/", requireAcceptTaxii(handleUndefinedRequest))
-
+	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts))
+	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
 }
 
-// server is set up with basicAuth and HSTS applied to each handler
-func setupServer(h http.Handler) *http.Server {
+// server is set up with basic auth and HSTS applied to each handler
+func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
 	port := strconv.Itoa(config.Port)
 	info.Println("Server will listen on port " + port)
 
 	return &http.Server{
 		Addr:         ":" + port,
-		Handler:      basicAuth(h),
+		Handler:      withBasicAuth(ts, h),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
@@ -90,9 +94,10 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
-	server, err := newCabby()
+	server, err := newCabby(defaultConfig)
 	if err != nil {
 		fail.Fatal("Can't start server:", err)
 	}
+
 	fail.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
 }

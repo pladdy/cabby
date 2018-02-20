@@ -7,7 +7,10 @@ import (
 )
 
 func TestHandleTaxiiDiscovery(t *testing.T) {
-	status, result := handlerTest(handleTaxiiDiscovery, "GET", discoveryURL, nil)
+	ts := getStorer()
+	defer ts.disconnect()
+
+	status, result := handlerTest(handleTaxiiDiscovery(ts), "GET", discoveryURL, nil)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -27,20 +30,23 @@ func TestHandleTaxiiDiscovery(t *testing.T) {
 func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Error(err)
-	}
+	// delete discovery from table
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("delete from taxii_discovery")
+	_, err := s.db.Exec("delete from taxii_discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// now try to use handler
+	ts := getStorer()
+	defer ts.disconnect()
+
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleTaxiiDiscovery(res, req)
+	h := handleTaxiiDiscovery(ts)
+	h(res, req)
 
 	if res.Code != 404 {
 		t.Error("Got:", res.Code, "Expected:", 404)
@@ -50,35 +56,26 @@ func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 func TestHandleTaxiiDiscoveryError(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Error(err)
-	}
+	// drop the table all together
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_discovery")
+	_, err := s.db.Exec("drop table taxii_discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// now try to use handler
+	ts := getStorer()
+	defer ts.disconnect()
+
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	handleTaxiiDiscovery(res, req)
+	h := handleTaxiiDiscovery(ts)
+	h(res, req)
 
 	if res.Code != 400 {
 		t.Error("Got:", res.Code, "Expected:", 404)
-	}
-}
-
-func TestTaxiiDiscoveryFailTaxiiStorer(t *testing.T) {
-	config = cabbyConfig{}
-	defer loadTestConfig()
-
-	td := taxiiDiscovery{}
-	err := td.read()
-
-	if err == nil {
-		t.Error("Expected a taxiiStorer error")
 	}
 }
 
@@ -86,32 +83,13 @@ func TestTaxiiDiscoveryFailParse(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiDiscovery.sql", "backend/sqlite/read/taxiiDiscovery.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiDiscovery.sql.testing", "backend/sqlite/read/taxiiDiscovery.sql")
 
+	ts := getStorer()
+	defer ts.disconnect()
+
 	td := taxiiDiscovery{}
-	err := td.read()
+	err := td.read(ts)
 
 	if err == nil {
 		t.Error("Expected a taxiiStorer error")
-	}
-}
-
-func TestTaxiiDiscoveryFailRead(t *testing.T) {
-	defer setupSQLite()
-
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Error(err)
-	}
-	defer s.disconnect()
-
-	_, err = s.db.Exec("drop table taxii_discovery")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	td := taxiiDiscovery{}
-	err = td.read()
-
-	if err == nil {
-		t.Error("Expected error")
 	}
 }

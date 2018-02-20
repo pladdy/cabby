@@ -7,23 +7,27 @@ import (
 
 /* handler */
 
-func handleTaxiiDiscovery(w http.ResponseWriter, r *http.Request) {
-	info.Println("Discovery resource requested")
-	defer recoverFromPanic(w)
+func handleTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		info.Println("Discovery resource requested")
+		defer recoverFromPanic(w)
 
-	td := taxiiDiscovery{}
+		td := taxiiDiscovery{}
 
-	err := td.read()
-	if err != nil {
-		badRequest(w, err)
-		return
-	}
+		err := td.read(ts)
+		td.Default = insertPort(td.Default)
 
-	if td.Title == "" {
-		resourceNotFound(w, errors.New("Discovery not defined"))
-	} else {
-		writeContent(w, taxiiContentType, resourceToJSON(td))
-	}
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
+		if td.Title == "" {
+			resourceNotFound(w, errors.New("Discovery not defined"))
+		} else {
+			writeContent(w, taxiiContentType, resourceToJSON(td))
+		}
+	})
 }
 
 /* model */
@@ -36,15 +40,15 @@ type taxiiDiscovery struct {
 	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
-func (td *taxiiDiscovery) create() error {
-	err := createResource("taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
+func (td *taxiiDiscovery) create(ts taxiiStorer) error {
+	err := createResource(ts, "taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
 	return err
 }
 
-func (td *taxiiDiscovery) read() error {
+func (td *taxiiDiscovery) read(ts taxiiStorer) error {
 	discovery := *td
 
-	result, err := readResource("taxiiDiscovery", []interface{}{})
+	result, err := ts.read("taxiiDiscovery", []interface{}{})
 	if err != nil {
 		return err
 	}

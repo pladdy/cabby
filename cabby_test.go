@@ -18,6 +18,7 @@ func init() {
 /* helpers */
 
 func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
+	info.Println("Requesting", r.URL, "from test server")
 	MaxTries := 3
 
 	for i := 0; i < MaxTries; i++ {
@@ -65,15 +66,7 @@ func requestFromTestServer(r *http.Request) (*http.Response, string) {
 
 // run server in go routine and return it
 func runTestServer() *http.Server {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/testing_config.json", configPath)
-
-	defer func() {
-		renameFile(configPath, "test/config/testing_config.json")
-		renameFile(configPath+".testing", configPath)
-	}()
-
-	server, err := newCabby()
+	server, err := newCabby(testConfig)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -94,18 +87,6 @@ func tlsClient() *http.Client {
 }
 
 /* tests */
-
-func TestHSTS(t *testing.T) {
-	req := requestWithBasicAuth(discoveryURL)
-	res, _ := requestFromTestServer(req)
-
-	expected := "max-age=" + sixMonthsOfSeconds + "; includeSubDomains"
-	result := strings.Join(res.Header["Strict-Transport-Security"], "")
-
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
-	}
-}
 
 func TestBasicAuth(t *testing.T) {
 	tests := []struct {
@@ -133,20 +114,33 @@ func TestBasicAuth(t *testing.T) {
 	}
 }
 
+func TestHSTS(t *testing.T) {
+	req := requestWithBasicAuth(discoveryURL)
+	res, _ := requestFromTestServer(req)
+
+	expected := "max-age=" + sixMonthsOfSeconds + "; includeSubDomains"
+	result := strings.Join(res.Header["Strict-Transport-Security"], "")
+
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
 func TestMain(t *testing.T) {
-	renameFile(configPath, configPath+".testing")
-	renameFile("test/config/main_test_config.json", configPath)
+	renameFile(defaultConfig, defaultConfig+".testing")
+	renameFile("test/config/main_test_config.json", defaultConfig)
 
 	defer func() {
-		renameFile(configPath, "test/config/main_test_config.json")
-		renameFile(configPath+".testing", configPath)
+		renameFile(defaultConfig, "test/config/main_test_config.json")
+		renameFile(defaultConfig+".testing", defaultConfig)
 	}()
 
 	go func() {
 		main()
 	}()
 
-	req := requestWithBasicAuth(discoveryURL)
+	mainTestConfigPort := "1235"
+	req := requestWithBasicAuth(strings.Replace(discoveryURL, "1234", mainTestConfigPort, 1))
 	res, _ := attemptRequest(tlsClient(), req)
 	defer res.Body.Close()
 
@@ -167,7 +161,7 @@ func TestMain(t *testing.T) {
 }
 
 func TestMainAPIRoot(t *testing.T) {
-	req := requestWithBasicAuth(apiRootURL)
+	req := requestWithBasicAuth(testAPIRootURL)
 	_, body := requestFromTestServer(req)
 
 	var result taxiiAPIRoot
@@ -179,43 +173,40 @@ func TestMainAPIRoot(t *testing.T) {
 	expected := testAPIRoot
 
 	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
+		t.Error("Got:", result.Title, "Expected:", expected.Title, result)
 	}
 }
 
-func TestNewCabbyFail(t *testing.T) {
+func TestNewCabbyNoAPIRoots(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
 
-	_, err := newCabby()
+	_, err := newCabby(testConfig)
 	if err == nil {
 		t.Error("Expected an error")
 	}
 }
 
-func TestRegisterAPIRootInvalidURL(t *testing.T) {
-	recovered := false
-
-	defer func() {
-		if err := recover(); err == nil {
-			t.Error("Failed to recover")
-		}
-		recovered = true
-	}()
-
-	mockHandler := http.NewServeMux()
-	registerAPIRoot("", mockHandler)
-
-	if recovered != true {
-		t.Error("Expected: 'recovered' to be true")
+func TestNewCabbyFail(t *testing.T) {
+	_, err := newCabby("test/config/no_datastore_config.json")
+	if err == nil {
+		t.Error("Expected an error")
 	}
 }
 
 func TestSetupHandlerFail(t *testing.T) {
+	loadTestConfig()
+
 	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
 
-	_, err := setupHandler()
+	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	if err != nil {
+		t.Fatal(err)
+	}
+	ts.disconnect()
+
+	_, err = setupHandler(ts)
 	if err == nil {
 		t.Error("Expected an error")
 	}

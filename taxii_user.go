@@ -17,13 +17,13 @@ type taxiiUser struct {
 	CollectionAccess map[taxiiID]taxiiCollectionAccess
 }
 
-func newTaxiiUser(u, p string) (taxiiUser, error) {
+func newTaxiiUser(ts taxiiStorer, u, p string) (taxiiUser, error) {
 	tu := taxiiUser{Email: u, CollectionAccess: make(map[taxiiID]taxiiCollectionAccess)}
-	err := tu.read(fmt.Sprintf("%x", sha256.Sum256([]byte(p))))
+	err := tu.read(ts, fmt.Sprintf("%x", sha256.Sum256([]byte(p))))
 	return tu, err
 }
 
-func (tu *taxiiUser) create(p string) error {
+func (tu *taxiiUser) create(ts taxiiStorer, p string) error {
 	var err error
 
 	parts := []struct {
@@ -35,7 +35,7 @@ func (tu *taxiiUser) create(p string) error {
 	}
 
 	for _, p := range parts {
-		err = createResource(p.resource, p.args)
+		err = createResource(ts, p.resource, p.args)
 		if err != nil {
 			return err
 		}
@@ -44,13 +44,8 @@ func (tu *taxiiUser) create(p string) error {
 	return err
 }
 
-func (tu *taxiiUser) read(pass string) error {
+func (tu *taxiiUser) read(ts taxiiStorer, pass string) error {
 	user := *tu
-
-	ts, err := newTaxiiStorer()
-	if err != nil {
-		return err
-	}
 
 	valid, err := verifyValidUser(ts, tu.Email, pass)
 	if !valid || err != nil {
@@ -74,7 +69,7 @@ func (tu *taxiiUser) read(pass string) error {
 func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, error) {
 	var tcas []taxiiCollectionAccess
 
-	result, err := readResource("taxiiCollectionAccess", []interface{}{e})
+	result, err := ts.read("taxiiCollectionAccess", []interface{}{e})
 	if err != nil {
 		return tcas, err
 	}
@@ -86,7 +81,7 @@ func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, err
 func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
 	var valid bool
 
-	result, err := readResource("taxiiUser", []interface{}{e, p})
+	result, err := ts.read("taxiiUser", []interface{}{e, p})
 	if err != nil {
 		return false, err
 	}

@@ -9,10 +9,10 @@ import (
 func TestNewTaxiiUser(t *testing.T) {
 	setupSQLite()
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// create a collection record
@@ -34,7 +34,7 @@ func TestNewTaxiiUser(t *testing.T) {
 		t.Fatal("DB Err:", err)
 	}
 
-	user, err := newTaxiiUser(testUser, testPass)
+	user, err := newTaxiiUser(ts, testUser, testPass)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,10 +56,10 @@ func TestNewTaxiiUser(t *testing.T) {
 func TestNewTaxiiUserNoAccess(t *testing.T) {
 	setupSQLite()
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// create a collection record
@@ -75,17 +75,21 @@ func TestNewTaxiiUserNoAccess(t *testing.T) {
 	}
 
 	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
-	_, err = newTaxiiUser(testUser, pass)
+	_, err = newTaxiiUser(ts, testUser, pass)
 	if err == nil {
 		t.Error("Expected error with no access")
 	}
 }
 
 func TestNewTaxiiUserFail(t *testing.T) {
-	config = cabbyConfig{}
 	defer loadTestConfig()
 
-	_, err := newTaxiiUser("test@test.fail", "nopass")
+	ts := getStorer()
+	defer ts.disconnect()
+
+	config = cabbyConfig{}
+
+	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -95,7 +99,10 @@ func TestTaxiiUserReadFail(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiUser.sql", "backend/sqlite/read/taxiiUser.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
 
-	_, err := newTaxiiUser("test@test.fail", "nopass")
+	ts := getStorer()
+	defer ts.disconnect()
+
+	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -104,18 +111,18 @@ func TestTaxiiUserReadFail(t *testing.T) {
 func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_user_collection")
+	_, err := s.db.Exec("drop table taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = newTaxiiUser(testUser, testPass)
+	_, err = newTaxiiUser(ts, testUser, testPass)
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -125,13 +132,10 @@ func TestTaxiiUserAssignedCollectionsParseFail(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiCollectionAccess.sql", "backend/sqlite/read/taxiiCollectionAccess.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiCollectionAccess.sql.testing", "backend/sqlite/read/taxiiCollectionAccess.sql")
 
-	s, err := newSQLiteDB()
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = assignedCollections(s, "test@test.fail")
+	_, err := assignedCollections(s, "test@test.fail")
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -141,8 +145,11 @@ func TestTaxiiUserCreateFail(t *testing.T) {
 	renameFile("backend/sqlite/create/taxiiUser.sql", "backend/sqlite/create/taxiiUser.sql.testing")
 	defer renameFile("backend/sqlite/create/taxiiUser.sql.testing", "backend/sqlite/create/taxiiUser.sql")
 
+	ts := getStorer()
+	defer ts.disconnect()
+
 	tu := taxiiUser{}
-	err := tu.create("fail")
+	err := tu.create(ts, "fail")
 	if err == nil {
 		t.Error("Expected error")
 	}

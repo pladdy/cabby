@@ -12,8 +12,11 @@ TAXII 2.0 server in Golang.
 ## Setup
 `make`
 
-## Test
-`make test`
+## Testing
+To run all tests: `make test`
+
+"Helper" functions are in `test_helper_test.go`.  The goal with this file was to put repetitive code that make the
+tests verbose into a DRY'er format.
 
 ## Run
 `make run`
