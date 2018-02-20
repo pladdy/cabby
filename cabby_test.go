@@ -160,6 +160,33 @@ func TestMain(t *testing.T) {
 	}
 }
 
+func TestMainPanic(t *testing.T) {
+	renameFile(defaultConfig, defaultConfig+".testing")
+	renameFile("test/config/no_datastore_config.json", defaultConfig)
+
+	defer func() {
+		renameFile(defaultConfig, "test/config/no_datastore_config.json")
+		renameFile(defaultConfig+".testing", defaultConfig)
+	}()
+
+	p := panicChecker{}
+	go func() {
+		defer attemptRecover(t, &p)
+
+		main()
+	}()
+
+	// try to check the panic up to 3 times
+	for i := 1; i <= 3; i++ {
+		if p.recovered == false {
+			time.Sleep(time.Duration(i*100) * time.Millisecond)
+		}
+	}
+	if p.recovered != true {
+		t.Error("Failed to recover a panic")
+	}
+}
+
 func TestMainAPIRoot(t *testing.T) {
 	req := requestWithBasicAuth(testAPIRootURL)
 	_, body := requestFromTestServer(req)

@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var config cabbyConfig
@@ -19,11 +21,17 @@ type cabbyConfig struct {
 func (c cabbyConfig) parse(file string) (pc cabbyConfig) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
-		fail.Panic(err)
+		log.WithFields(log.Fields{
+			"file":  file,
+			"error": err,
+		}).Panic("Can't parse config file")
 	}
 
 	if err = json.Unmarshal(b, &pc); err != nil {
-		fail.Panic(err)
+		log.WithFields(log.Fields{
+			"file":  file,
+			"error": err,
+		}).Panic("Can't unmarshal JSON")
 	}
 
 	return

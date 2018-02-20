@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 )
 
 type sqliteDB struct {
@@ -35,7 +36,7 @@ func newSQLiteDB(path string) (*sqliteDB, error) {
 func (s *sqliteDB) connect(connection string) (err error) {
 	s.db, err = sql.Open(s.driver, connection)
 	if err != nil {
-		fail.Println(err)
+		log.Error(err)
 	}
 	return
 }
@@ -210,7 +211,6 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 
 	tq, err := s.parse("create", resource)
 	if err != nil {
-		fail.Println(err)
 		errs <- err
 		return
 	}
@@ -227,7 +227,6 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 
 		_, err := stmt.Exec(args...)
 		if err != nil {
-			fail.Println(err)
 			errs <- err
 			continue
 		}
@@ -247,13 +246,11 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt *sql.Stmt, err error) {
 	tx, err = s.db.Begin()
 	if err != nil {
-		fail.Println(err)
 		errs <- err
 	}
 
 	stmt, err = tx.Prepare(query)
 	if err != nil {
-		fail.Printf("%v in statement: %v\n", err, query)
 		errs <- err
 	}
 

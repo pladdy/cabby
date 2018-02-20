@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"testing"
 
@@ -23,6 +24,12 @@ const (
 )
 
 var (
+	// logging
+	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	warn = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
+
+	// test globals
 	testAPIRootURL = "https://localhost:1234/" + testAPIRootPath + "/"
 	testAPIRoot    = taxiiAPIRoot{Title: "test api root",
 		Description:      "test api root description",
