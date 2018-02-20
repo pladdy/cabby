@@ -38,6 +38,8 @@ sqlite:
 
 dependencies:
 	go get
+	go get github.com/fzipp/gocyclo
+	go get github.com/golang/lint
 
 fmt:
 	go fmt -x
