@@ -12,10 +12,7 @@ import (
 )
 
 func TestHandleTaxiiCollectionsPost(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections")
@@ -30,10 +27,7 @@ func TestHandleTaxiiCollectionsPost(t *testing.T) {
 		t.Error("Got:", status, "Expected: 200")
 	}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	var title string
@@ -51,21 +45,15 @@ func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
 	defer setupSQLite()
 
 	// remove required table
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_collection")
+	_, err := s.db.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	// test a post which should fail
@@ -82,11 +70,8 @@ func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
 	}
 }
 
-func TestHandlePostTaxiiCollectionsBadID(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections")
@@ -101,10 +86,7 @@ func TestHandlePostTaxiiCollectionsBadID(t *testing.T) {
 	}
 
 	// verify no record exists
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	var title string
@@ -114,7 +96,7 @@ func TestHandlePostTaxiiCollectionsBadID(t *testing.T) {
 	}
 }
 
-func TestHandlePostTaxiiCollectionsMethod(t *testing.T) {
+func TestHandleTaxiiCollectionsMethods(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected int
@@ -123,10 +105,7 @@ func TestHandlePostTaxiiCollectionsMethod(t *testing.T) {
 		{"CUSTOM", 405},
 	}
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	for _, test := range tests {
@@ -141,11 +120,8 @@ func TestHandlePostTaxiiCollectionsMethod(t *testing.T) {
 	}
 }
 
-func TestHandlePostTaxiiCollectionsNoUser(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections/")
@@ -182,10 +158,7 @@ func TestHandlePostTaxiiCollectionsNoUser(t *testing.T) {
 func TestHandleGetTaxiiCollections(t *testing.T) {
 	setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections/")
@@ -207,10 +180,7 @@ func TestHandleGetTaxiiCollections(t *testing.T) {
 }
 
 func TestHandleGetTaxiiCollectionsBadID(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections/fail")
@@ -232,10 +202,7 @@ func TestHandleGetTaxiiCollectionsBadID(t *testing.T) {
 func TestHandleGetTaxiiCollectionsUnknownID(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -260,10 +227,7 @@ func TestHandleGetTaxiiCollectionsUnknownID(t *testing.T) {
 }
 
 func TestHandleGetTaxiiCollectionsInvalidUser(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -297,10 +261,7 @@ func TestHandleGetTaxiiCollectionsInvalidUser(t *testing.T) {
 func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -313,10 +274,7 @@ func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	_, err = s.db.Exec("drop table taxii_collection")
@@ -333,10 +291,7 @@ func TestHandleGetTaxiiCollectionsReadError(t *testing.T) {
 func TestHandleGetTaxiiCollectionsNoResults(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	u, err := url.Parse("https://localhost/api_root/collections/")
@@ -344,10 +299,7 @@ func TestHandleGetTaxiiCollectionsNoResults(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	_, err = s.db.Exec("delete from taxii_user_collection")
@@ -362,10 +314,7 @@ func TestHandleGetTaxiiCollectionsNoResults(t *testing.T) {
 }
 
 func TestReadTaxiiCollection(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	w := httptest.NewRecorder()
@@ -380,22 +329,16 @@ func TestReadTaxiiCollection(t *testing.T) {
 func TestReadTaxiiCollectionsFailRead(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	w := httptest.NewRecorder()
 	user := "foo"
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_user_collection")
+	_, err := s.db.Exec("drop table taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,10 +413,7 @@ func TestNewTaxiiID(t *testing.T) {
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	cid, err := newTaxiiID()
@@ -487,10 +427,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// check id in taxii_collection
@@ -522,10 +459,7 @@ func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
 	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
 	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -543,10 +477,7 @@ func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
 func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -555,10 +486,7 @@ func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	}
 	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	_, err = s.db.Exec("drop table taxii_collection")
@@ -575,10 +503,7 @@ func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	id, err := newTaxiiID()
@@ -587,10 +512,7 @@ func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
 	}
 	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	_, err = s.db.Exec("drop table taxii_collection_api_root")
@@ -607,16 +529,10 @@ func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
 func TestTaxiiCollectionRead(t *testing.T) {
 	setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// create a collection record and add a user to access it
@@ -647,16 +563,10 @@ func TestTaxiiCollectionRead(t *testing.T) {
 func TestTaxiiCollectionsRead(t *testing.T) {
 	setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
 	// create a collection record and add a user to access it
@@ -685,14 +595,11 @@ func TestTaxiiCollectionsReadFailQuery(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiCollections.sql", "backend/sqlite/read/taxiiCollections.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiCollections.sql.testing", "backend/sqlite/read/taxiiCollections.sql")
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	tcs := taxiiCollections{}
-	err = tcs.read(ts, testUser)
+	err := tcs.read(ts, testUser)
 	if err == nil {
 		t.Error("Expected a query error")
 	}
@@ -701,21 +608,15 @@ func TestTaxiiCollectionsReadFailQuery(t *testing.T) {
 func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 	defer setupSQLite()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	tcs := taxiiCollections{}
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_collection")
+	_, err := s.db.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}

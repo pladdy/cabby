@@ -6,10 +6,7 @@ import (
 )
 
 func TestHandleTaxiiAPIRoot(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	status, result := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
@@ -19,7 +16,7 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 	}
 
 	var ta taxiiAPIRoot
-	err = json.Unmarshal([]byte(result), &ta)
+	err := json.Unmarshal([]byte(result), &ta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,10 +30,7 @@ func TestHandleTaxiiAPIRootFailRead(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiAPIRoot.sql", "backend/sqlite/read/taxiiAPIRoot.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiAPIRoot.sql.testing", "backend/sqlite/read/taxiiAPIRoot.sql")
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	status, _ := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
@@ -49,17 +43,12 @@ func TestHandleTaxiiAPIRootFailRead(t *testing.T) {
 func TestHandleTaxiiAPIRootNotFound(t *testing.T) {
 	defer setupSQLite()
 
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := getSQLiteDB()
+	defer s.disconnect()
 
-	_, err = s.db.Exec("delete from taxii_api_root")
+	s.db.Exec("delete from taxii_api_root")
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	status, _ := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)

@@ -70,6 +70,22 @@ func createUser(testStorer taxiiStorer) {
 	}
 }
 
+func getStorer() taxiiStorer {
+	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return ts
+}
+
+func getSQLiteDB() *sqliteDB {
+	s, err := newSQLiteDB(config.DataStore["path"])
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return s
+}
+
 func loadTestConfig() {
 	config = cabbyConfig{}.parse(testConfig)
 }

@@ -7,10 +7,7 @@ import (
 )
 
 func TestHandleTaxiiDiscovery(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	status, result := handlerTest(handleTaxiiDiscovery(ts), "GET", discoveryURL, nil)
@@ -20,7 +17,7 @@ func TestHandleTaxiiDiscovery(t *testing.T) {
 	}
 
 	var td taxiiDiscovery
-	err = json.Unmarshal([]byte(result), &td)
+	err := json.Unmarshal([]byte(result), &td)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -34,22 +31,16 @@ func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 	defer setupSQLite()
 
 	// delete discovery from table
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("delete from taxii_discovery")
+	_, err := s.db.Exec("delete from taxii_discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// now try to use handler
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
@@ -66,22 +57,16 @@ func TestHandleTaxiiDiscoveryError(t *testing.T) {
 	defer setupSQLite()
 
 	// drop the table all together
-	s, err := newSQLiteDB(config.DataStore["path"])
-	if err != nil {
-		t.Error(err)
-	}
+	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_discovery")
+	_, err := s.db.Exec("drop table taxii_discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// now try to use handler
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
@@ -98,14 +83,11 @@ func TestTaxiiDiscoveryFailParse(t *testing.T) {
 	renameFile("backend/sqlite/read/taxiiDiscovery.sql", "backend/sqlite/read/taxiiDiscovery.sql.testing")
 	defer renameFile("backend/sqlite/read/taxiiDiscovery.sql.testing", "backend/sqlite/read/taxiiDiscovery.sql")
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	td := taxiiDiscovery{}
-	err = td.read(ts)
+	err := td.read(ts)
 
 	if err == nil {
 		t.Error("Expected a taxiiStorer error")

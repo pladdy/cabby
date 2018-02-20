@@ -3,10 +3,9 @@ package main
 import "testing"
 
 func TestValidateUser(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		fail.Fatal(err)
-	}
+	setupSQLite()
+
+	ts := getStorer()
 	defer ts.disconnect()
 
 	tests := []struct {
