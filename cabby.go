@@ -2,19 +2,13 @@ package main
 
 import (
 	"crypto/tls"
-	"log"
 	"net/http"
-	"os"
 	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const defaultConfig = "config/cabby.json"
-
-var (
-	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	warn = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-)
 
 func newCabby(configPath string) (*http.Server, error) {
 	var server http.Server
@@ -42,9 +36,13 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, h *http.ServeMux) {
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
-	info.Println("Registering handler for", path)
+	log.WithFields(log.Fields{
+		"path": path,
+	}).Info("Registering handler for")
+
 	sm.HandleFunc(path,
-		withAcceptTaxii(h))
+		withRequestLogging(
+			withAcceptTaxii(h)))
 }
 
 func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
@@ -53,7 +51,7 @@ func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 	apiRoots := taxiiAPIRoots{}
 	err := apiRoots.read(ts)
 	if err != nil {
-		fail.Println("Unable to register api roots")
+		log.Error("Unable to register api roots")
 		return handler, err
 	}
 
@@ -69,7 +67,9 @@ func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 // server is set up with basic auth and HSTS applied to each handler
 func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
 	port := strconv.Itoa(config.Port)
-	info.Println("Server will listen on port " + port)
+	log.WithFields(log.Fields{
+		"port": port,
+	}).Info("Configured port to listen on")
 
 	return &http.Server{
 		Addr:         ":" + port,
@@ -96,7 +96,9 @@ func setupTLS() *tls.Config {
 func main() {
 	server, err := newCabby(defaultConfig)
 	if err != nil {
-		fail.Fatal("Can't start server:", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Panic("Can't start server:")
 	}
 
 	fail.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))

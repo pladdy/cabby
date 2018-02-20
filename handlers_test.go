@@ -85,7 +85,19 @@ func TestAPIRoot(t *testing.T) {
 	}
 }
 
-/* undefined request */
+func TestWithLoggingUnauthorized(t *testing.T) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	req := httptest.NewRequest("GET", discoveryURL, nil)
+	// omit adding a user to the context
+	res := httptest.NewRecorder()
+	withRequestLogging(handleTaxiiDiscovery(ts))(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Error("Got:", res.Code, "Expected: unauthorized")
+	}
+}
 
 func TestHandleUndefinedRequest(t *testing.T) {
 	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home", nil)
@@ -95,10 +107,7 @@ func TestHandleUndefinedRequest(t *testing.T) {
 }
 
 func TestHeaders(t *testing.T) {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
+	ts := getStorer()
 	defer ts.disconnect()
 
 	h := handleTaxiiDiscovery(ts)

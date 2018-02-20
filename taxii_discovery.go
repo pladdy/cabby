@@ -9,11 +9,9 @@ import (
 
 func handleTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		info.Println("Discovery resource requested")
 		defer recoverFromPanic(w)
 
 		td := taxiiDiscovery{}
-
 		err := td.read(ts)
 		td.Default = insertPort(td.Default)
 

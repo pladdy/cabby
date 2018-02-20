@@ -23,7 +23,6 @@ func trimSlashes(s string) string {
 func handleTaxiiAPIRoot(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
-		info.Println("API Root requested for", r.URL)
 
 		ta := taxiiAPIRoot{}
 		err := ta.read(ts, trimSlashes(r.URL.Path))

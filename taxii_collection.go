@@ -30,8 +30,6 @@ func handleTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
 }
 
 func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	info.Println("Request for GET Collection:", r.URL)
-
 	id := lastURLPathToken(r.URL.Path)
 
 	user, ok := r.Context().Value(userName).(string)
@@ -66,8 +64,6 @@ func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
 }
 
 func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	info.Println("Request to POST Collection:", r.URL)
-
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		badRequest(w, err)
@@ -77,7 +73,6 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 
 	tc, err := taxiiCollectionFromBytes(body)
 	if err != nil {
-		fail.Println("from bytes failed")
 		badRequest(w, err)
 		return
 	}

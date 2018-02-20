@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -42,10 +44,30 @@ func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, ok := r.Context().Value(userName).(string)
+		if !ok {
+			unauthorized(w, errors.New("Invalid user"))
+		}
+
+		log.WithFields(log.Fields{
+			"url":    r.URL,
+			"method": r.Method,
+			"user":   user,
+		}).Info("Request made to server")
+
+		h(w, r)
+	}
+}
+
 /* http status functions */
 
 func errorStatus(w http.ResponseWriter, title string, err error, status int) {
-	fail.Println(err)
+	log.WithFields(log.Fields{
+		"error": err,
+	}).Error("Returning an error status")
+
 	errString := fmt.Sprintf("%v", err)
 
 	te := taxiiError{Title: title, Description: errString, HTTPStatus: status}
@@ -97,7 +119,10 @@ func apiRoot(u string) string {
 func insertPort(s string) string {
 	u, err := url.Parse(s)
 	if err != nil {
-		fail.Panic(err)
+		log.WithFields(log.Fields{
+			"url":   s,
+			"error": err,
+		}).Panic("Can't parse string")
 	}
 	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
 }
@@ -112,7 +137,10 @@ func lastURLPathToken(u string) string {
 func resourceToJSON(v interface{}) string {
 	b, err := json.Marshal(v)
 	if err != nil {
-		warn.Panicf("Can't convert %v to JSON, error: %v", v, err)
+		log.WithFields(log.Fields{
+			"value": v,
+			"error": err,
+		}).Panic("Can't convert to JSON")
 	}
 	return string(b)
 }
