@@ -7,9 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var config cabbyConfig
+var config Config
 
-type cabbyConfig struct {
+type Config struct {
 	Host      string
 	Port      int
 	SSLCert   string            `json:"ssl_cert"`
@@ -18,7 +18,7 @@ type cabbyConfig struct {
 }
 
 // given a path to a config file parse it from json
-func (c cabbyConfig) parse(file string) (pc cabbyConfig) {
+func (c Config) parse(file string) (pc Config) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.WithFields(log.Fields{

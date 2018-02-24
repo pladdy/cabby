@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
@@ -245,16 +246,11 @@ func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
 	res := httptest.NewRecorder()
 	h := handleTaxiiCollections(ts)
 	h(res, req)
-	b, _ := ioutil.ReadAll(res.Body)
 
-	status, result := res.Code, string(b)
-	expected := `{"title":"Bad Request","description":"Invalid user specified","http_status":"400"}` + "\n"
+	status := res.Code
 
-	if status != 400 {
-		t.Error("Got:", status, "Expected:", 400)
-	}
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+	if status != http.StatusUnauthorized {
+		t.Error("Got:", status, "Expected:", http.StatusUnauthorized)
 	}
 }
 

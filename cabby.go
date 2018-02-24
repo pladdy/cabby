@@ -13,7 +13,7 @@ const defaultConfig = "config/cabby.json"
 func newCabby(configPath string) (*http.Server, error) {
 	var server http.Server
 
-	config = cabbyConfig{}.parse(configPath)
+	config = Config{}.parse(configPath)
 
 	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
 	if err != nil {
@@ -38,7 +38,7 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, h *http.ServeMux) {
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	log.WithFields(log.Fields{
 		"path": path,
-	}).Info("Registering handler for")
+	}).Info("Registering handler")
 
 	sm.HandleFunc(path,
 		withRequestLogging(
@@ -59,7 +59,7 @@ func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 		registerAPIRoot(ts, rootPath, handler)
 	}
 
-	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts))
+	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, config.Port))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
 }
@@ -69,7 +69,7 @@ func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
 	port := strconv.Itoa(config.Port)
 	log.WithFields(log.Fields{
 		"port": port,
-	}).Info("Configuring port to listen on")
+	}).Info("Server port configured")
 
 	return &http.Server{
 		Addr:         ":" + port,

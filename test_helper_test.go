@@ -94,7 +94,7 @@ func getSQLiteDB() *sqliteDB {
 }
 
 func loadTestConfig() {
-	config = cabbyConfig{}.parse(testConfig)
+	config = Config{}.parse(testConfig)
 }
 
 func renameFile(from, to string) {

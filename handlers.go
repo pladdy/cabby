@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
-	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -64,13 +62,16 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 /* http status functions */
 
 func errorStatus(w http.ResponseWriter, title string, err error, status int) {
-	log.WithFields(log.Fields{
-		"error": err,
-	}).Error("Returning an error status")
-
 	errString := fmt.Sprintf("%v", err)
 
 	te := taxiiError{Title: title, Description: errString, HTTPStatus: status}
+
+	log.WithFields(log.Fields{
+		"error":       err,
+		"title":       title,
+		"http status": status,
+	}).Error("Returning error in response")
+
 	w.Header().Set("Content-Type", taxiiContentType)
 	http.Error(w, resourceToJSON(te), status)
 }
@@ -116,17 +117,6 @@ func apiRoot(u string) string {
 	return tokens[rootIndex]
 }
 
-func insertPort(s string) string {
-	u, err := url.Parse(s)
-	if err != nil {
-		log.WithFields(log.Fields{
-			"url":   s,
-			"error": err,
-		}).Panic("Can't parse string")
-	}
-	return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(config.Port) + u.Path
-}
-
 func lastURLPathToken(u string) string {
 	u = strings.TrimSuffix(u, "/")
 	tokens := strings.Split(u, "/")
@@ -143,17 +133,6 @@ func resourceToJSON(v interface{}) string {
 		}).Panic("Can't convert to JSON")
 	}
 	return string(b)
-}
-
-func urlWithNoPort(u *url.URL) string {
-	var noPort string
-
-	if u.Host == "" {
-		noPort = "https://" + config.Host + u.Path
-	} else {
-		noPort = u.Scheme + "://" + u.Hostname() + u.Path
-	}
-	return noPort
 }
 
 func writeContent(w http.ResponseWriter, contentType, content string) {

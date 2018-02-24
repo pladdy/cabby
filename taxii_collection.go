@@ -34,7 +34,7 @@ func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 
 	user, ok := r.Context().Value(userName).(string)
 	if !ok {
-		badRequest(w, errors.New("Invalid user specified"))
+		unauthorized(w, errors.New("Invalid user specified"))
 		return
 	}
 

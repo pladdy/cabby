@@ -87,7 +87,7 @@ func TestNewTaxiiUserFail(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	config = cabbyConfig{}
+	config = Config{}
 
 	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
 	if err == nil {
