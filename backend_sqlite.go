@@ -156,7 +156,7 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 			return td, err
 		}
 		if apiRoot != "No API Roots defined" {
-			apiRoots = append(apiRoots, td.Default+apiRoot)
+			apiRoots = append(apiRoots, apiRoot)
 		}
 	}
 

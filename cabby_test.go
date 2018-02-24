@@ -140,6 +140,7 @@ func TestMain(t *testing.T) {
 	}()
 
 	mainTestConfigPort := "1235"
+
 	req := requestWithBasicAuth(strings.Replace(discoveryURL, "1234", mainTestConfigPort, 1))
 	res, _ := attemptRequest(tlsClient(), req)
 	defer res.Body.Close()
@@ -153,7 +154,9 @@ func TestMain(t *testing.T) {
 	}
 
 	expected := testDiscovery
-	expected.Default = insertPort(expected.Default)
+
+	expected.Default = ""
+	result.Default = ""
 
 	if result.Default != expected.Default {
 		t.Error("Got:", result.Default, "Expected:", expected.Default)

@@ -3,21 +3,29 @@ package main
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"strconv"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /* handler */
 
-func handleTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
+func handleTaxiiDiscovery(ts taxiiStorer, port int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
 		td := taxiiDiscovery{}
 		err := td.read(ts)
-		td.Default = insertPort(td.Default)
-
 		if err != nil {
 			badRequest(w, err)
 			return
+		}
+
+		td.Default = insertPort(td.Default, port)
+
+		for i := 0; i < len(td.APIRoots); i++ {
+			td.APIRoots[i] = swapPath(td.Default, td.APIRoots[i]) + "/"
 		}
 
 		if td.Title == "" {
@@ -26,6 +34,24 @@ func handleTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
 			writeContent(w, taxiiContentType, resourceToJSON(td))
 		}
 	})
+}
+
+func urlTokens(u string) map[string]string {
+	tokens, err := url.Parse(u)
+	if err != nil {
+		log.Panic("Can't parse url")
+	}
+	return map[string]string{"scheme": tokens.Scheme, "host": tokens.Host, "path": tokens.Path}
+}
+
+func insertPort(u string, port int) string {
+	tokens := urlTokens(u)
+	return tokens["scheme"] + "://" + tokens["host"] + ":" + strconv.Itoa(port) + tokens["path"]
+}
+
+func swapPath(u, p string) string {
+	tokens := urlTokens(u)
+	return tokens["scheme"] + "://" + tokens["host"] + "/" + p
 }
 
 /* model */

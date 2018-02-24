@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"testing"
 )
 
@@ -92,7 +91,7 @@ func TestWithLoggingUnauthorized(t *testing.T) {
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	// omit adding a user to the context
 	res := httptest.NewRecorder()
-	withRequestLogging(handleTaxiiDiscovery(ts))(res, req)
+	withRequestLogging(handleTaxiiDiscovery(ts, config.Port))(res, req)
 
 	if res.Code != http.StatusUnauthorized {
 		t.Error("Got:", res.Code, "Expected: unauthorized")
@@ -110,7 +109,7 @@ func TestHeaders(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	h := handleTaxiiDiscovery(ts)
+	h := handleTaxiiDiscovery(ts, config.Port)
 	s := httptest.NewServer(http.HandlerFunc(h))
 	defer s.Close()
 
@@ -185,24 +184,5 @@ func TestResourceToJSONFail(t *testing.T) {
 
 	if recovered != true {
 		t.Error("Got:", result, "Expected: 'recovered' to be true")
-	}
-}
-
-func TestUrlWithNoPort(t *testing.T) {
-	tests := []struct {
-		host     string
-		expected string
-	}{
-		{"https://localhost:1234/api_root", "https://localhost/api_root"},
-		{"https://localhost/api_root", "https://localhost/api_root"},
-		{"/api_root", "https://localhost/api_root"},
-	}
-
-	for _, test := range tests {
-		u, _ := url.Parse(test.host)
-		result := urlWithNoPort(u)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
 	}
 }

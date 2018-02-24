@@ -9,7 +9,7 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	config = cabbyConfig{}.parse("config/cabby.example.json")
+	config = Config{}.parse("config/cabby.example.json")
 	defer loadTestConfig()
 
 	if config.Host != "localhost" {
@@ -27,7 +27,7 @@ func TestParseConfigNotFound(t *testing.T) {
 		}
 	}()
 
-	_ = cabbyConfig{}.parse("foo/bar")
+	_ = Config{}.parse("foo/bar")
 	t.Error("Failed to panic with an unknown resource")
 }
 
@@ -42,6 +42,6 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 	}()
 
 	_ = ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	_ = cabbyConfig{}.parse(invalidJSON)
+	_ = Config{}.parse(invalidJSON)
 	t.Error("Failed to panic with an unknown resource")
 }

@@ -10,7 +10,7 @@ func TestHandleTaxiiDiscovery(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	status, result := handlerTest(handleTaxiiDiscovery(ts), "GET", discoveryURL, nil)
+	status, result := handlerTest(handleTaxiiDiscovery(ts, config.Port), "GET", discoveryURL, nil)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected:", 200)
@@ -45,7 +45,7 @@ func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	h := handleTaxiiDiscovery(ts)
+	h := handleTaxiiDiscovery(ts, config.Port)
 	h(res, req)
 
 	if res.Code != 404 {
@@ -71,7 +71,7 @@ func TestHandleTaxiiDiscoveryError(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	h := handleTaxiiDiscovery(ts)
+	h := handleTaxiiDiscovery(ts, config.Port)
 	h(res, req)
 
 	if res.Code != 400 {
@@ -91,5 +91,41 @@ func TestTaxiiDiscoveryFailParse(t *testing.T) {
 
 	if err == nil {
 		t.Error("Expected a taxiiStorer error")
+	}
+}
+
+func TestInsertPort(t *testing.T) {
+	tests := []struct {
+		url      string
+		port     int
+		expected string
+	}{
+		{"http://test.com/foo", 1234, "http://test.com:1234/foo"},
+		{"http://test.com", 1234, "http://test.com:1234"},
+	}
+
+	for _, test := range tests {
+		result := insertPort(test.url, test.port)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestSwapPath(t *testing.T) {
+	tests := []struct {
+		url      string
+		path     string
+		expected string
+	}{
+		{"http://test.com/foo", "baz", "http://test.com/baz"},
+		{"http://test.com", "foo", "http://test.com/foo"},
+	}
+
+	for _, test := range tests {
+		result := swapPath(test.url, test.path)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
 	}
 }

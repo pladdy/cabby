@@ -18,9 +18,6 @@ To run all tests: `make test`
 "Helper" functions are in `test_helper_test.go`.  The goal with this file was to put repetitive code that make the
 tests verbose into a DRY'er format.
 
-## Run
-`make run`
-
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
 - discovery
@@ -58,7 +55,7 @@ insert into taxii_discovery (title, description, contact, default_url) values(
   "a local taxii 2 server",
   "this is a test taxii2 server written in golang",
   "github.com/pladdy",
-  "https:/localhost/taxii/"
+  "https://localhost/taxii/"
 )'
 
 # set up api root
@@ -75,7 +72,6 @@ insert into taxii_api_root (id, api_root_path, title, description, versions, max
 
 In another terminal, run a server:
 ```sh
-make
 make run
 ```
 
