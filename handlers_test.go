@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,28 +9,6 @@ import (
 	"net/http/httptest"
 	"testing"
 )
-
-/* helpers */
-
-// handle generic testing of handlers.  It takes a handler function to call with a url;
-// it returns the status code and response as a string
-func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	var req *http.Request
-
-	if b != nil {
-		req = httptest.NewRequest("POST", url, b)
-	} else {
-		req = httptest.NewRequest(method, url, nil)
-	}
-
-	ctx := context.WithValue(context.Background(), userName, testUser)
-	req = req.WithContext(ctx)
-	res := httptest.NewRecorder()
-	h(res, req)
-
-	body, _ := ioutil.ReadAll(res.Body)
-	return res.Code, string(body)
-}
 
 func TestRequireAcceptTaxii(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {

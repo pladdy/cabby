@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -91,6 +95,26 @@ func getSQLiteDB() *sqliteDB {
 		fail.Fatal(err)
 	}
 	return s
+}
+
+// handle generic testing of handlers.  It takes a handler function to call with a url;
+// it returns the status code and response as a string
+func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
+	var req *http.Request
+
+	if b != nil {
+		req = httptest.NewRequest("POST", url, b)
+	} else {
+		req = httptest.NewRequest(method, url, nil)
+	}
+
+	ctx := context.WithValue(context.Background(), userName, testUser)
+	req = req.WithContext(ctx)
+	res := httptest.NewRecorder()
+	h(res, req)
+
+	body, _ := ioutil.ReadAll(res.Body)
+	return res.Code, string(body)
 }
 
 func loadTestConfig() {
