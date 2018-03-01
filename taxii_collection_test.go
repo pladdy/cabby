@@ -91,7 +91,7 @@ func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
 	defer s.disconnect()
 
 	var title string
-	err = s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
+	err = s.db.QueryRow("select collection_id from taxii_collection where collection_id = 'fail'").Scan(&title)
 	if err == nil {
 		t.Fatal("Should be no record created")
 	}
@@ -428,7 +428,7 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 
 	// check id in taxii_collection
 	var uid string
-	err = s.db.QueryRow("select id from taxii_collection where id = '" + cid.String() + "'").Scan(&uid)
+	err = s.db.QueryRow("select collection_id from taxii_collection where collection_id = '" + cid.String() + "'").Scan(&uid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -536,7 +536,7 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	_, err = s.db.Exec(`insert into taxii_collection (collection_id, title, description, media_types)
 	                    values ("` + id.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
@@ -570,7 +570,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	_, err = s.db.Exec(`insert into taxii_collection (collection_id, title, description, media_types)
 	                    values ("` + id.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)

@@ -15,8 +15,9 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 	bundleFile, _ := os.Open("test/data/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)
 
+	maxContent := int64(2048)
 	b := bytes.NewBuffer(bundle)
-	status, response := handlerTest(handleTaxiiObjects(ts), "POST", u, b)
+	status, response := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
 
 	if status != 200 {
 		t.Error("Got:", status, "Expected: 200")
@@ -40,7 +41,20 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 }
 
 func TestHandleTaxiiObjectsPostContentTooBig(t *testing.T) {
+	ts := getStorer()
+	defer ts.disconnect()
 
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	bundleFile, _ := os.Open("test/data/malware_bundle.json")
+	bundle, _ := ioutil.ReadAll(bundleFile)
+
+	maxContent := int64(1)
+	b := bytes.NewBuffer(bundle)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+
+	if status != 413 {
+		t.Error("Got:", status, "Expected: 413")
+	}
 }
 
 func TestHandleTaxiiObjectPostCollectionUnauthorized(t *testing.T) {

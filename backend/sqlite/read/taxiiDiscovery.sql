@@ -9,4 +9,4 @@ select
 from
   taxii_discovery td
   left join taxii_api_root tar
-    on td.id = tar.discovery_id
+    on td.discovery_id = tar.discovery_id

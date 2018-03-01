@@ -91,7 +91,7 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
+	_, err = s.db.Exec(`insert into taxii_collection (collection_id, title, description, media_types)
 	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
@@ -225,7 +225,7 @@ func TestSQLiteCreate(t *testing.T) {
 	}
 
 	var uid string
-	err := s.db.QueryRow(`select id from taxii_collection where id = 'test'`).Scan(&uid)
+	err := s.db.QueryRow(`select collection_id from taxii_collection where collection_id = 'test'`).Scan(&uid)
 	if err != nil {
 		t.Fatal(err)
 	}

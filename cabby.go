@@ -20,18 +20,27 @@ func newCabby(configPath string) (*http.Server, error) {
 		return &server, err
 	}
 
-	handler, err := setupHandler(ts)
+	handler, err := setupHandler(ts, config.Port)
 	if err != nil {
 		return &server, err
 	}
-	return setupServer(ts, handler), err
+	return setupServer(ts, handler, config.Port), err
 }
 
-func registerAPIRoot(ts taxiiStorer, rootPath string, h *http.ServeMux) {
+func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
+	ar := taxiiAPIRoot{}
+	err := ar.read(ts, rootPath)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"api_root": rootPath,
+		}).Error("No associated API root exists")
+	}
+
 	if rootPath != "" {
 		path := "/" + rootPath + "/"
-		registerRoute(h, path+"collections/", handleTaxiiCollections(ts))
-		registerRoute(h, path, handleTaxiiAPIRoot(ts))
+		registerRoute(sm, path+"collections/objects/", handleTaxiiObjects(ts, ar.MaxContentLength))
+		registerRoute(sm, path+"collections/", handleTaxiiCollections(ts))
+		registerRoute(sm, path, handleTaxiiAPIRoot(ts))
 	}
 }
 
@@ -45,7 +54,7 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 			withAcceptTaxii(h)))
 }
 
-func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
+func setupHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 	handler := http.NewServeMux()
 
 	apiRoots := taxiiAPIRoots{}
@@ -59,20 +68,20 @@ func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 		registerAPIRoot(ts, rootPath, handler)
 	}
 
-	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, config.Port))
+	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, port))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
 }
 
 // server is set up with basic auth and HSTS applied to each handler
-func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
-	port := strconv.Itoa(config.Port)
+func setupServer(ts taxiiStorer, h http.Handler, port int) *http.Server {
+	p := strconv.Itoa(config.Port)
 	log.WithFields(log.Fields{
-		"port": port,
+		"port": p,
 	}).Info("Server port configured")
 
 	return &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + p,
 		Handler:      withBasicAuth(ts, h),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),

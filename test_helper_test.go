@@ -21,8 +21,9 @@ const (
 	testConfig      = "test/config/testing_config.json"
 	testDB          = "test/test.db"
 	testID          = "82407036-edf9-4c75-9a56-e72697c53e99"
-	testUser        = "test@cabby.com"
 	testPass        = "test"
+	testPort        = 1234
+	testUser        = "test@cabby.com"
 	discoveryURL    = "https://localhost:1234/taxii/"
 	eightMB         = 8388608
 )

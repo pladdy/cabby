@@ -236,7 +236,8 @@ func TestSetupHandlerFail(t *testing.T) {
 	}
 	ts.disconnect()
 
-	_, err = setupHandler(ts)
+	maxContent := 1024
+	_, err = setupHandler(ts, maxContent)
 	if err == nil {
 		t.Error("Expected an error")
 	}

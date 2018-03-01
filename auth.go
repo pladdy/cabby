@@ -12,9 +12,13 @@ import (
 type key int
 
 const (
-	sixMonthsOfSeconds     = "63072000"
-	userName           key = 0
-	userCollections    key = 1
+	userName         key = 0
+	userCollections  key = 1
+	maxContentLength key = 3
+)
+
+const (
+	sixMonthsOfSeconds = "63072000"
 )
 
 func addTaxiiUserToRequest(tu taxiiUser, r *http.Request) *http.Request {
