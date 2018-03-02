@@ -31,13 +31,13 @@ ifeq ("$(html)","true")
 endif
 	@rm cover.out
 
-	dependencies:
-		go get
-		go get github.com/fzipp/gocyclo
-		go get github.com/golang/lint
+dependencies:
+	go get
+	go get github.com/fzipp/gocyclo
+	go get github.com/golang/lint
 
-	fmt:
-		go fmt -x
+fmt:
+	go fmt -x
 
 reportcard: fmt
 	gocyclo -over 15 .
@@ -51,7 +51,7 @@ sqlite:
 	rm -rf db/
 	mkdir db
 	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
-	
+
 test:
 	go test -v -cover ./...
 

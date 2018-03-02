@@ -28,9 +28,9 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	expectedCount := 3
+	expectedCount := 0
 	var count int
-	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	err := s.db.QueryRow("select count(*) from stix_object where collection_id = '" + testID + "'").Scan(&count)
 	if err != nil {
 		t.Error(err)
 	}

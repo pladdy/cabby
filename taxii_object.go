@@ -11,7 +11,7 @@ func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc
 
 		switch r.Method {
 		case http.MethodPost:
-			if contentTooLarge(r.ContentLength, maxContentLength) {
+			if contentIsTooLarge(r.ContentLength, maxContentLength) {
 				requestTooLarge(w, r.ContentLength, maxContentLength)
 				return
 			}
@@ -22,7 +22,7 @@ func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc
 	})
 }
 
-func contentTooLarge(r, m int64) bool {
+func contentIsTooLarge(r, m int64) bool {
 	if r > m {
 		return true
 	}
