@@ -33,12 +33,11 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
 	if err != nil {
 		log.WithFields(log.Fields{
 			"api_root": rootPath,
-		}).Error("No associated API root exists")
+		}).Error("Unable to read API roots")
 	}
 
 	if rootPath != "" {
 		path := "/" + rootPath + "/"
-		registerRoute(sm, path+"collections/objects/", handleTaxiiObjects(ts, ar.MaxContentLength))
 		registerRoute(sm, path+"collections/", handleTaxiiCollections(ts))
 		registerRoute(sm, path, handleTaxiiAPIRoot(ts))
 	}

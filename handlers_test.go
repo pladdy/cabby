@@ -13,7 +13,7 @@ import (
 func TestRequireAcceptTaxii(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
 		accept := r.Header.Get("Accept")
-		io.WriteString(w, fmt.Sprintln("Accept Header: %v", accept))
+		io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
 	}
 	mockHandler = withAcceptTaxii(mockHandler)
 

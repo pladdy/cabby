@@ -1,31 +1,32 @@
 /* stix */
 
-drop table if exists stix_object;
+drop table if exists stix_objects;
 
-create table stix_object (
-  stix_id       text not null,
-  stix_type     text not null,
-  stix_modified text not null,
+create table stix_objects (
+  id            text not null,
+  type          text not null,
+  created       text not null,
+  modified      text not null,
+  object        text not null check(json_valid(object) = 1),
   collection_id text not null,
-  stix_object   text not null,
   created_at    text,
   updated_at    text
 );
 
-  create trigger stix_object_ai_created_at after insert on stix_object
+  create trigger stix_objects_ai_created_at after insert on stix_objects
     begin
-      update stix_object set created_at = datetime('now') where stix_id = new.stix_id;
-      update stix_object set updated_at = datetime('now') where stix_id = new.stix_id;
+      update stix_objects set created_at = datetime('now') where id = new.id;
+      update stix_objects set updated_at = datetime('now') where id = new.id;
     end;
 
-  create trigger stix_object_au_updated_at after update on stix_object
+  create trigger stix_objects_au_updated_at after update on stix_objects
     begin
-      update stix_object set updated_at = datetime('now') where stix_id = new.stix_id;
+      update stix_objects set updated_at = datetime('now') where id = new.id;
     end;
 
-  create index stix_object_stix_id on stix_object (stix_id);
-  create index stix_object_stix_type on stix_object (stix_type);
-  create index stix_object_stix_version on stix_object (stix_id, stix_modified);
+  create index stix_objects_id on stix_objects (id);
+  create index stix_objects_type on stix_objects (type);
+  create index stix_objects_version on stix_objects (id, type, modified);
 
 /* taxii */
 

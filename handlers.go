@@ -110,6 +110,7 @@ func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 
 func recoverFromPanic(w http.ResponseWriter) {
 	if r := recover(); r != nil {
+		log.Error("Panic!")
 		resourceNotFound(w, errors.New("Resource not found"))
 	}
 }
@@ -120,6 +121,12 @@ func apiRoot(p string) string {
 	var rootIndex = 1
 	tokens := strings.Split(p, "/")
 	return tokens[rootIndex]
+}
+
+func collectionID(p string) string {
+	var collectionIndex = 3
+	tokens := strings.Split(p, "/")
+	return tokens[collectionIndex]
 }
 
 func lastURLPathToken(u string) string {

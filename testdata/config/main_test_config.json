@@ -5,6 +5,6 @@
   "ssl_key": "server.key",
   "data_store": {
     "name": "sqlite",
-    "path": "test/test.db"
+    "path": "testdata/test.db"
   }
 }

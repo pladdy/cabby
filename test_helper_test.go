@@ -18,8 +18,8 @@ import (
 
 const (
 	testAPIRootPath = "cabby_test_root"
-	testConfig      = "test/config/testing_config.json"
-	testDB          = "test/test.db"
+	testConfig      = "testdata/config/testing_config.json"
+	testDB          = "testdata/test.db"
 	testID          = "82407036-edf9-4c75-9a56-e72697c53e99"
 	testPass        = "test"
 	testPort        = 1234
@@ -104,13 +104,11 @@ func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, 
 	var req *http.Request
 
 	if b != nil {
-		req = httptest.NewRequest("POST", url, b)
+		req = withAuthContext(httptest.NewRequest("POST", url, b))
 	} else {
-		req = httptest.NewRequest(method, url, nil)
+		req = withAuthContext(httptest.NewRequest(method, url, nil))
 	}
 
-	ctx := context.WithValue(context.Background(), userName, testUser)
-	req = req.WithContext(ctx)
 	res := httptest.NewRecorder()
 	h(res, req)
 
@@ -140,20 +138,22 @@ func setupSQLite() {
 		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
-	info.Println("Reading in schema")
+	info.Println("Opening schema")
 	f, err := os.Open("backend/sqlite/schema.sql")
 	if err != nil {
-		fail.Fatal("Couldn't open schema file")
+		fail.Fatal("Couldn't open schema file: ", err)
 	}
 
+	info.Println("Reading in schema")
 	schema, err := ioutil.ReadAll(f)
 	if err != nil {
-		fail.Fatal("Couldn't read schema file")
+		fail.Fatal("Couldn't read schema file: ", err)
 	}
 
+	info.Println("Executing schema")
 	_, err = db.Exec(string(schema))
 	if err != nil {
-		fail.Fatal("Couldn't load schema")
+		fail.Fatal("Couldn't load schema: ", err)
 	}
 
 	loadTestConfig()
@@ -173,6 +173,21 @@ func setupSQLite() {
 
 func tearDownSQLite() {
 	os.Remove(testDB)
+}
+
+// create a context for the testUser and give it read/write access to the test collection
+func withAuthContext(r *http.Request) *http.Request {
+	tid, err := newTaxiiID(testID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ctx := context.WithValue(context.Background(), userName, testUser)
+	ctx = context.WithValue(ctx,
+		userCollections,
+		map[taxiiID]taxiiCollectionAccess{tid: taxiiCollectionAccess{ID: tid, CanRead: true, CanWrite: true}})
+
+	return r.WithContext(ctx)
 }
 
 /* check for panics and record recovery */

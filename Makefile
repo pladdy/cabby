@@ -1,11 +1,12 @@
 .PHONY: config test
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
+BUILD_TAGS=-tags json1
 
 all: config cert dependencies test
 
 build:
-	go build -o bin/cabby $(GO_FILES)
+	go build $(BUILD_TAGS) -o bin/cabby $(GO_FILES)
 
 clean:
 	rm -rf bin/ db/
@@ -21,8 +22,8 @@ config:
 	 done
 	@echo Configs available in config/
 
-cover:
-	go test -v -coverprofile=cover.out
+cover: test_install
+	go test $(BUILD_TAGS) -v -coverprofile=cover.out
 	go tool cover -func=cover.out
 	@echo
 	@echo "'make cover html=true' to see coverage details in a browser"
@@ -45,15 +46,25 @@ reportcard: fmt
 	go vet
 
 run:
-	go run $(GO_FILES)
+	go run $(BUILD_TAGS) $(GO_FILES)
 
 sqlite:
 	rm -rf db/
 	mkdir db
 	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
-test:
-	go test -v -cover ./...
+test: test_install
+	go test $(BUILD_TAGS) -v -cover ./...
 
-test_failures:
-	go test -v ./... 2>&1 | grep -A 1 FAIL
+test_failures: test_install
+	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
+
+test_install:
+	go test -tags json1 -i
+
+test_run:
+ifdef test
+	go test $(BUILD_TAGS) -v -run $(test)
+else
+	@echo Syntax is 'make test_run test=<test name>'
+endif
