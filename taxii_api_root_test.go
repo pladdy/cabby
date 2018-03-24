@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 )
 
@@ -11,8 +12,8 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 
 	status, result := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
 
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
 	var ta taxiiAPIRoot
@@ -35,8 +36,8 @@ func TestHandleTaxiiAPIRootFailRead(t *testing.T) {
 
 	status, _ := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
 
-	if status != 400 {
-		t.Error("Got:", status, "Expected: 400")
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
 	}
 }
 
@@ -53,7 +54,7 @@ func TestHandleTaxiiAPIRootNotFound(t *testing.T) {
 
 	status, _ := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
 
-	if status != 404 {
-		t.Error("Got:", status, "Expected: 400")
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }

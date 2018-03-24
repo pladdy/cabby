@@ -94,8 +94,8 @@ func TestBasicAuth(t *testing.T) {
 		pass           string
 		expectedStatus int
 	}{
-		{testUser, testPass, 200},
-		{"invalid", "pass", 401},
+		{testUser, testPass, http.StatusOK},
+		{"invalid", "pass", http.StatusUnauthorized},
 	}
 
 	for _, test := range tests {
@@ -218,6 +218,8 @@ func TestNewCabbyNoAPIRoots(t *testing.T) {
 }
 
 func TestNewCabbyFail(t *testing.T) {
+	defer loadTestConfig()
+
 	_, err := newCabby("testdata/config/no_datastore_config.json")
 	if err == nil {
 		t.Error("Expected an error")
@@ -225,6 +227,17 @@ func TestNewCabbyFail(t *testing.T) {
 }
 
 func TestRegisterAPIRootInvalidPath(t *testing.T) {
+	defer setupSQLite()
+
+	// remove required table
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_api_root")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	ts := getStorer()
 	defer ts.disconnect()
 

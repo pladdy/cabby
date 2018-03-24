@@ -21,12 +21,12 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		acceptHeader string
 		responseCode int
 	}{
-		{"application/vnd.oasis.taxii+json; version=2.0", 200},
-		{"application/vnd.oasis.taxii+json", 200},
-		{"application/vnd.oasis.taxii+json;verion=2.0", 200},
-		{"", 415},
-		{"application/vnd.oasis.taxii+jsonp", 415},
-		{"application/vnd.oasis.taxii+jsonp; version=3.0", 415},
+		{"application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
+		{"application/vnd.oasis.taxii+json", http.StatusOK},
+		{"application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
+		{"", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.taxii+jsonp", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusUnsupportedMediaType},
 	}
 
 	for _, test := range tests {
@@ -38,7 +38,7 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		body, _ := ioutil.ReadAll(res.Body)
 
 		if res.Code != test.responseCode {
-			t.Error("Got:", res.Code, string(body), "Expected: 200")
+			t.Error("Got:", res.Code, string(body), "Expected:", http.StatusOK)
 		}
 	}
 }
@@ -76,8 +76,8 @@ func TestWithLoggingUnauthorized(t *testing.T) {
 
 func TestHandleUndefinedRequest(t *testing.T) {
 	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home", nil)
-	if status != 404 {
-		t.Error("Got:", status, "Expected: 404", "Response:", result)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound, "Response:", result)
 	}
 }
 

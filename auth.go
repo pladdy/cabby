@@ -48,9 +48,7 @@ func withBasicAuth(ts taxiiStorer, h http.Handler) http.Handler {
 			return
 		}
 
-		log.WithFields(log.Fields{
-			"user": u,
-		}).Info("Basic Auth validated")
+		log.WithFields(log.Fields{"user": u}).Info("Basic Auth validated")
 
 		r = withTaxiiUser(tu, r)
 		h.ServeHTTP(withHSTS(w), r)

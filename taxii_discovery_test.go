@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 )
@@ -12,8 +13,8 @@ func TestHandleTaxiiDiscovery(t *testing.T) {
 
 	status, result := handlerTest(handleTaxiiDiscovery(ts, testPort), "GET", discoveryURL, nil)
 
-	if status != 200 {
-		t.Error("Got:", status, "Expected:", 200)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
 	var td taxiiDiscovery
@@ -48,8 +49,8 @@ func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 	h := handleTaxiiDiscovery(ts, config.Port)
 	h(res, req)
 
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
+	if res.Code != http.StatusNotFound {
+		t.Error("Got:", res.Code, "Expected:", http.StatusNotFound)
 	}
 }
 
@@ -74,8 +75,8 @@ func TestHandleTaxiiDiscoveryError(t *testing.T) {
 	h := handleTaxiiDiscovery(ts, config.Port)
 	h(res, req)
 
-	if res.Code != 404 {
-		t.Error("Got:", res.Code, "Expected:", 404)
+	if res.Code != http.StatusNotFound {
+		t.Error("Got:", res.Code, "Expected:", http.StatusNotFound)
 	}
 }
 
