@@ -58,12 +58,12 @@ create table taxii_api_root (
 drop table if exists taxii_collection;
 
 create table taxii_collection (
-  id           text not null primary key,
-  title        text,
-  description  text,
-  media_types  text,
-  created_at   text,
-  updated_at   text
+  id          text not null primary key,
+  title       text,
+  description text,
+  media_types text,
+  created_at  text,
+  updated_at  text
 );
 
   create trigger taxii_collection_ai_created_at after insert on taxii_collection
