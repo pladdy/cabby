@@ -33,7 +33,7 @@ create table stix_objects (
 drop table if exists taxii_api_root;
 
 create table taxii_api_root (
-  api_root_id        text    not null primary key,
+  id                 text    not null primary key,
   discovery_id       integer check(discovery_id = 1) default 1,
   api_root_path      text    not null,
   title              text    not null,
@@ -46,19 +46,19 @@ create table taxii_api_root (
 
   create trigger taxii_api_root_ai_created_at after insert on taxii_api_root
     begin
-      update taxii_api_root set created_at = datetime('now') where api_root_id = new.api_root_id;
-      update taxii_api_root set updated_at = datetime('now') where api_root_id = new.api_root_id;
+      update taxii_api_root set created_at = datetime('now') where id = new.id;
+      update taxii_api_root set updated_at = datetime('now') where id = new.id;
     end;
 
   create trigger taxii_api_root_au_updated_at after update on taxii_api_root
     begin
-      update taxii_api_root set updated_at = datetime('now') where api_root_id = new.api_root_id;
+      update taxii_api_root set updated_at = datetime('now') where id = new.id;
     end;
 
 drop table if exists taxii_collection;
 
 create table taxii_collection (
-  collection_id text not null primary key,
+  id text not null primary key,
   title        text,
   description  text,
   media_types  text,
@@ -68,13 +68,13 @@ create table taxii_collection (
 
   create trigger taxii_collection_ai_created_at after insert on taxii_collection
     begin
-      update taxii_collection set created_at = datetime('now') where collection_id = new.collection_id;
-      update taxii_collection set updated_at = datetime('now') where collection_id = new.collection_id;
+      update taxii_collection set created_at = datetime('now') where id = new.id;
+      update taxii_collection set updated_at = datetime('now') where id = new.id;
     end;
 
   create trigger taxii_collection_au_updated_at after update on taxii_collection
     begin
-      update taxii_collection set updated_at = datetime('now') where collection_id = new.collection_id;
+      update taxii_collection set updated_at = datetime('now') where id = new.id;
     end;
 
 drop table if exists taxii_collection_api_root;
@@ -105,7 +105,7 @@ create table taxii_collection_api_root (
 drop table if exists taxii_discovery;
 
 create table taxii_discovery (
-  discovery_id text check(discovery_id = 1) default 1 primary key, /* can only be one, see trigger below */
+  id           text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
   title        text not null,
   description  text,
   contact      text,
@@ -116,13 +116,13 @@ create table taxii_discovery (
 
   create trigger taxii_discovery_ai_created_at after insert on taxii_discovery
     begin
-      update taxii_discovery set created_at = datetime('now') where discovery_id = new.discovery_id;
-      update taxii_discovery set updated_at = datetime('now') where discovery_id = new.discovery_id;
+      update taxii_discovery set created_at = datetime('now') where id = new.id;
+      update taxii_discovery set updated_at = datetime('now') where id = new.id;
     end;
 
   create trigger taxii_discovery_au_updated_at after update on taxii_discovery
     begin
-      update taxii_discovery set updated_at = datetime('now') where discovery_id = new.discovery_id;
+      update taxii_discovery set updated_at = datetime('now') where id = new.id;
     end;
 
   create trigger taxii_discovery_bi_count before insert on taxii_discovery
@@ -137,7 +137,7 @@ create table taxii_discovery (
 drop table if exists taxii_status;
 
 create table taxii_status (
-  status_id         text not null,
+  id                text not null,
   status            text not null,
   request_timestamp text,
   total_count       integer not null,
@@ -154,16 +154,16 @@ create table taxii_status (
 
   create trigger taxii_status_ai_created_at after insert on taxii_status
     begin
-      update taxii_status set created_at = datetime('now') where status_id = new.status_id;
-      update taxii_status set updated_at = datetime('now') where status_id = new.status_id;
+      update taxii_status set created_at = datetime('now') where id = new.id;
+      update taxii_status set updated_at = datetime('now') where id = new.id;
     end;
 
   create trigger taxii_status_au_updated_at after update on taxii_status
     begin
-      update taxii_status set updated_at = datetime('now') where status_id = new.status_id;
+      update taxii_status set updated_at = datetime('now') where id = new.id;
     end;
 
-  create index taxii_status_taxii_id on taxii_status (status_id);
+  create index taxii_status_taxii_id on taxii_status (id);
 
 drop table if exists taxii_user;
 
