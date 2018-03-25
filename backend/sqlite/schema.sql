@@ -105,13 +105,13 @@ create table taxii_collection_api_root (
 drop table if exists taxii_discovery;
 
 create table taxii_discovery (
-  id           text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
-  title        text not null,
-  description  text,
-  contact      text,
-  default_url  text,
-  created_at   text,
-  updated_at   text
+  id          text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
+  title       text not null,
+  description text,
+  contact     text,
+  default_url text,
+  created_at  text,
+  updated_at  text
 );
 
   create trigger taxii_discovery_ai_created_at after insert on taxii_discovery
