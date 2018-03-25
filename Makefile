@@ -3,7 +3,7 @@
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
 
-all: config cert dependencies test
+all: config cert dependencies
 
 build:
 	go build $(BUILD_TAGS) -o bin/cabby $(GO_FILES)
@@ -33,7 +33,7 @@ endif
 	@rm cover.out
 
 dependencies:
-	go get
+	go get -t -v  ./...
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
 
