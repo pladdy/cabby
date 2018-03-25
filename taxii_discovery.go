@@ -18,7 +18,7 @@ func handleTaxiiDiscovery(ts taxiiStorer, port int) http.HandlerFunc {
 		td := taxiiDiscovery{}
 		err := td.read(ts)
 		if err != nil {
-			badRequest(w, err)
+			resourceNotFound(w, err)
 			return
 		}
 

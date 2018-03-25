@@ -94,8 +94,8 @@ func TestBasicAuth(t *testing.T) {
 		pass           string
 		expectedStatus int
 	}{
-		{testUser, testPass, 200},
-		{"invalid", "pass", 401},
+		{testUser, testPass, http.StatusOK},
+		{"invalid", "pass", http.StatusUnauthorized},
 	}
 
 	for _, test := range tests {
@@ -128,10 +128,10 @@ func TestHSTS(t *testing.T) {
 
 func TestMain(t *testing.T) {
 	renameFile(defaultConfig, defaultConfig+".testing")
-	renameFile("test/config/main_test_config.json", defaultConfig)
+	renameFile("testdata/config/main_test_config.json", defaultConfig)
 
 	defer func() {
-		renameFile(defaultConfig, "test/config/main_test_config.json")
+		renameFile(defaultConfig, "testdata/config/main_test_config.json")
 		renameFile(defaultConfig+".testing", defaultConfig)
 	}()
 
@@ -165,10 +165,10 @@ func TestMain(t *testing.T) {
 
 func TestMainPanic(t *testing.T) {
 	renameFile(defaultConfig, defaultConfig+".testing")
-	renameFile("test/config/no_datastore_config.json", defaultConfig)
+	renameFile("testdata/config/no_datastore_config.json", defaultConfig)
 
 	defer func() {
-		renameFile(defaultConfig, "test/config/no_datastore_config.json")
+		renameFile(defaultConfig, "testdata/config/no_datastore_config.json")
 		renameFile(defaultConfig+".testing", defaultConfig)
 	}()
 
@@ -218,10 +218,32 @@ func TestNewCabbyNoAPIRoots(t *testing.T) {
 }
 
 func TestNewCabbyFail(t *testing.T) {
-	_, err := newCabby("test/config/no_datastore_config.json")
+	defer loadTestConfig()
+
+	_, err := newCabby("testdata/config/no_datastore_config.json")
 	if err == nil {
 		t.Error("Expected an error")
 	}
+}
+
+func TestRegisterAPIRootInvalidPath(t *testing.T) {
+	defer setupSQLite()
+
+	// remove required table
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_api_root")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	invalidPath := "foo"
+	handler := http.NewServeMux()
+	registerAPIRoot(ts, invalidPath, handler)
 }
 
 func TestSetupHandlerFail(t *testing.T) {
@@ -236,7 +258,8 @@ func TestSetupHandlerFail(t *testing.T) {
 	}
 	ts.disconnect()
 
-	_, err = setupHandler(ts)
+	maxContent := 1024
+	_, err = setupHandler(ts, maxContent)
 	if err == nil {
 		t.Error("Expected an error")
 	}

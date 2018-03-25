@@ -25,6 +25,7 @@ config/*
 *.swp
 *.db
 TODO.md
+coverage.txt
 
 # Vagrant
 .vagrant

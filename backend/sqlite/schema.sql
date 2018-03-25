@@ -1,3 +1,35 @@
+/* stix */
+
+drop table if exists stix_objects;
+
+create table stix_objects (
+  id            text not null,
+  type          text not null,
+  created       text not null,
+  modified      text not null,
+  object        text not null check(json_valid(object) = 1),
+  collection_id text not null,
+  created_at    text,
+  updated_at    text
+);
+
+  create trigger stix_objects_ai_created_at after insert on stix_objects
+    begin
+      update stix_objects set created_at = datetime('now') where id = new.id;
+      update stix_objects set updated_at = datetime('now') where id = new.id;
+    end;
+
+  create trigger stix_objects_au_updated_at after update on stix_objects
+    begin
+      update stix_objects set updated_at = datetime('now') where id = new.id;
+    end;
+
+  create index stix_objects_id on stix_objects (id);
+  create index stix_objects_type on stix_objects (type);
+  create index stix_objects_version on stix_objects (id, type, modified);
+
+/* taxii */
+
 drop table if exists taxii_api_root;
 
 create table taxii_api_root (
@@ -102,6 +134,37 @@ create table taxii_discovery (
         end;
     end;
 
+drop table if exists taxii_status;
+
+create table taxii_status (
+  id                text not null,
+  status            text not null,
+  request_timestamp text,
+  total_count       integer not null,
+  success_count     integer not null,
+  successes         text,
+  failure_count     integer not null,
+  failures          text,
+  pending_count     integer not null,
+  pendings          text,
+  /* internal */
+  created_at    text,
+  updated_at    text
+);
+
+  create trigger taxii_status_ai_created_at after insert on taxii_status
+    begin
+      update taxii_status set created_at = datetime('now') where id = new.id;
+      update taxii_status set updated_at = datetime('now') where id = new.id;
+    end;
+
+  create trigger taxii_status_au_updated_at after update on taxii_status
+    begin
+      update taxii_status set updated_at = datetime('now') where id = new.id;
+    end;
+
+  create index taxii_status_taxii_id on taxii_status (id);
+
 drop table if exists taxii_user;
 
 create table taxii_user (
@@ -131,8 +194,8 @@ drop table if exists taxii_user_collection;
 create table taxii_user_collection (
   email         text    not null,
   collection_id text    not null,
-  can_read      integer not null,
-  can_write     integer not null,
+  can_read      integer check(can_read in (1, 0)) not null,
+  can_write     integer check(can_read in (1, 0)) not null,
   created_at    text,
   updated_at    text,
 

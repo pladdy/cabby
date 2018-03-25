@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,32 +10,10 @@ import (
 	"testing"
 )
 
-/* helpers */
-
-// handle generic testing of handlers.  It takes a handler function to call with a url;
-// it returns the status code and response as a string
-func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	var req *http.Request
-
-	if b != nil {
-		req = httptest.NewRequest("POST", url, b)
-	} else {
-		req = httptest.NewRequest(method, url, nil)
-	}
-
-	ctx := context.WithValue(context.Background(), userName, testUser)
-	req = req.WithContext(ctx)
-	res := httptest.NewRecorder()
-	h(res, req)
-
-	body, _ := ioutil.ReadAll(res.Body)
-	return res.Code, string(body)
-}
-
 func TestRequireAcceptTaxii(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
 		accept := r.Header.Get("Accept")
-		io.WriteString(w, fmt.Sprintln("Accept Header: %v", accept))
+		io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
 	}
 	mockHandler = withAcceptTaxii(mockHandler)
 
@@ -45,12 +21,12 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		acceptHeader string
 		responseCode int
 	}{
-		{"application/vnd.oasis.taxii+json; version=2.0", 200},
-		{"application/vnd.oasis.taxii+json", 200},
-		{"application/vnd.oasis.taxii+json;verion=2.0", 200},
-		{"", 415},
-		{"application/vnd.oasis.taxii+jsonp", 415},
-		{"application/vnd.oasis.taxii+jsonp; version=3.0", 415},
+		{"application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
+		{"application/vnd.oasis.taxii+json", http.StatusOK},
+		{"application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
+		{"", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.taxii+jsonp", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusUnsupportedMediaType},
 	}
 
 	for _, test := range tests {
@@ -62,7 +38,7 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		body, _ := ioutil.ReadAll(res.Body)
 
 		if res.Code != test.responseCode {
-			t.Error("Got:", res.Code, string(body), "Expected: 200")
+			t.Error("Got:", res.Code, string(body), "Expected:", http.StatusOK)
 		}
 	}
 }
@@ -100,8 +76,8 @@ func TestWithLoggingUnauthorized(t *testing.T) {
 
 func TestHandleUndefinedRequest(t *testing.T) {
 	status, result := handlerTest(handleUndefinedRequest, "GET", "/nobody-home", nil)
-	if status != 404 {
-		t.Error("Got:", status, "Expected: 404", "Response:", result)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound, "Response:", result)
 	}
 }
 

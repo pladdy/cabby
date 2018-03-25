@@ -88,6 +88,11 @@ func resourceNotFound(w http.ResponseWriter, err error) {
 	errorStatus(w, "Resource not found", err, http.StatusNotFound)
 }
 
+func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
+	err := fmt.Errorf("content length is %v, content length can't be bigger than %v", rc, mc)
+	errorStatus(w, "Request too large", err, http.StatusRequestEntityTooLarge)
+}
+
 func unauthorized(w http.ResponseWriter, err error) {
 	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
 	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
@@ -105,16 +110,23 @@ func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
 
 func recoverFromPanic(w http.ResponseWriter) {
 	if r := recover(); r != nil {
+		log.Error("Panic!")
 		resourceNotFound(w, errors.New("Resource not found"))
 	}
 }
 
 /* helpers */
 
-func apiRoot(u string) string {
+func apiRoot(p string) string {
 	var rootIndex = 1
-	tokens := strings.Split(u, "/")
+	tokens := strings.Split(p, "/")
 	return tokens[rootIndex]
+}
+
+func collectionID(p string) string {
+	var collectionIndex = 3
+	tokens := strings.Split(p, "/")
+	return tokens[collectionIndex]
 }
 
 func lastURLPathToken(u string) string {

@@ -9,6 +9,7 @@ import (
 
 var config Config
 
+// Config represents a cabby config file
 type Config struct {
 	Host      string
 	Port      int

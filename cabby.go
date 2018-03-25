@@ -20,32 +20,37 @@ func newCabby(configPath string) (*http.Server, error) {
 		return &server, err
 	}
 
-	handler, err := setupHandler(ts)
+	handler, err := setupHandler(ts, config.Port)
 	if err != nil {
 		return &server, err
 	}
-	return setupServer(ts, handler), err
+	return setupServer(ts, handler, config.Port), err
 }
 
-func registerAPIRoot(ts taxiiStorer, rootPath string, h *http.ServeMux) {
+func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
+	ar := taxiiAPIRoot{}
+	err := ar.read(ts, rootPath)
+	if err != nil {
+		log.WithFields(log.Fields{"api_root": rootPath}).Error("Unable to read API roots")
+		return
+	}
+
 	if rootPath != "" {
 		path := "/" + rootPath + "/"
-		registerRoute(h, path+"collections/", handleTaxiiCollections(ts))
-		registerRoute(h, path, handleTaxiiAPIRoot(ts))
+		registerRoute(sm, path+"collections/", handleTaxiiCollections(ts))
+		registerRoute(sm, path, handleTaxiiAPIRoot(ts))
 	}
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
-	log.WithFields(log.Fields{
-		"path": path,
-	}).Info("Registering handler")
+	log.WithFields(log.Fields{"path": path}).Info("Registering handler")
 
 	sm.HandleFunc(path,
 		withRequestLogging(
 			withAcceptTaxii(h)))
 }
 
-func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
+func setupHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 	handler := http.NewServeMux()
 
 	apiRoots := taxiiAPIRoots{}
@@ -59,20 +64,18 @@ func setupHandler(ts taxiiStorer) (*http.ServeMux, error) {
 		registerAPIRoot(ts, rootPath, handler)
 	}
 
-	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, config.Port))
+	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, port))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
 }
 
 // server is set up with basic auth and HSTS applied to each handler
-func setupServer(ts taxiiStorer, h http.Handler) *http.Server {
-	port := strconv.Itoa(config.Port)
-	log.WithFields(log.Fields{
-		"port": port,
-	}).Info("Server port configured")
+func setupServer(ts taxiiStorer, h http.Handler, port int) *http.Server {
+	p := strconv.Itoa(config.Port)
+	log.WithFields(log.Fields{"port": p}).Info("Server port configured")
 
 	return &http.Server{
-		Addr:         ":" + port,
+		Addr:         ":" + p,
 		Handler:      withBasicAuth(ts, h),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
@@ -96,9 +99,7 @@ func setupTLS() *tls.Config {
 func main() {
 	server, err := newCabby(defaultConfig)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Panic("Can't start server")
+		log.WithFields(log.Fields{"error": err}).Panic("Can't start server")
 	}
 
 	log.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
