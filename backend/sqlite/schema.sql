@@ -58,7 +58,7 @@ create table taxii_api_root (
 drop table if exists taxii_collection;
 
 create table taxii_collection (
-  id text not null primary key,
+  id           text not null primary key,
   title        text,
   description  text,
   media_types  text,
