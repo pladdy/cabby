@@ -58,12 +58,13 @@ create table taxii_api_root (
 drop table if exists taxii_collection;
 
 create table taxii_collection (
-  id          text not null primary key,
-  title       text,
-  description text,
-  media_types text,
-  created_at  text,
-  updated_at  text
+  id            text not null primary key,
+  api_root_path text not null,
+  title         text,
+  description   text,
+  media_types   text,
+  created_at    text,
+  updated_at    text
 );
 
   create trigger taxii_collection_ai_created_at after insert on taxii_collection
@@ -75,31 +76,6 @@ create table taxii_collection (
   create trigger taxii_collection_au_updated_at after update on taxii_collection
     begin
       update taxii_collection set updated_at = datetime('now') where id = new.id;
-    end;
-
-drop table if exists taxii_collection_api_root;
-
-create table taxii_collection_api_root (
-  collection_id text not null,
-  api_root_id   text not null,
-  created_at    text,
-  updated_at    text,
-
-  primary key (collection_id, api_root_id)
-);
-
-  create trigger taxii_collection_api_root_ai_created_at after insert on taxii_collection_api_root
-    begin
-      update taxii_collection_api_root set created_at = datetime('now')
-        where collection_id = new.collection_id and api_root_id = new.api_root_id;
-      update taxii_collection_api_root set updated_at = datetime('now')
-        where collection_id = new.collection_id and api_root_id = new.api_root_id;
-    end;
-
-  create trigger taxii_collection_api_root_au_updated_at after update on taxii_collection_api_root
-    begin
-      update taxii_collection_api_root set updated_at = datetime('now')
-        where collection_id = new.collection_id and api_root_id = new.api_root_id;
     end;
 
 drop table if exists taxii_discovery;
@@ -216,10 +192,13 @@ create table taxii_user_collection (
 drop table if exists taxii_user_pass;
 
 create table taxii_user_pass (
-  email      text not null primary key,
+  id         integer primary key not null,
+  email      text not null,
   pass       text not null check (pass != ""),
   created_at text,
-  updated_at text
+  updated_at text,
+
+  unique(email) on conflict ignore
 );
 
   create trigger taxii_user_pass_ai_created_at after insert on taxii_user_pass

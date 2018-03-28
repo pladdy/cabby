@@ -165,10 +165,27 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 	return td, err
 }
 
+func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) {
+	rs := routableCollections{}
+
+	for rows.Next() {
+		var collectionID taxiiID
+		if err := rows.Scan(&collectionID); err != nil {
+			return rs, err
+		}
+		rs.CollectionIDs = append(rs.CollectionIDs, collectionID)
+	}
+
+	err := rows.Err()
+	return rs, err
+}
+
 func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
 
 	switch resource {
+	case "routableCollections":
+		result, err = s.readRoutableCollections(rows)
 	case "taxiiAPIRoot":
 		result, err = s.readAPIRoot(rows)
 	case "taxiiAPIRoots":

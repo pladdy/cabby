@@ -436,19 +436,6 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	if uid != cid.String() {
 		t.Error("Got:", uid, "Expected:", cid.String())
 	}
-
-	// check for collection api root association
-	info.Println("Looking for ID:", cid.String())
-
-	err = s.db.QueryRow(`select collection_id from taxii_collection_api_root where collection_id = '` +
-		cid.String() + "'").Scan(&uid)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if uid != cid.String() {
-		t.Error("Got:", uid, "Expected:", cid.String())
-	}
 }
 
 func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
@@ -511,7 +498,7 @@ func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_collection_api_root")
+	_, err = s.db.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -536,8 +523,8 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + id.String() + `", "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ("` + id.String() + `", "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -570,8 +557,8 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + id.String() + `", "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ("` + id.String() + `", "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
