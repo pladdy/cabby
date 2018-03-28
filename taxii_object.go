@@ -21,37 +21,16 @@ func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc
 				return
 			}
 			handlePostTaxiiObjects(ts, w, r)
+		case http.MethodGet:
+			handleGetTaxiiObjects(ts, w, r)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 		}
 	})
 }
 
-func contentTooLarge(r, m int64) bool {
-	if r > m {
-		return true
-	}
-	return false
-}
+func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
 
-func bundleFromBytes(b []byte) (s.Bundle, error) {
-	var bundle s.Bundle
-
-	err := json.Unmarshal(b, &bundle)
-	if err != nil {
-		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
-	}
-
-	valid, errs := bundle.Validate()
-	if !valid {
-		errString := "Invalid bundle:"
-		for _, e := range errs {
-			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
-		}
-		err = fmt.Errorf(errString)
-	}
-
-	return bundle, err
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
@@ -82,4 +61,33 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 
 	status.TotalCount = int64(len(bundle.Objects))
 	writeContent(w, taxiiContentType, resourceToJSON(status))
+}
+
+/* helpers */
+
+func bundleFromBytes(b []byte) (s.Bundle, error) {
+	var bundle s.Bundle
+
+	err := json.Unmarshal(b, &bundle)
+	if err != nil {
+		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
+	}
+
+	valid, errs := bundle.Validate()
+	if !valid {
+		errString := "Invalid bundle:"
+		for _, e := range errs {
+			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
+		}
+		err = fmt.Errorf(errString)
+	}
+
+	return bundle, err
+}
+
+func contentTooLarge(r, m int64) bool {
+	if r > m {
+		return true
+	}
+	return false
 }

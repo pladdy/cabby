@@ -71,23 +71,21 @@ insert into taxii_api_root (id, api_root_path, title, description, versions, max
 ```
 
 In another terminal, run a server:
-```sh
-make run
-```
+`make run`
 
-##### View TAXII Root
+#### View TAXII Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 # without a trailing slash
 curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
 ```
 
-##### View API Root
+#### View API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
 ```
 
-##### Create a collection in API Root
+#### Create a collection in API Root
 Let the server assign an ID:
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
@@ -100,7 +98,7 @@ Check it:
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-##### Create a collection with an ID in API Root
+#### Create a collection with an ID in API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "a collection",
