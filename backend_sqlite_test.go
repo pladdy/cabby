@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"strconv"
 	"testing"
@@ -91,8 +90,8 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + tuid.String() + `", "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ("` + tuid.String() + `", "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -145,8 +144,6 @@ func TestSQLiteReadScanError(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	type readFunction func(*sql.Rows) (interface{}, error)
-
 	tests := []struct {
 		fn readFunction
 	}{
@@ -154,12 +151,14 @@ func TestSQLiteReadScanError(t *testing.T) {
 		{s.readAPIRoots},
 		{s.readCollections},
 		{s.readCollectionAccess},
-		{s.readUser},
 		{s.readDiscovery},
+		{s.readRoutableCollections},
+		{s.readStixObjects},
+		{s.readUser},
 	}
 
 	for _, test := range tests {
-		rows, err := s.db.Query(`select null`)
+		rows, err := s.db.Query(`select 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -217,7 +216,7 @@ func TestSQLiteCreate(t *testing.T) {
 	errs := make(chan error, 10)
 
 	go s.create("taxiiCollection", toCreate, errs)
-	toCreate <- []interface{}{"test", "test collection", "this is a test collection", "media type"}
+	toCreate <- []interface{}{"test", "test api root", "test collection", "this is a test collection", "media type"}
 	close(toCreate)
 
 	for e := range errs {
@@ -317,7 +316,7 @@ func TestSQLiteCreateMaxWrites(t *testing.T) {
 	writes := maxWrites
 	for i := 0; i < writes; i++ {
 		iStr := strconv.FormatInt(int64(i), 10)
-		args := []interface{}{"test" + iStr, t.Name(), "description", "media_type"}
+		args := []interface{}{"test" + iStr, "apiRoot" + iStr, t.Name(), "description", "media_type"}
 		toCreate <- args
 	}
 

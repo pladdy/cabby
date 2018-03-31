@@ -21,8 +21,8 @@ func TestNewTaxiiUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ('` + id.String() + `', "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ('` + id.String() + `', "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -68,8 +68,8 @@ func TestNewTaxiiUserNoAccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ('` + id.String() + `', "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ('` + id.String() + `', "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}

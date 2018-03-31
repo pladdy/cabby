@@ -12,17 +12,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+func collectionsURL() string {
+	u, err := url.Parse("https://localhost/api_root/collections")
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return u.String()
+}
+
 func TestHandleTaxiiCollectionsPost(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", u.String(), b)
+	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -32,7 +35,7 @@ func TestHandleTaxiiCollectionsPost(t *testing.T) {
 	defer s.disconnect()
 
 	var title string
-	err = s.db.QueryRow("select title from taxii_collection where title = '" + t.Name() + "'").Scan(&title)
+	err := s.db.QueryRow("select title from taxii_collection where title = '" + t.Name() + "'").Scan(&title)
 	if err != nil {
 		t.Error(err)
 	}
@@ -58,13 +61,8 @@ func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
 	defer ts.disconnect()
 
 	// test a post which should fail
-	u, err := url.Parse("https://localhost/api_root/collections")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", u.String(), b)
+	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -75,12 +73,7 @@ func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", u.String(), nil)
+	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), nil)
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -91,7 +84,7 @@ func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
 	defer s.disconnect()
 
 	var title string
-	err = s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
+	err := s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
 	if err == nil {
 		t.Fatal("Should be no record created")
 	}
@@ -125,14 +118,9 @@ func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections/")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	// set up a request with some data
 	data := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	req := httptest.NewRequest("POST", u.String(), data)
+	req := httptest.NewRequest("POST", collectionsURL(), data)
 
 	// update context to a fake user
 	ctx := context.WithValue(context.Background(), userName, nil)
@@ -162,12 +150,7 @@ func TestHandleTaxiiCollectionsGet(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections/")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, result := handlerTest(handleTaxiiCollections(ts), "GET", u.String(), nil)
+	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
 
 	expected := `{"collections":[{"id":"82407036-edf9-4c75-9a56-e72697c53e99","can_read":true,` +
 		`"can_write":true,"title":"a title","description":"a description","media_types":[""]}]}`
@@ -184,12 +167,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections/fail")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, result := handlerTest(handleTaxiiCollections(ts), "GET", u.String(), nil)
+	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/fail", nil)
 	expected := `{"title":"Bad Request","description":"uuid: incorrect UUID length: fail","http_status":"400"}` + "\n"
 
 	if status != http.StatusBadRequest {
@@ -211,12 +189,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	status, result := handlerTest(handleTaxiiCollections(ts), "GET", u.String(), nil)
+	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/"+id.String(), nil)
 	expected := `{"title":"Resource not found","description":"Invalid Collection","http_status":"404"}` + "\n"
 
 	if status != http.StatusNotFound {
@@ -236,12 +209,7 @@ func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	u, err := url.Parse("https://localhost/api_root/collections/" + id.String())
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	req := httptest.NewRequest("GET", u.String(), nil)
+	req := httptest.NewRequest("GET", collectionsURL()+"/"+id.String(), nil)
 	// don't set a user in the context before setting up a response
 	res := httptest.NewRecorder()
 	h := handleTaxiiCollections(ts)
@@ -290,20 +258,15 @@ func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u, err := url.Parse("https://localhost/api_root/collections/")
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("delete from taxii_user_collection")
+	_, err := s.db.Exec("delete from taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", u.String(), nil)
+	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
@@ -436,19 +399,6 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	if uid != cid.String() {
 		t.Error("Got:", uid, "Expected:", cid.String())
 	}
-
-	// check for collection api root association
-	info.Println("Looking for ID:", cid.String())
-
-	err = s.db.QueryRow(`select collection_id from taxii_collection_api_root where collection_id = '` +
-		cid.String() + "'").Scan(&uid)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if uid != cid.String() {
-		t.Error("Got:", uid, "Expected:", cid.String())
-	}
 }
 
 func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
@@ -511,7 +461,7 @@ func TestTaxiiCollectionCreateFailWritePart(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("drop table taxii_collection_api_root")
+	_, err = s.db.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -536,8 +486,8 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + id.String() + `", "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ("` + id.String() + `", "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
@@ -570,8 +520,8 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = s.db.Exec(`insert into taxii_collection (id, title, description, media_types)
-	                    values ("` + id.String() + `", "a title", "a description", "")`)
+	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
+	                    values ("` + id.String() + `", "api_root", "a title", "a description", "")`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}

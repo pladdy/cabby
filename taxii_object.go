@@ -21,37 +21,33 @@ func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc
 				return
 			}
 			handlePostTaxiiObjects(ts, w, r)
+		case http.MethodGet:
+			handleGetTaxiiObjects(ts, w, r)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 		}
 	})
 }
 
-func contentTooLarge(r, m int64) bool {
-	if r > m {
-		return true
+func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !takeCollectionAccess(r).CanRead {
+		unauthorized(w, fmt.Errorf("Unauthorized to read from collection"))
+		return
 	}
-	return false
-}
 
-func bundleFromBytes(b []byte) (s.Bundle, error) {
-	var bundle s.Bundle
-
-	err := json.Unmarshal(b, &bundle)
+	b, err := s.NewBundle()
 	if err != nil {
-		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
+		resourceNotFound(w, errors.New("Unable to create bundle"))
 	}
 
-	valid, errs := bundle.Validate()
-	if !valid {
-		errString := "Invalid bundle:"
-		for _, e := range errs {
-			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
-		}
-		err = fmt.Errorf(errString)
+	sos := stixObjects{}
+	sos.read(ts, collectionID(r.URL.Path))
+
+	for _, o := range sos.Objects {
+		b.Objects = append(b.Objects, o)
 	}
 
-	return bundle, err
+	writeContent(w, stixContentType, resourceToJSON(b))
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
@@ -78,8 +74,36 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 		resourceNotFound(w, errors.New("Unable to process status"))
 	}
 
-	writeBundle(bundle, collectionID(r.URL.Path), ts)
-
 	status.TotalCount = int64(len(bundle.Objects))
 	writeContent(w, taxiiContentType, resourceToJSON(status))
+	go writeBundle(bundle, collectionID(r.URL.Path), ts)
+}
+
+/* helpers */
+
+func bundleFromBytes(b []byte) (s.Bundle, error) {
+	var bundle s.Bundle
+
+	err := json.Unmarshal(b, &bundle)
+	if err != nil {
+		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
+	}
+
+	valid, errs := bundle.Validate()
+	if !valid {
+		errString := "Invalid bundle:"
+		for _, e := range errs {
+			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
+		}
+		err = fmt.Errorf(errString)
+	}
+
+	return bundle, err
+}
+
+func contentTooLarge(r, m int64) bool {
+	if r > m {
+		return true
+	}
+	return false
 }

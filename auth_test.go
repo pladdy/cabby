@@ -1,6 +1,21 @@
 package main
 
-import "testing"
+import (
+	"net/http/httptest"
+	"testing"
+)
+
+func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
+	// create a request with a valid context BUT a path with an invalid collection in it
+	request := withAuthContext(httptest.NewRequest("GET", "/foo/bar/baz", nil))
+
+	tca := takeCollectionAccess(request)
+	empty := taxiiCollectionAccess{}
+
+	if tca != empty {
+		t.Error("Got:", tca, "Expected:", empty)
+	}
+}
 
 func TestValidateUser(t *testing.T) {
 	setupSQLite()

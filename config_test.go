@@ -41,7 +41,7 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 		}
 	}()
 
-	_ = ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	_ = Config{}.parse(invalidJSON)
+	ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
+	Config{}.parse(invalidJSON)
 	t.Error("Failed to panic with an unknown resource")
 }

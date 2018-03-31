@@ -36,16 +36,38 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
 	}
 
 	if rootPath != "" {
-		path := "/" + rootPath + "/"
-		registerRoute(sm, path+"collections/", handleTaxiiCollections(ts))
-		registerRoute(sm, path, handleTaxiiAPIRoot(ts))
+		registerObjects(ts, ar, rootPath, sm)
+		registerRoute(sm, rootPath+"/collections", handleTaxiiCollections(ts))
+		registerRoute(sm, rootPath, handleTaxiiAPIRoot(ts))
+	}
+}
+
+func registerObjects(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, sm *http.ServeMux) {
+	rcs := routableCollections{}
+	err := rcs.read(ts, rootPath)
+	if err != nil {
+		log.WithFields(log.Fields{"api_root": rootPath}).Error("Unable to read routable collections")
+	}
+
+	log.Info(rcs)
+
+	for _, collectionID := range rcs.CollectionIDs {
+		registerRoute(sm,
+			rootPath+"/collections/"+collectionID.String()+"/objects",
+			handleTaxiiObjects(ts, ar.MaxContentLength))
 	}
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	log.WithFields(log.Fields{"path": path}).Info("Registering handler")
 
-	sm.HandleFunc(path,
+	// assume route is root
+	route := "/"
+	if path != "/" {
+		route = "/" + path + "/"
+	}
+
+	sm.HandleFunc(route,
 		withRequestLogging(
 			withAcceptTaxii(h)))
 }
@@ -64,7 +86,7 @@ func setupHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 		registerAPIRoot(ts, rootPath, handler)
 	}
 
-	registerRoute(handler, "/taxii/", handleTaxiiDiscovery(ts, port))
+	registerRoute(handler, "taxii", handleTaxiiDiscovery(ts, port))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
 }

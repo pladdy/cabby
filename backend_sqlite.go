@@ -165,29 +165,60 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 	return td, err
 }
 
+func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) {
+	rs := routableCollections{}
+
+	for rows.Next() {
+		var collectionID taxiiID
+		if err := rows.Scan(&collectionID); err != nil {
+			return rs, err
+		}
+		rs.CollectionIDs = append(rs.CollectionIDs, collectionID)
+	}
+
+	err := rows.Err()
+	return rs, err
+}
+
+type readFunction func(*sql.Rows) (interface{}, error)
+
 func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
 
-	switch resource {
-	case "taxiiAPIRoot":
-		result, err = s.readAPIRoot(rows)
-	case "taxiiAPIRoots":
-		result, err = s.readAPIRoots(rows)
-	case "taxiiCollection":
-		result, err = s.readCollections(rows)
-	case "taxiiCollections":
-		result, err = s.readCollections(rows)
-	case "taxiiCollectionAccess":
-		result, err = s.readCollectionAccess(rows)
-	case "taxiiDiscovery":
-		result, err = s.readDiscovery(rows)
-	case "taxiiUser":
-		result, err = s.readUser(rows)
-	default:
-		err = errors.New("Unknown resource name '" + resource)
+	resourceReader := map[string]readFunction{
+		"routableCollections":   s.readRoutableCollections,
+		"stixObjects":           s.readStixObjects,
+		"taxiiAPIRoot":          s.readAPIRoot,
+		"taxiiAPIRoots":         s.readAPIRoots,
+		"taxiiCollection":       s.readCollections,
+		"taxiiCollections":      s.readCollections,
+		"taxiiCollectionAccess": s.readCollectionAccess,
+		"taxiiDiscovery":        s.readDiscovery,
+		"taxiiUser":             s.readUser,
 	}
 
+	if resourceReader[resource] != nil {
+		result, err = resourceReader[resource](rows)
+		return
+	}
+	err = errors.New("Unknown resource name '" + resource)
 	return
+}
+
+func (s *sqliteDB) readStixObjects(rows *sql.Rows) (interface{}, error) {
+	sos := stixObjects{}
+	var err error
+
+	for rows.Next() {
+		var object []byte
+		if err := rows.Scan(&object); err != nil {
+			return sos, err
+		}
+		sos.Objects = append(sos.Objects, object)
+	}
+
+	err = rows.Err()
+	return sos, err
 }
 
 func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
@@ -228,6 +259,7 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 		_, err := stmt.Exec(args...)
 		if err != nil {
 			errs <- err
+			log.WithFields(log.Fields{"args": args, "err": err}).Error("Failed to write")
 			continue
 		}
 
@@ -247,11 +279,14 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt 
 	tx, err = s.db.Begin()
 	if err != nil {
 		errs <- err
+		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
+		return
 	}
 
 	stmt, err = tx.Prepare(query)
 	if err != nil {
 		errs <- err
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare query")
 	}
 
 	return

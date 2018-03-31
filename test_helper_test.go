@@ -138,19 +138,16 @@ func setupSQLite() {
 		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
-	info.Println("Opening schema")
 	f, err := os.Open("backend/sqlite/schema.sql")
 	if err != nil {
 		fail.Fatal("Couldn't open schema file: ", err)
 	}
 
-	info.Println("Reading in schema")
 	schema, err := ioutil.ReadAll(f)
 	if err != nil {
 		fail.Fatal("Couldn't read schema file: ", err)
 	}
 
-	info.Println("Executing schema")
 	_, err = db.Exec(string(schema))
 	if err != nil {
 		fail.Fatal("Couldn't load schema: ", err)
@@ -158,7 +155,6 @@ func setupSQLite() {
 
 	loadTestConfig()
 
-	info.Println("Creating resources")
 	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
 	if err != nil {
 		fail.Fatal(err)

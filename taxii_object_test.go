@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	s "github.com/pladdy/stones"
 )
 
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
@@ -21,6 +24,59 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"}`))
 	if err == nil {
 		t.Error("Expected error for bundle:", b)
+	}
+}
+
+func TestHandleTaxiiObjectsGet(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// post a bundle to the data store
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundleContent, _ := ioutil.ReadAll(bundleFile)
+
+	maxContent := int64(2048)
+	b := bytes.NewBuffer(bundleContent)
+	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+
+	// give time for bundle to be persisted
+	time.Sleep(100 * time.Millisecond)
+
+	// read the bundle back
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var bundle s.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bundle.Objects) != 3 {
+		t.Error("Expected 3 objects")
+	}
+}
+
+func TestHandleTaxiiObjectGetCollectionUnauthorized(t *testing.T) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	maxContent := int64(2048)
+
+	// omit a context with the testUser name in it
+	req := httptest.NewRequest("GET", u, nil)
+	res := httptest.NewRecorder()
+	h := handleTaxiiObjects(ts, maxContent)
+	h(res, req)
+
+	if res.Code != http.StatusUnauthorized {
+		t.Error("Got:", res.Code, "Expected:", http.StatusUnauthorized)
 	}
 }
 

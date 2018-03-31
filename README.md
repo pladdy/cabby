@@ -7,7 +7,7 @@ TAXII 2.0 server in Golang.
 
 ## Dependencies
 - Golang 1.9.x
-- Sqlite
+- SQLite
 
 ## Setup
 `make`
@@ -31,8 +31,8 @@ Using Sqlite as a light-weight data store to run this in development mode.  Goal
 
 ## API Examples with a test user
 The examples below require
-- sqlite
 - jq
+- sqlite
 
 On a mac you can install via `brew`:
 ```sh
@@ -41,53 +41,24 @@ brew install jq
 ```
 
 Set up the DB:
-```sh
-make sqlite
-
-# set up user
-pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
-sqlite3 db/cabby.db "insert into taxii_user (email) values('test@cabby.com')"
-sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('test@cabby.com', '${pass}')"
-
-# set up discovery
-sqlite3 db/cabby.db '
-insert into taxii_discovery (title, description, contact, default_url) values(
-  "a local taxii 2 server",
-  "this is a test taxii2 server written in golang",
-  "github.com/pladdy",
-  "https://localhost/taxii/"
-)'
-
-# set up api root
-sqlite3 db/cabby.db '
-insert into taxii_api_root (id, api_root_path, title, description, versions, max_content_length) values (
-  "testId",
-  "cabby_test_root",
-  "a title",
-  "a description",
-  "application/vnd.oasis.stix+json; version=2.0",
-  8388608 /* 8 MB */
-)'
-```
+`./scripts/setup_db`
 
 In another terminal, run a server:
-```sh
-make run
-```
+`make run`
 
-##### View TAXII Root
+#### View TAXII Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 # without a trailing slash
 curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
 ```
 
-##### View API Root
+#### View API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
 ```
 
-##### Create a collection in API Root
+#### Create a collection in API Root
 Let the server assign an ID:
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
@@ -100,17 +71,30 @@ Check it:
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-##### Create a collection with an ID in API Root
+#### Create a collection with an ID in API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
-  "title": "a collection",
+  "title": "another collection",
   "id": "352abc04-a474-4e22-9f4d-944ca508e68c"
 }' | jq .
 ```
 
 Check it:
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
+```
+
+#### Add Objects
+In the above example, new collections were added.  Kill the server (CTRL+C) and `make run` again.  The logs will show new routes are added.
+
+Now post a bundle of STIX 2.0 data:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
+```
+
+#### View Objects
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
 ```
 
 ## Resources

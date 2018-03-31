@@ -157,8 +157,7 @@ func (tc *taxiiCollection) create(ts taxiiStorer, user, apiRoot string) error {
 		resource string
 		args     []interface{}
 	}{
-		{"taxiiCollection", []interface{}{tc.ID.String(), tc.Title, tc.Description, strings.Join(tc.MediaTypes, ",")}},
-		{"taxiiCollectionAPIRoot", []interface{}{tc.ID.String(), apiRoot}},
+		{"taxiiCollection", []interface{}{tc.ID.String(), apiRoot, tc.Title, tc.Description, strings.Join(tc.MediaTypes, ",")}},
 		{"taxiiUserCollection", []interface{}{user, tc.ID.String(), true, true}},
 	}
 
