@@ -84,7 +84,7 @@ func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
 	defer s.disconnect()
 
 	var title string
-	err = s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
+	err := s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
 	if err == nil {
 		t.Fatal("Should be no record created")
 	}
@@ -167,7 +167,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
+	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/fail", nil)
 	expected := `{"title":"Bad Request","description":"uuid: incorrect UUID length: fail","http_status":"400"}` + "\n"
 
 	if status != http.StatusBadRequest {
@@ -189,7 +189,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
+	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/"+id.String(), nil)
 	expected := `{"title":"Resource not found","description":"Invalid Collection","http_status":"404"}` + "\n"
 
 	if status != http.StatusNotFound {
@@ -209,7 +209,7 @@ func TestHandleTaxiiCollectionsGetInvalidUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	req := httptest.NewRequest("GET", collectionsURL(), nil)
+	req := httptest.NewRequest("GET", collectionsURL()+"/"+id.String(), nil)
 	// don't set a user in the context before setting up a response
 	res := httptest.NewRecorder()
 	h := handleTaxiiCollections(ts)
@@ -261,7 +261,7 @@ func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err = s.db.Exec("delete from taxii_user_collection")
+	_, err := s.db.Exec("delete from taxii_user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
