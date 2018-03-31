@@ -180,32 +180,28 @@ func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) 
 	return rs, err
 }
 
+type readFunction func(*sql.Rows) (interface{}, error)
+
 func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
 
-	switch resource {
-	case "routableCollections":
-		result, err = s.readRoutableCollections(rows)
-	case "stixObjects":
-		result, err = s.readStixObjects(rows)
-	case "taxiiAPIRoot":
-		result, err = s.readAPIRoot(rows)
-	case "taxiiAPIRoots":
-		result, err = s.readAPIRoots(rows)
-	case "taxiiCollection":
-		result, err = s.readCollections(rows)
-	case "taxiiCollections":
-		result, err = s.readCollections(rows)
-	case "taxiiCollectionAccess":
-		result, err = s.readCollectionAccess(rows)
-	case "taxiiDiscovery":
-		result, err = s.readDiscovery(rows)
-	case "taxiiUser":
-		result, err = s.readUser(rows)
-	default:
-		err = errors.New("Unknown resource name '" + resource)
+	resourceReader := map[string]readFunction{
+		"routableCollections":   s.readRoutableCollections,
+		"stixObjects":           s.readStixObjects,
+		"taxiiAPIRoot":          s.readAPIRoot,
+		"taxiiAPIRoots":         s.readAPIRoots,
+		"taxiiCollection":       s.readCollections,
+		"taxiiCollections":      s.readCollections,
+		"taxiiCollectionAccess": s.readCollectionAccess,
+		"taxiiDiscovery":        s.readDiscovery,
+		"taxiiUser":             s.readUser,
 	}
 
+	if resourceReader[resource] != nil {
+		result, err = resourceReader[resource](rows)
+		return
+	}
+	err = errors.New("Unknown resource name '" + resource)
 	return
 }
 

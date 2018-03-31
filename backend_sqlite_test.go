@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"strconv"
 	"testing"
@@ -144,8 +143,6 @@ func TestSQLiteReadFail(t *testing.T) {
 func TestSQLiteReadScanError(t *testing.T) {
 	s := getSQLiteDB()
 	defer s.disconnect()
-
-	type readFunction func(*sql.Rows) (interface{}, error)
 
 	tests := []struct {
 		fn readFunction
