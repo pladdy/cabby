@@ -7,6 +7,7 @@ TAXII 2.0 server in Golang.
 
 ## Dependencies
 - Golang 1.9.x
+- SQLite
 
 ## Setup
 `make`
