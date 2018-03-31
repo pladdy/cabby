@@ -156,11 +156,12 @@ func TestSQLiteReadScanError(t *testing.T) {
 		{s.readCollectionAccess},
 		{s.readDiscovery},
 		{s.readRoutableCollections},
+		{s.readStixObjects},
 		{s.readUser},
 	}
 
 	for _, test := range tests {
-		rows, err := s.db.Query(`select null`)
+		rows, err := s.db.Query(`select 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1`)
 		if err != nil {
 			t.Fatal(err)
 		}

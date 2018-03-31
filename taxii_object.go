@@ -30,7 +30,24 @@ func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc
 }
 
 func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !takeCollectionAccess(r).CanRead {
+		unauthorized(w, fmt.Errorf("Unauthorized to read from collection"))
+		return
+	}
 
+	b, err := s.NewBundle()
+	if err != nil {
+		resourceNotFound(w, errors.New("Unable to create bundle"))
+	}
+
+	sos := stixObjects{}
+	sos.read(ts, collectionID(r.URL.Path))
+
+	for _, o := range sos.Objects {
+		b.Objects = append(b.Objects, o)
+	}
+
+	writeContent(w, stixContentType, resourceToJSON(b))
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
@@ -57,10 +74,9 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 		resourceNotFound(w, errors.New("Unable to process status"))
 	}
 
-	writeBundle(bundle, collectionID(r.URL.Path), ts)
-
 	status.TotalCount = int64(len(bundle.Objects))
 	writeContent(w, taxiiContentType, resourceToJSON(status))
+	go writeBundle(bundle, collectionID(r.URL.Path), ts)
 }
 
 /* helpers */

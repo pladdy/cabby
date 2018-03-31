@@ -186,6 +186,8 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 	switch resource {
 	case "routableCollections":
 		result, err = s.readRoutableCollections(rows)
+	case "stixObjects":
+		result, err = s.readStixObjects(rows)
 	case "taxiiAPIRoot":
 		result, err = s.readAPIRoot(rows)
 	case "taxiiAPIRoots":
@@ -205,6 +207,22 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 	}
 
 	return
+}
+
+func (s *sqliteDB) readStixObjects(rows *sql.Rows) (interface{}, error) {
+	sos := stixObjects{}
+	var err error
+
+	for rows.Next() {
+		var object []byte
+		if err := rows.Scan(&object); err != nil {
+			return sos, err
+		}
+		sos.Objects = append(sos.Objects, object)
+	}
+
+	err = rows.Err()
+	return sos, err
 }
 
 func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
@@ -245,6 +263,7 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 		_, err := stmt.Exec(args...)
 		if err != nil {
 			errs <- err
+			log.WithFields(log.Fields{"args": args, "err": err}).Error("Failed to write")
 			continue
 		}
 
@@ -264,11 +283,14 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt 
 	tx, err = s.db.Begin()
 	if err != nil {
 		errs <- err
+		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
+		return
 	}
 
 	stmt, err = tx.Prepare(query)
 	if err != nil {
 		errs <- err
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare query")
 	}
 
 	return

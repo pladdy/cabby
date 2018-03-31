@@ -10,7 +10,9 @@ create table stix_objects (
   object        text not null check(json_valid(object) = 1),
   collection_id text not null,
   created_at    text,
-  updated_at    text
+  updated_at    text,
+
+  primary key (id, modified)
 );
 
   create trigger stix_objects_ai_created_at after insert on stix_objects
@@ -62,7 +64,7 @@ create table taxii_collection (
   api_root_path text not null,
   title         text,
   description   text,
-  media_types   text,
+  media_types   text default '',
   created_at    text,
   updated_at    text
 );
