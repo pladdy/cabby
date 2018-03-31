@@ -52,6 +52,28 @@ func TestStixObjectsRead(t *testing.T) {
 	}
 }
 
+func TestStixObjectsReadFail(t *testing.T) {
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table stix_objects")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	sos := stixObjects{}
+	err = sos.read(ts, testID)
+
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+
 func TestWriteBundle(t *testing.T) {
 	setupSQLite()
 	writeMalwareBundle()
@@ -61,6 +83,32 @@ func TestWriteBundle(t *testing.T) {
 	defer s.disconnect()
 
 	expectedCount := 3
+	var count int
+	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if count != expectedCount {
+		t.Error("Got:", count, "Expected:", expectedCount)
+	}
+}
+
+func TestWriteBundleBadObject(t *testing.T) {
+	setupSQLite()
+	bundle := s.Bundle{}
+	bundle.AddObject("invalid stix")
+
+	// write the bundle
+	ts := getStorer()
+	defer ts.disconnect()
+	writeBundle(bundle, testID, ts)
+
+	// check for persistence
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	expectedCount := 0
 	var count int
 	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
 	if err != nil {
