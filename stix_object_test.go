@@ -38,28 +38,6 @@ func writeMalwareBundle() {
 
 /* tests */
 
-func TestStixObjectReadFail(t *testing.T) {
-	defer setupSQLite()
-
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.db.Exec("drop table stix_objects")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	so := stixObject{}
-	err = so.read(ts, testID, "stixID")
-
-	if err == nil {
-		t.Error("Expected an error")
-	}
-}
-
 func TestStixObjectsRead(t *testing.T) {
 	writeMalwareBundle()
 

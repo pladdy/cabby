@@ -29,27 +29,22 @@ func newStixObject(b []byte) (stixObject, error) {
 	return so, err
 }
 
-func (s *stixObject) read(ts taxiiStorer, collectionID, stixID string) error {
-	so := *s
-
-	result, err := ts.read("stixObject", []interface{}{collectionID, stixID})
-	if err != nil {
-		return err
-	}
-	so = result.(stixObject)
-
-	*s = so
-	return err
-}
-
 type stixObjects struct {
 	Objects [][]byte
 }
 
-func (s *stixObjects) read(ts taxiiStorer, collectionID string) error {
+func (s *stixObjects) read(ts taxiiStorer, collectionID string, stixID ...string) error {
 	sos := *s
 
-	result, err := ts.read("stixObjects", []interface{}{collectionID})
+	var result interface{}
+	var err error
+
+	if len(stixID) > 0 {
+		result, err = ts.read("stixObject", []interface{}{collectionID, stixID[0]})
+	} else {
+		result, err = ts.read("stixObjects", []interface{}{collectionID})
+	}
+
 	if err != nil {
 		return err
 	}

@@ -42,29 +42,17 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 		resourceNotFound(w, errors.New("Unable to create bundle"))
 	}
 
-	if len(stixID) > 0 {
-		getObject(ts, w, r, b)
-		return
-	}
-	getObjects(ts, w, r, b)
-}
-
-func getObject(ts taxiiStorer, w http.ResponseWriter, r *http.Request, b s.Bundle) {
-	so := stixObject{}
-	so.read(ts, getCollectionID(r.URL.Path), getStixID(r.URL.Path))
-	b.Objects = append(b.Objects, so.Object)
-
-	writeContent(w, stixContentType, resourceToJSON(b))
-}
-
-func getObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request, b s.Bundle) {
 	sos := stixObjects{}
-	sos.read(ts, getCollectionID(r.URL.Path))
+
+	if len(stixID) > 0 {
+		sos.read(ts, getCollectionID(r.URL.Path), getStixID(r.URL.Path))
+	} else {
+		sos.read(ts, getCollectionID(r.URL.Path))
+	}
 
 	for _, o := range sos.Objects {
 		b.Objects = append(b.Objects, o)
 	}
-
 	writeContent(w, stixContentType, resourceToJSON(b))
 }
 
