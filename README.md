@@ -20,9 +20,9 @@ tests verbose into a DRY'er format.
 
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
-- discovery
-- api root definitions
+- port
 - data store file path
+- cert paths
 
 ## DB Setup
 Using Sqlite as a light-weight data store to run this in development mode.  Goal is to move to some kind of JSON store
