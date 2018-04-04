@@ -117,16 +117,29 @@ func recoverFromPanic(w http.ResponseWriter) {
 
 /* helpers */
 
-func apiRoot(p string) string {
-	var rootIndex = 1
-	tokens := strings.Split(p, "/")
-	return tokens[rootIndex]
+func getIndex(tokens []string, i int) string {
+	if len(tokens) >= i {
+		return tokens[i]
+	}
+	return ""
 }
 
-func collectionID(p string) string {
+func getAPIRoot(p string) string {
+	var rootIndex = 1
+	tokens := strings.Split(p, "/")
+	return getIndex(tokens, rootIndex)
+}
+
+func getCollectionID(p string) string {
 	var collectionIndex = 3
 	tokens := strings.Split(p, "/")
-	return tokens[collectionIndex]
+	return getIndex(tokens, collectionIndex)
+}
+
+func getStixID(p string) string {
+	var stixIDIndex = 5
+	tokens := strings.Split(p, "/")
+	return getIndex(tokens, stixIDIndex)
 }
 
 func lastURLPathToken(u string) string {

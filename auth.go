@@ -30,7 +30,7 @@ func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 		return taxiiCollectionAccess{}
 	}
 
-	tid, err := newTaxiiID(collectionID(r.URL.Path))
+	tid, err := newTaxiiID(getCollectionID(r.URL.Path))
 	if err != nil {
 		return taxiiCollectionAccess{}
 	}
