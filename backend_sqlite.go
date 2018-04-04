@@ -187,7 +187,7 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 
 	resourceReader := map[string]readFunction{
 		"routableCollections":   s.readRoutableCollections,
-		"stixObject":            s.readStixObject,
+		"stixObject":            s.readStixObjects,
 		"stixObjects":           s.readStixObjects,
 		"taxiiAPIRoot":          s.readAPIRoot,
 		"taxiiAPIRoots":         s.readAPIRoots,
@@ -204,20 +204,6 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 	}
 	err = errors.New("Unknown resource name '" + resource)
 	return
-}
-
-func (s *sqliteDB) readStixObject(rows *sql.Rows) (interface{}, error) {
-	so := stixObject{}
-	var err error
-
-	for rows.Next() {
-		if err := rows.Scan(&so.Object); err != nil {
-			return so, err
-		}
-	}
-
-	err = rows.Err()
-	return so, err
 }
 
 func (s *sqliteDB) readStixObjects(rows *sql.Rows) (interface{}, error) {

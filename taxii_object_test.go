@@ -14,12 +14,12 @@ import (
 )
 
 /* helpers */
-func postBundle(u string) {
+func postBundle(u, bundlePath string) {
 	ts := getStorer()
 	defer ts.disconnect()
 
 	// post a bundle to the data store
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundleFile, _ := os.Open(bundlePath)
 	bundleContent, _ := ioutil.ReadAll(bundleFile)
 
 	maxContent := int64(2048)
@@ -48,7 +48,7 @@ func TestHandleTaxiiObjectGet(t *testing.T) {
 	setupSQLite()
 
 	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	postBundle(u)
+	postBundle(u, "testdata/malware_bundle.json")
 
 	// read the bundle back
 	ts := getStorer()
@@ -74,11 +74,41 @@ func TestHandleTaxiiObjectGet(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
+	setupSQLite()
+
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	postBundle(u, "testdata/multiple_versions.json")
+
+	// read the bundle back
+	ts := getStorer()
+	defer ts.disconnect()
+
+	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
+	u = u + stixID
+	maxContent := int64(2048)
+
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var bundle s.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bundle.Objects) != 2 {
+		t.Error("Got:", len(bundle.Objects), "Expected 2 objects")
+	}
+}
+
 func TestHandleTaxiiObjectsGet(t *testing.T) {
 	setupSQLite()
 
 	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	postBundle(u)
+	postBundle(u, "testdata/malware_bundle.json")
 
 	// read the bundle back
 	ts := getStorer()
