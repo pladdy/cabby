@@ -29,6 +29,19 @@ func newStixObject(b []byte) (stixObject, error) {
 	return so, err
 }
 
+func (s *stixObject) read(ts taxiiStorer, collectionID, stixID string) error {
+	so := *s
+
+	result, err := ts.read("stixObject", []interface{}{collectionID, stixID})
+	if err != nil {
+		return err
+	}
+	so = result.(stixObject)
+
+	*s = so
+	return err
+}
+
 type stixObjects struct {
 	Objects [][]byte
 }

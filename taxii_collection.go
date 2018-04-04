@@ -81,7 +81,7 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err = tc.create(ts, user, apiRoot(r.URL.Path))
+	err = tc.create(ts, user, getAPIRoot(r.URL.Path))
 	if err != nil {
 		badRequest(w, err)
 		return

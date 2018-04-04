@@ -13,6 +13,23 @@ import (
 	s "github.com/pladdy/stones"
 )
 
+/* helpers */
+func postBundle(u string) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// post a bundle to the data store
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundleContent, _ := ioutil.ReadAll(bundleFile)
+
+	maxContent := int64(2048)
+	b := bytes.NewBuffer(bundleContent)
+	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+
+	// give time for bundle to be persisted
+	time.Sleep(100 * time.Millisecond)
+}
+
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
 	if err == nil {
@@ -27,25 +44,47 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiObjectsGet(t *testing.T) {
+func TestHandleTaxiiObjectGet(t *testing.T) {
 	setupSQLite()
 
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	postBundle(u)
+
+	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
-	// post a bundle to the data store
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	bundleContent, _ := ioutil.ReadAll(bundleFile)
-
+	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
+	u = u + stixID
 	maxContent := int64(2048)
-	b := bytes.NewBuffer(bundleContent)
-	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
 
-	// give time for bundle to be persisted
-	time.Sleep(100 * time.Millisecond)
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var bundle s.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bundle.Objects) != 1 {
+		t.Error("Expected 1 object")
+	}
+}
+
+func TestHandleTaxiiObjectsGet(t *testing.T) {
+	setupSQLite()
+
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	postBundle(u)
 
 	// read the bundle back
+	ts := getStorer()
+	defer ts.disconnect()
+
+	maxContent := int64(2048)
 	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected", http.StatusOK)
@@ -62,7 +101,7 @@ func TestHandleTaxiiObjectsGet(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiObjectGetCollectionUnauthorized(t *testing.T) {
+func TestHandleTaxiiObjectsGetCollectionUnauthorized(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
