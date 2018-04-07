@@ -13,23 +13,6 @@ import (
 	s "github.com/pladdy/stones"
 )
 
-/* helpers */
-func postBundle(u, bundlePath string) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	// post a bundle to the data store
-	bundleFile, _ := os.Open(bundlePath)
-	bundleContent, _ := ioutil.ReadAll(bundleFile)
-
-	maxContent := int64(2048)
-	b := bytes.NewBuffer(bundleContent)
-	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
-
-	// give time for bundle to be persisted
-	time.Sleep(100 * time.Millisecond)
-}
-
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
 	if err == nil {
@@ -41,6 +24,37 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"}`))
 	if err == nil {
 		t.Error("Expected error for bundle:", b)
+	}
+}
+
+func TestHandleGetTaxiiObjectsFail(t *testing.T) {
+	defer setupSQLite()
+
+	// drop the table so it can't be read
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table stix_objects")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// access the url using the handler
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
+	u = u + stixID
+
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", u, nil))
+	res := httptest.NewRecorder()
+
+	handleGetTaxiiObjects(ts, res, req)
+
+	if res.Code != http.StatusNotFound {
+		t.Error("Got:", res.Code, "Expected", http.StatusNotFound)
 	}
 }
 

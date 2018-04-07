@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -125,6 +126,22 @@ func renameFile(from, to string) {
 	if err != nil {
 		fail.Fatal("Failed to rename file: ", from, " to: ", to)
 	}
+}
+
+func postBundle(u, bundlePath string) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// post a bundle to the data store
+	bundleFile, _ := os.Open(bundlePath)
+	bundleContent, _ := ioutil.ReadAll(bundleFile)
+
+	maxContent := int64(2048)
+	b := bytes.NewBuffer(bundleContent)
+	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+
+	// give time for bundle to be persisted
+	time.Sleep(100 * time.Millisecond)
 }
 
 func setupSQLite() {
