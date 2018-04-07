@@ -165,6 +165,26 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 	return td, err
 }
 
+func (s *sqliteDB) readManifest(rows *sql.Rows) (interface{}, error) {
+	tm := taxiiManifest{}
+	var err error
+
+	for rows.Next() {
+		tme := taxiiManifestEntry{}
+		var versions string
+
+		if err := rows.Scan(&tme.ID, &tme.DateAdded, &versions); err != nil {
+			return tm, err
+		}
+
+		tme.Versions = strings.Split(string(versions), ",")
+		tm.Objects = append(tm.Objects, tme)
+	}
+
+	err = rows.Err()
+	return tm, err
+}
+
 func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) {
 	rs := routableCollections{}
 
@@ -195,6 +215,7 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 		"taxiiCollections":      s.readCollections,
 		"taxiiCollectionAccess": s.readCollectionAccess,
 		"taxiiDiscovery":        s.readDiscovery,
+		"taxiiManifest":         s.readManifest,
 		"taxiiUser":             s.readUser,
 	}
 

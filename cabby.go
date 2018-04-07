@@ -36,13 +36,13 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
 	}
 
 	if rootPath != "" {
-		registerObjects(ts, ar, rootPath, sm)
+		registerCollectionRoutes(ts, ar, rootPath, sm)
 		registerRoute(sm, rootPath+"/collections", handleTaxiiCollections(ts))
 		registerRoute(sm, rootPath, handleTaxiiAPIRoot(ts))
 	}
 }
 
-func registerObjects(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, sm *http.ServeMux) {
+func registerCollectionRoutes(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, sm *http.ServeMux) {
 	rcs := routableCollections{}
 	err := rcs.read(ts, rootPath)
 	if err != nil {
@@ -55,6 +55,9 @@ func registerObjects(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, sm *http.
 		registerRoute(sm,
 			rootPath+"/collections/"+collectionID.String()+"/objects",
 			handleTaxiiObjects(ts, ar.MaxContentLength))
+		registerRoute(sm,
+			rootPath+"/collections/"+collectionID.String()+"/manifest",
+			handleTaxiiManifest(ts))
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	s "github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 func handleTaxiiObjects(ts taxiiStorer, maxContentLength int64) http.HandlerFunc {
@@ -35,25 +36,38 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	stixID := getStixID(r.URL.Path)
-
 	b, err := s.NewBundle()
 	if err != nil {
 		resourceNotFound(w, errors.New("Unable to create bundle"))
 	}
 
-	sos := stixObjects{}
+	stixID := getStixID(r.URL.Path)
+	collectionID := getCollectionID(r.URL.Path)
 
-	if len(stixID) > 0 {
-		sos.read(ts, getCollectionID(r.URL.Path), getStixID(r.URL.Path))
-	} else {
-		sos.read(ts, getCollectionID(r.URL.Path))
+	sos, err := getStixObjects(ts, collectionID, stixID)
+	if err != nil {
+		log.WithFields(
+			log.Fields{"fn": "handleGetTaxiiObjects", "error": err, "stixID": stixID, "collection": collectionID},
+		).Error("failed to get objects")
+		resourceNotFound(w, errors.New("Unable to process request"))
 	}
 
 	for _, o := range sos.Objects {
 		b.Objects = append(b.Objects, o)
 	}
 	writeContent(w, stixContentType, resourceToJSON(b))
+}
+
+func getStixObjects(ts taxiiStorer, collectionID, stixID string) (stixObjects, error) {
+	sos := stixObjects{}
+	var err error
+
+	if len(stixID) > 0 {
+		err = sos.read(ts, collectionID, stixID)
+	} else {
+		err = sos.read(ts, collectionID)
+	}
+	return sos, err
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
