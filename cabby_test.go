@@ -252,22 +252,3 @@ func TestRegisterAPIRootInvalidPath(t *testing.T) {
 	handler := http.NewServeMux()
 	registerAPIRoot(ts, invalidPath, handler)
 }
-
-func TestSetupHandlerFail(t *testing.T) {
-	loadTestConfig()
-
-	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
-
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
-	if err != nil {
-		t.Fatal(err)
-	}
-	ts.disconnect()
-
-	maxContent := 1024
-	_, err = setupHandler(ts, maxContent)
-	if err == nil {
-		t.Error("Expected an error")
-	}
-}

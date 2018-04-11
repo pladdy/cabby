@@ -95,19 +95,6 @@ func TestNewTaxiiUserFail(t *testing.T) {
 	}
 }
 
-func TestTaxiiUserReadFail(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiUser.sql", "backend/sqlite/read/taxiiUser.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
-	if err == nil {
-		t.Error("Expected an error")
-	}
-}
-
 func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
 	defer setupSQLite()
 
