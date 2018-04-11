@@ -17,10 +17,6 @@ type taxiiConnector interface {
 	disconnect()
 }
 
-type taxiiParser interface {
-	parse(command, resource string) (taxiiQuery, error)
-}
-
 type taxiiQuery struct {
 	resource string
 	query    string
@@ -36,7 +32,6 @@ type taxiiWriter interface {
 
 type taxiiStorer interface {
 	taxiiConnector
-	taxiiParser
 	taxiiReader
 	taxiiWriter
 }

@@ -401,24 +401,24 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	}
 }
 
-func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
-	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
-	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	id, err := newTaxiiID()
-	if err != nil {
-		t.Fatal(err)
-	}
-	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
-
-	err = testCollection.create(ts, testUser, "api_root")
-	if err == nil {
-		t.Error("Expected a query error")
-	}
-}
+// func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
+// 	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
+// 	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
+//
+// 	ts := getStorer()
+// 	defer ts.disconnect()
+//
+// 	id, err := newTaxiiID()
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
+//
+// 	err = testCollection.create(ts, testUser, "api_root")
+// 	if err == nil {
+// 		t.Error("Expected a query error")
+// 	}
+// }
 
 func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	defer setupSQLite()
@@ -534,20 +534,6 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 
 	if len(tcs.Collections) != 1 {
 		t.Error("Got:", len(tcs.Collections), "Expected", 1)
-	}
-}
-
-func TestTaxiiCollectionsReadFailQuery(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiCollections.sql", "backend/sqlite/read/taxiiCollections.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiCollections.sql.testing", "backend/sqlite/read/taxiiCollections.sql")
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	tcs := taxiiCollections{}
-	err := tcs.read(ts, testUser)
-	if err == nil {
-		t.Error("Expected a query error")
 	}
 }
 

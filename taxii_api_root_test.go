@@ -27,9 +27,16 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiAPIRootFailRead(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiAPIRoot.sql", "backend/sqlite/read/taxiiAPIRoot.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiAPIRoot.sql.testing", "backend/sqlite/read/taxiiAPIRoot.sql")
+func TestHandleTaxiiAPIRootReadFail(t *testing.T) {
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_api_root")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ts := getStorer()
 	defer ts.disconnect()

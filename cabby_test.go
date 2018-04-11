@@ -208,10 +208,17 @@ func TestMainAPIRoot(t *testing.T) {
 }
 
 func TestNewCabbyNoAPIRoots(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiAPIRoots.sql", "backend/sqlite/read/taxiiAPIRoots.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiAPIRoots.sql.testing", "backend/sqlite/read/taxiiAPIRoots.sql")
+	defer setupSQLite()
 
-	_, err := newCabby(testConfig)
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_api_root")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = newCabby(testConfig)
 	if err == nil {
 		t.Error("Expected an error")
 	}

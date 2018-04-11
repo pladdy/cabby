@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"strconv"
 	"testing"
 )
@@ -39,29 +38,20 @@ func TestSQLiteConnectFailDriver(t *testing.T) {
 
 func TestSQLiteParse(t *testing.T) {
 	tests := []struct {
-		command  string
-		fileName string
-		path     string
+		command string
+		model   string
 	}{
-		{"create", "taxiiCollection", "backend/sqlite/create/taxiiCollection.sql"},
+		{"create", "taxiiCollection"},
 	}
 
 	s := getSQLiteDB()
 	defer s.disconnect()
 
 	for _, test := range tests {
-		result, err := s.parse(test.command, test.fileName)
-		if err != nil {
-			t.Fatal(err)
-		}
+		result, err := s.parse(test.command, test.model)
 
-		expected, err := ioutil.ReadFile(test.path)
 		if err != nil {
-			t.Fatal(err)
-		}
-
-		if result.query != string(expected) {
-			t.Error("Got:", result.query, "Expected:", string(expected))
+			t.Error("Got:", result.query, "Expected no empty")
 		}
 	}
 }
@@ -72,7 +62,7 @@ func TestSQLiteParseInvalid(t *testing.T) {
 
 	_, err := s.parse("noCommand", "fail")
 	if err == nil {
-		t.Fatal("Expected error")
+		t.Error("Query should be undefined")
 	}
 }
 
@@ -134,6 +124,18 @@ func TestSQLiteReadFail(t *testing.T) {
 	case error:
 		err = result.(error)
 	}
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+
+func TestSQLiteReadParseFail(t *testing.T) {
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.read("fail", []interface{}{"foo"})
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -210,6 +212,8 @@ func TestSQLiteReadDiscoveryNoAPIRoot(t *testing.T) {
 /* sqlite creator interface */
 
 func TestSQLiteCreate(t *testing.T) {
+	setupSQLite()
+
 	s := getSQLiteDB()
 	defer s.disconnect()
 
