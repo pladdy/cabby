@@ -95,19 +95,6 @@ func TestNewTaxiiUserFail(t *testing.T) {
 	}
 }
 
-func TestTaxiiUserReadFail(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiUser.sql", "backend/sqlite/read/taxiiUser.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiUser.sql.testing", "backend/sqlite/read/taxiiUser.sql")
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
-	if err == nil {
-		t.Error("Expected an error")
-	}
-}
-
 func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
 	defer setupSQLite()
 
@@ -128,28 +115,47 @@ func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
 	}
 }
 
-func TestTaxiiUserAssignedCollectionsParseFail(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiCollectionAccess.sql", "backend/sqlite/read/taxiiCollectionAccess.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiCollectionAccess.sql.testing", "backend/sqlite/read/taxiiCollectionAccess.sql")
+func TestVerifyValidUserFail(t *testing.T) {
+	defer setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	_, err := assignedCollections(s, "test@test.fail")
+	_, err := s.db.Exec("drop table taxii_user")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	b, err := verifyValidUser(ts, "fail", "test")
+
+	if b != false {
+		t.Error("Got:", b, "Expected: false")
+	}
+
 	if err == nil {
-		t.Error("Expected an error")
+		t.Error("Expected error")
 	}
 }
 
 func TestTaxiiUserCreateFail(t *testing.T) {
-	renameFile("backend/sqlite/create/taxiiUser.sql", "backend/sqlite/create/taxiiUser.sql.testing")
-	defer renameFile("backend/sqlite/create/taxiiUser.sql.testing", "backend/sqlite/create/taxiiUser.sql")
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_user")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ts := getStorer()
 	defer ts.disconnect()
 
 	tu := taxiiUser{}
-	err := tu.create(ts, "fail")
+	err = tu.create(ts, "fail")
 	if err == nil {
 		t.Error("Expected error")
 	}

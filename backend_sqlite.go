@@ -4,13 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"path"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
 )
+
+type readFunction func(*sql.Rows) (interface{}, error)
 
 type sqliteDB struct {
 	db        *sql.DB
@@ -18,6 +18,72 @@ type sqliteDB struct {
 	extension string
 	path      string
 	driver    string
+}
+
+var statements = map[string]map[string]string{
+	"create": map[string]string{
+		"stixObject": `insert into stix_objects (id, type, created, modified, object, collection_id)
+		               values (?, ?, ?, ?, ?, ?)`,
+		"taxiiAPIRoot": `insert into taxii_api_root (id, api_root_path, title, description, versions, max_content_length)
+		                 values (?, ?, ?, ?, ?, ?)`,
+		"taxiiCollection": `insert into taxii_collection (id, api_root_path, title, description, media_types)
+		                    values (?, ?, ?, ?, ?)`,
+		"taxiiCollectionAPIRoot": `insert into taxii_collection_api_root (collection_id, api_root_id)
+		                           values (?, ?)`,
+		"taxiiDiscovery": `insert into taxii_discovery (title, description, contact, default_url)
+		                   values (?, ?, ?, ?)`,
+		"taxiiUser": `insert into taxii_user (email) values (?)`,
+		"taxiiUserCollection": `insert into taxii_user_collection (email, collection_id, can_read, can_write)
+		                        values (?, ?, ?, ?)`,
+		"taxiiUserPass": `insert into taxii_user_pass (email, pass) values (?, ?)`,
+	},
+	"read": map[string]string{
+		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
+		"stixObject":          `select object from stix_objects where collection_id = ? and id = ?`,
+		"stixObjects":         `select object from stix_objects where collection_id = ?`,
+		"taxiiAPIRoot": `select title, description, versions, max_content_length
+		                 from taxii_api_root
+		                 where api_root_path = ?`,
+		"taxiiAPIRoots": `select api_root_path from taxii_api_root`,
+		"taxiiCollection": `select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
+												from
+												  taxii_collection c
+												  inner join taxii_user_collection uc
+												    on c.id = uc.collection_id
+												where uc.email = ? and c.id = ? and uc.can_read = 1`,
+		"taxiiCollectionAccess": `select tuc.collection_id, tuc.can_read, tuc.can_write
+															from
+															  taxii_user tu
+															  inner join taxii_user_collection tuc
+															    on tu.email = tuc.email
+															where tu.email = ?`,
+		"taxiiCollections": `select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
+												 from
+												   taxii_collection c
+												   inner join taxii_user_collection uc
+												     on c.id = uc.collection_id
+												 where
+												   uc.email = ?
+												   and uc.can_read = 1 or uc.can_write = 1`,
+		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
+											   case
+											     when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
+											   end api_root_path
+											 from
+											   taxii_discovery td
+											   left join taxii_api_root tar
+											     on td.id = tar.discovery_id`,
+		"taxiiManifest": `select id, min(created) date_added, group_concat(modified) versions -- media_types omitted for now
+											from stix_objects
+											where collection_id = ?
+											group by id`,
+		"taxiiUser": `select 1
+									from
+									  taxii_user tu
+									  inner join taxii_user_pass tup
+									    on tu.email = tup.email
+									where tu.email = ? and tup.pass = ?`,
+	},
 }
 
 func newSQLiteDB(path string) (*sqliteDB, error) {
@@ -48,14 +114,13 @@ func (s *sqliteDB) disconnect() {
 /* parser methods */
 
 func (s *sqliteDB) parse(command, resource string) (taxiiQuery, error) {
-	path := path.Join(backendDir, s.dbName, command, resource+"."+s.extension)
+	var err error
+	statement := statements[command][resource]
 
-	query, err := ioutil.ReadFile(path)
-	if err != nil {
-		err = fmt.Errorf("Unable to parse file: %v", path)
+	if statement == "" {
+		return taxiiQuery{}, fmt.Errorf("invalid command %v and resource %v", command, resource)
 	}
-
-	return taxiiQuery{resource: resource, query: string(query)}, err
+	return taxiiQuery{resource: resource, query: statement}, err
 }
 
 /* read methods */
@@ -199,8 +264,6 @@ func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) 
 	err := rows.Err()
 	return rs, err
 }
-
-type readFunction func(*sql.Rows) (interface{}, error)
 
 func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()

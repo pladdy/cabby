@@ -80,21 +80,6 @@ func TestHandleTaxiiDiscoveryError(t *testing.T) {
 	}
 }
 
-func TestTaxiiDiscoveryFailParse(t *testing.T) {
-	renameFile("backend/sqlite/read/taxiiDiscovery.sql", "backend/sqlite/read/taxiiDiscovery.sql.testing")
-	defer renameFile("backend/sqlite/read/taxiiDiscovery.sql.testing", "backend/sqlite/read/taxiiDiscovery.sql")
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	td := taxiiDiscovery{}
-	err := td.read(ts)
-
-	if err == nil {
-		t.Error("Expected a taxiiStorer error")
-	}
-}
-
 func TestInsertPort(t *testing.T) {
 	tests := []struct {
 		url      string
