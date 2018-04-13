@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+type readFunction func(*sql.Rows) (interface{}, error)
+
 type sqliteDB struct {
 	db        *sql.DB
 	dbName    string
@@ -262,8 +264,6 @@ func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) 
 	err := rows.Err()
 	return rs, err
 }
-
-type readFunction func(*sql.Rows) (interface{}, error)
 
 func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
 	defer rows.Close()
