@@ -27,7 +27,7 @@ func handleTaxiiAPIRoot(ts taxiiStorer) http.HandlerFunc {
 		ta := taxiiAPIRoot{}
 		err := ta.read(ts, trimSlashes(r.URL.Path))
 		if err != nil {
-			badRequest(w, err)
+			resourceNotFound(w, err)
 			return
 		}
 

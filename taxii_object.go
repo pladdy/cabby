@@ -39,6 +39,7 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 	b, err := s.NewBundle()
 	if err != nil {
 		resourceNotFound(w, errors.New("Unable to create bundle"))
+		return
 	}
 
 	stixID := getStixID(r.URL.Path)
@@ -50,6 +51,7 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 			log.Fields{"fn": "handleGetTaxiiObjects", "error": err, "stixID": stixID, "collection": collectionID},
 		).Error("failed to get objects")
 		resourceNotFound(w, errors.New("Unable to process request"))
+		return
 	}
 
 	for _, o := range sos.Objects {

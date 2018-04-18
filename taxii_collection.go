@@ -28,19 +28,31 @@ func handleTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
 }
 
 func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	id := lastURLPathToken(r.URL.Path)
-
 	user, ok := r.Context().Value(userName).(string)
 	if !ok {
 		unauthorized(w, errors.New("Invalid user specified"))
 		return
 	}
 
-	if id == "collections" {
-		readTaxiiCollections(ts, w, user)
-	} else {
-		readTaxiiCollection(ts, w, id, user)
+	result, err := getTaxiiCollections(ts, r, user)
+
+	if err != nil {
+		resourceNotFound(w, err)
+		return
 	}
+	writeContent(w, taxiiContentType, resourceToJSON(result))
+}
+
+func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
+	var result interface{}
+	var err error
+
+	if lastURLPathToken(r.URL.Path) == "collections" {
+		result, err = readTaxiiCollections(ts, r, user)
+	} else {
+		result, err = readTaxiiCollection(ts, r, user)
+	}
+	return result, err
 }
 
 func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
@@ -48,7 +60,7 @@ func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
 
 	err := json.Unmarshal(b, &tc)
 	if err != nil {
-		return tc, fmt.Errorf("invalid data to POST, error: %v", err)
+		return tc, fmt.Errorf("Invalid data to POST, error: %v", err)
 	}
 
 	err = tc.ensureID()
@@ -77,52 +89,49 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 
 	user, ok := r.Context().Value(userName).(string)
 	if !ok {
-		badRequest(w, errors.New("No user specified"))
+		unauthorized(w, errors.New("No user specified"))
 		return
 	}
 
 	err = tc.create(ts, user, getAPIRoot(r.URL.Path))
 	if err != nil {
-		badRequest(w, err)
+		resourceNotFound(w, err)
 		return
 	}
 
 	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
-func readTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, id, user string) {
+func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
+	id := lastURLPathToken(r.URL.Path)
+
 	tc, err := newTaxiiCollection(id)
 	if err != nil {
-		badRequest(w, err)
-		return
+		return tc, err
 	}
 
 	err = tc.read(ts, user)
 	if err != nil {
-		badRequest(w, err)
-		return
+		return tc, err
 	}
 
 	if tc.ID.String() != id {
-		resourceNotFound(w, errors.New("Invalid Collection"))
-	} else {
-		writeContent(w, taxiiContentType, resourceToJSON(tc))
+		return tc, errors.New("Invalid collection")
 	}
+	return tc, err
 }
 
-func readTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, user string) {
+func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
 	tcs := taxiiCollections{}
 	err := tcs.read(ts, user)
 	if err != nil {
-		badRequest(w, err)
-		return
+		return tcs, err
 	}
 
 	if len(tcs.Collections) == 0 {
-		resourceNotFound(w, errors.New("No collections available for this user"))
-	} else {
-		writeContent(w, taxiiContentType, resourceToJSON(tcs))
+		return tcs, errors.New("No collections available for this user")
 	}
+	return tcs, err
 }
 
 /* models */

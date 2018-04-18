@@ -38,7 +38,7 @@ func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 }
 
 // decorate a handler with basic authentication
-func withBasicAuth(ts taxiiStorer, h http.Handler) http.Handler {
+func withBasicAuth(h http.Handler, ts taxiiStorer) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
 		tu, validated := validateUser(ts, u, p)
@@ -48,7 +48,7 @@ func withBasicAuth(ts taxiiStorer, h http.Handler) http.Handler {
 			return
 		}
 
-		r = withTaxiiUser(tu, r)
+		r = withTaxiiUser(r, tu)
 		h.ServeHTTP(withHSTS(w), r)
 	})
 }
@@ -58,7 +58,7 @@ func withHSTS(w http.ResponseWriter) http.ResponseWriter {
 	return w
 }
 
-func withTaxiiUser(tu taxiiUser, r *http.Request) *http.Request {
+func withTaxiiUser(r *http.Request, tu taxiiUser) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tu.Email)
 	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
 	return r.WithContext(ctx)

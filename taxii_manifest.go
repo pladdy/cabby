@@ -31,10 +31,11 @@ func handleTaxiiManifest(ts taxiiStorer) http.HandlerFunc {
 		err := m.read(ts, getCollectionID(r.URL.Path))
 		if err != nil {
 			log.WithFields(
-				log.Fields{"fn": "handleTaxiiManifest", "error": err},
+				log.Fields{"fn": "handleTaxiiManifest", "id": getCollectionID(r.URL.Path), "error": err},
 			).Error("failed to read manifest")
 
 			resourceNotFound(w, errors.New("Unable to get manifest"))
+			return
 		}
 
 		for i := range m.Objects {

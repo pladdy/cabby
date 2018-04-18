@@ -43,8 +43,8 @@ func TestHandleTaxiiAPIRootReadFail(t *testing.T) {
 
 	status, _ := handlerTest(handleTaxiiAPIRoot(ts), "GET", testAPIRootURL, nil)
 
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }
 

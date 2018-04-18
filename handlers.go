@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -17,6 +18,32 @@ const (
 	taxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
 	taxiiContentType   = "application/vnd.oasis.taxii+json"
 )
+
+const defaultLastRange = 250
+
+type httpRange struct {
+	first int64
+	last  int64
+}
+
+// newRange returns a Range given a string from the 'Range' HTTP header string
+// the Range HTTP Header is specified by the request with the syntax 'items X-Y'
+func newHTTPRange(items string) (hr httpRange, err error) {
+	if items == "" {
+		return hr, err
+	}
+
+	itemDelimiter := "-"
+	raw := strings.TrimSpace(items)
+	tokens := strings.Split(raw, itemDelimiter)
+
+	if len(tokens) == 2 {
+		hr.first, err = strconv.ParseInt(tokens[0], 10, 64)
+		hr.last, err = strconv.ParseInt(tokens[1], 10, 64)
+		return hr, err
+	}
+	return hr, fmt.Errorf("Invalid range specified")
+}
 
 func splitAcceptHeader(h string) (string, string) {
 	parts := strings.Split(h, ";")
@@ -93,6 +120,10 @@ func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
 	errorStatus(w, "Request too large", err, http.StatusRequestEntityTooLarge)
 }
 
+func rangeInvalid(w http.ResponseWriter, err error) {
+	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
+}
+
 func unauthorized(w http.ResponseWriter, err error) {
 	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
 	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
@@ -117,7 +148,9 @@ func recoverFromPanic(w http.ResponseWriter) {
 
 /* helpers */
 
-func getIndex(tokens []string, i int) string {
+func getToken(s string, i int) string {
+	tokens := strings.Split(s, "/")
+
 	if len(tokens) >= i {
 		return tokens[i]
 	}
@@ -126,27 +159,23 @@ func getIndex(tokens []string, i int) string {
 
 func getAPIRoot(p string) string {
 	var rootIndex = 1
-	tokens := strings.Split(p, "/")
-	return getIndex(tokens, rootIndex)
+	return getToken(p, rootIndex)
 }
 
 func getCollectionID(p string) string {
 	var collectionIndex = 3
-	tokens := strings.Split(p, "/")
-	return getIndex(tokens, collectionIndex)
+	return getToken(p, collectionIndex)
 }
 
 func getStixID(p string) string {
 	var stixIDIndex = 5
-	tokens := strings.Split(p, "/")
-	return getIndex(tokens, stixIDIndex)
+	return getToken(p, stixIDIndex)
 }
 
 func lastURLPathToken(u string) string {
 	u = strings.TrimSuffix(u, "/")
 	tokens := strings.Split(u, "/")
-	length := len(tokens)
-	return tokens[length-1]
+	return tokens[len(tokens)-1]
 }
 
 func resourceToJSON(v interface{}) string {

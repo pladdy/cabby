@@ -41,7 +41,8 @@ var (
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
 		MaxContentLength: eightMB}
-	testDiscovery = taxiiDiscovery{Title: "test discovery",
+	testCollectionURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/"
+	testDiscovery     = taxiiDiscovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}

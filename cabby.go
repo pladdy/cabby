@@ -101,7 +101,7 @@ func setupServer(ts taxiiStorer, h http.Handler, port int) *http.Server {
 
 	return &http.Server{
 		Addr:         ":" + p,
-		Handler:      withBasicAuth(ts, h),
+		Handler:      withBasicAuth(h, ts),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
