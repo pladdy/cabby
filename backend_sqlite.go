@@ -57,14 +57,17 @@ var statements = map[string]map[string]string{
 															  inner join taxii_user_collection tuc
 															    on tu.email = tuc.email
 															where tu.email = ?`,
-		"taxiiCollections": `select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
-												 from
-												   taxii_collection c
-												   inner join taxii_user_collection uc
-												     on c.id = uc.collection_id
-												 where
-												   uc.email = ?
-												   and uc.can_read = 1 or uc.can_write = 1`,
+		"taxiiCollections": `select id, title, description, can_read, can_write, media_types
+												 from (
+												   select c.rowid, c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
+													 from
+													   taxii_collection c
+													   inner join taxii_user_collection uc
+													     on c.id = uc.collection_id
+													 where
+													   uc.email = ?
+													   and (uc.can_read = 1 or uc.can_write = 1)
+													 )`,
 		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
 											   case
 											     when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
@@ -113,6 +116,13 @@ func (s *sqliteDB) disconnect() {
 
 /* parser methods */
 
+func withPagination(query string, tr taxiiRange) string {
+	if tr.first == 0 && tr.last == 0 {
+		return query
+	}
+	return fmt.Sprintf("%v where rowid between %v and %v", query, tr.first, tr.last)
+}
+
 func (s *sqliteDB) parse(command, resource string) (taxiiQuery, error) {
 	var err error
 	statement := statements[command][resource]
@@ -125,12 +135,16 @@ func (s *sqliteDB) parse(command, resource string) (taxiiQuery, error) {
 
 /* read methods */
 
-func (s *sqliteDB) read(resource string, args []interface{}) (interface{}, error) {
+func (s *sqliteDB) read(resource string, args []interface{}, trs ...taxiiRange) (interface{}, error) {
 	var result interface{}
 
 	tq, err := s.parse("read", resource)
 	if err != nil {
 		return result, err
+	}
+
+	if len(trs) > 0 {
+		tq.query = withPagination(tq.query, trs[0])
 	}
 
 	rows, err := s.db.Query(tq.query, args...)

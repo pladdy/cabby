@@ -93,20 +93,20 @@ func TestLastURLPathToken(t *testing.T) {
 	}
 }
 
-func TestNewHTTPRange(t *testing.T) {
+func TestNewTaxiiRange(t *testing.T) {
 	tests := []struct {
 		input       string
-		resultRange httpRange
+		resultRange taxiiRange
 		isError     bool
 	}{
-		{"items 0-10", httpRange{first: 0, last: 10}, false},
-		{"items 0 10", httpRange{}, true},
-		{"items 10", httpRange{}, true},
-		{"", httpRange{}, false},
+		{"items 0-10", taxiiRange{first: 0, last: 10}, false},
+		{"items 0 10", taxiiRange{}, true},
+		{"items 10", taxiiRange{}, true},
+		{"", taxiiRange{}, false},
 	}
 
 	for _, test := range tests {
-		result, err := newHTTPRange(test.input)
+		result, err := newTaxiiRange(test.input)
 		if result != test.resultRange {
 			t.Error("Got:", result, "Expected:", test.resultRange)
 		}
@@ -173,6 +173,7 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		}
 	}
 }
+
 func TestResourceToJSONFail(t *testing.T) {
 	recovered := false
 
@@ -188,6 +189,17 @@ func TestResourceToJSONFail(t *testing.T) {
 
 	if recovered != true {
 		t.Error("Got:", result, "Expected: 'recovered' to be true")
+	}
+}
+
+func TestTakeRequestRange(t *testing.T) {
+	req := httptest.NewRequest("GET", "/test", nil)
+
+	result := takeRequestRange(req)
+	expected := taxiiRange{}
+
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
 	}
 }
 

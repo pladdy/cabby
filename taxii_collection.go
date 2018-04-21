@@ -34,8 +34,14 @@ func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	result, err := getTaxiiCollections(ts, r, user)
+	tr, err := newTaxiiRange(r.Header.Get("Range"))
+	if err != nil {
+		rangeNotSatisfiable(w, err)
+		return
+	}
+	r = withTaxiiRange(r, tr)
 
+	result, err := getTaxiiCollections(ts, r, user)
 	if err != nil {
 		resourceNotFound(w, err)
 		return
@@ -115,6 +121,7 @@ func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (interfac
 		return tc, err
 	}
 
+	// if the read returns no data
 	if tc.ID.String() != id {
 		return tc, errors.New("Invalid collection")
 	}
@@ -123,7 +130,8 @@ func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (interfac
 
 func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
 	tcs := taxiiCollections{}
-	err := tcs.read(ts, user)
+
+	err := tcs.read(ts, user, takeRequestRange(r))
 	if err != nil {
 		return tcs, err
 	}
@@ -216,10 +224,10 @@ type taxiiCollections struct {
 	Collections []taxiiCollection `json:"collections"`
 }
 
-func (tcs *taxiiCollections) read(ts taxiiStorer, u string) error {
+func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tr taxiiRange) error {
 	collections := *tcs
 
-	result, err := ts.read("taxiiCollections", []interface{}{u})
+	result, err := ts.read("taxiiCollections", []interface{}{u}, tr)
 	if err != nil {
 		return err
 	}

@@ -55,8 +55,8 @@ func createAPIRoot(testStorer taxiiStorer) {
 	}
 }
 
-func createCollection(testStorer taxiiStorer) {
-	id, err := newTaxiiID(testID)
+func createCollection(testStorer taxiiStorer, cid string) {
+	id, err := newTaxiiID(cid)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func setupSQLite() {
 	createDiscovery(ts)
 	createAPIRoot(ts)
 	createUser(ts)
-	createCollection(ts)
+	createCollection(ts, testID)
 }
 
 func tearDownSQLite() {

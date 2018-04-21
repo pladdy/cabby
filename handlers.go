@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// per context docuentation, use a key type for context keys
+type key int
+
+const (
+	userName         key = 0
+	userCollections  key = 1
+	maxContentLength key = 2
+	requestRange     key = 3
+)
+
 const (
 	stixContentType20  = "application/vnd.oasis.stix+json; version=2.0"
 	stixContentType    = "application/vnd.oasis.stix+json"
@@ -19,16 +30,14 @@ const (
 	taxiiContentType   = "application/vnd.oasis.taxii+json"
 )
 
-const defaultLastRange = 250
-
-type httpRange struct {
+type taxiiRange struct {
 	first int64
 	last  int64
 }
 
 // newRange returns a Range given a string from the 'Range' HTTP header string
 // the Range HTTP Header is specified by the request with the syntax 'items X-Y'
-func newHTTPRange(items string) (hr httpRange, err error) {
+func newTaxiiRange(items string) (hr taxiiRange, err error) {
 	if items == "" {
 		return hr, err
 	}
@@ -42,7 +51,7 @@ func newHTTPRange(items string) (hr httpRange, err error) {
 		hr.last, err = strconv.ParseInt(tokens[1], 10, 64)
 		return hr, err
 	}
-	return hr, fmt.Errorf("Invalid range specified")
+	return hr, errors.New("Invalid range specified")
 }
 
 func splitAcceptHeader(h string) (string, string) {
@@ -55,6 +64,32 @@ func splitAcceptHeader(h string) (string, string) {
 	}
 
 	return first, second
+}
+
+func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
+	ctx := r.Context()
+
+	// get collection access map from userCollections context
+	ca, ok := ctx.Value(userCollections).(map[taxiiID]taxiiCollectionAccess)
+	if !ok {
+		return taxiiCollectionAccess{}
+	}
+
+	tid, err := newTaxiiID(getCollectionID(r.URL.Path))
+	if err != nil {
+		return taxiiCollectionAccess{}
+	}
+	return ca[tid]
+}
+
+func takeRequestRange(r *http.Request) taxiiRange {
+	ctx := r.Context()
+
+	tr, ok := ctx.Value(requestRange).(taxiiRange)
+	if !ok {
+		return taxiiRange{}
+	}
+	return tr
 }
 
 func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
@@ -84,6 +119,11 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 
 		h(w, r)
 	}
+}
+
+func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
+	ctx := context.WithValue(r.Context(), requestRange, tr)
+	return r.WithContext(ctx)
 }
 
 /* http status functions */
@@ -120,7 +160,7 @@ func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
 	errorStatus(w, "Request too large", err, http.StatusRequestEntityTooLarge)
 }
 
-func rangeInvalid(w http.ResponseWriter, err error) {
+func rangeNotSatisfiable(w http.ResponseWriter, err error) {
 	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
 }
 

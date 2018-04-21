@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
@@ -175,6 +177,61 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	}
 	if result != expected {
 		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
+	defer setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// post an additional collection
+	newID := "82407036-edf9-4c75-9a56-e72697c53e90"
+	createCollection(ts, newID)
+
+	// create request and add a range to it
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", collectionsURL(), nil))
+	last := 1
+	req.Header.Set("Range", "items 0-"+strconv.Itoa(last))
+
+	res := httptest.NewRecorder()
+	handleTaxiiCollections(ts)(res, req)
+
+	body, _ := ioutil.ReadAll(res.Body)
+
+	var collections taxiiCollections
+	err := json.Unmarshal([]byte(body), &collections)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.Code != http.StatusOK {
+		t.Error("Got:", res.Code, "Expected:", http.StatusOK)
+	}
+
+	if len(collections.Collections) != last {
+		t.Error("Got:", len(collections.Collections), "Expected:", last)
+	}
+}
+
+func TestHandleTaxiiCollectionsGetInvalidRange(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", collectionsURL(), nil))
+	req.Header.Set("Range", "invalid range")
+
+	res := httptest.NewRecorder()
+	handleTaxiiCollections(ts)(res, req)
+
+	if res.Code != http.StatusRequestedRangeNotSatisfiable {
+		t.Error("Got:", res.Code, "Expected:", http.StatusRequestedRangeNotSatisfiable)
 	}
 }
 
@@ -520,7 +577,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	}
 
 	tcs := taxiiCollections{}
-	err = tcs.read(ts, testUser)
+	err = tcs.read(ts, testUser, taxiiRange{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,7 +603,7 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = tcs.read(ts, testUser)
+	err = tcs.read(ts, testUser, taxiiRange{})
 	if err == nil {
 		t.Error("Expected a write error")
 	}
