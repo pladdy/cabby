@@ -74,7 +74,7 @@ func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, err
 		return tcas, err
 	}
 
-	tcas = result.([]taxiiCollectionAccess)
+	tcas = result.data.([]taxiiCollectionAccess)
 	return tcas, err
 }
 
@@ -86,7 +86,7 @@ func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
 		return false, err
 	}
 
-	valid = result.(bool)
+	valid = result.data.(bool)
 
 	if valid != true {
 		err = errors.New("Invalid user")

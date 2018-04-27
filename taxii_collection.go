@@ -46,7 +46,12 @@ func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 		resourceNotFound(w, err)
 		return
 	}
-	writeContent(w, taxiiContentType, resourceToJSON(result))
+
+	if tr.Valid() {
+		writePartialContent(w, tr, taxiiContentType, resourceToJSON(result))
+	} else {
+		writeContent(w, taxiiContentType, resourceToJSON(result))
+	}
 }
 
 func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
@@ -204,7 +209,7 @@ func (tc *taxiiCollection) read(ts taxiiStorer, u string) error {
 		return err
 	}
 
-	tcs := result.(taxiiCollections)
+	tcs := result.data.(taxiiCollections)
 	collection = firstTaxiiCollection(tcs)
 	*tc = collection
 
@@ -232,7 +237,7 @@ func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tr taxiiRange) error
 		return err
 	}
 
-	collections = result.(taxiiCollections)
+	collections = result.data.(taxiiCollections)
 	*tcs = collections
 	return err
 }

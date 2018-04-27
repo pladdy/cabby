@@ -18,12 +18,28 @@ type taxiiConnector interface {
 }
 
 type taxiiQuery struct {
-	resource string
-	query    string
+	resource  string
+	statement string
 }
 
 type taxiiReader interface {
-	read(resource string, args []interface{}, tr ...taxiiRange) (interface{}, error)
+	read(resource string, args []interface{}, tr ...taxiiRange) (taxiiResult, error)
+}
+
+type taxiiResult struct {
+	data         interface{}
+	itemStart    int64
+	itemEnd      int64
+	items        int64
+	query        taxiiQuery
+	queryRunTime int64
+}
+
+func (t *taxiiResult) withPagination(tr taxiiRange) {
+	result := *t
+	result.itemStart = tr.first
+	result.itemEnd = tr.last
+	*t = result
 }
 
 type taxiiWriter interface {

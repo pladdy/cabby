@@ -36,7 +36,7 @@ type stixObjects struct {
 func (s *stixObjects) read(ts taxiiStorer, collectionID string, stixID ...string) error {
 	sos := *s
 
-	var result interface{}
+	var result taxiiResult
 	var err error
 
 	if len(stixID) > 0 {
@@ -48,7 +48,7 @@ func (s *stixObjects) read(ts taxiiStorer, collectionID string, stixID ...string
 	if err != nil {
 		return err
 	}
-	sos = result.(stixObjects)
+	sos = result.data.(stixObjects)
 
 	*s = sos
 	return err

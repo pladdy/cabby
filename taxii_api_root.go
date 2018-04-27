@@ -66,7 +66,7 @@ func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
 	if err != nil {
 		return err
 	}
-	apiRoot = result.(taxiiAPIRoot)
+	apiRoot = result.data.(taxiiAPIRoot)
 
 	*ta = apiRoot
 	return err
@@ -83,7 +83,7 @@ func (ta *taxiiAPIRoots) read(ts taxiiStorer) error {
 	if err != nil {
 		return err
 	}
-	roots = result.(taxiiAPIRoots)
+	roots = result.data.(taxiiAPIRoots)
 
 	*ta = roots
 	return err

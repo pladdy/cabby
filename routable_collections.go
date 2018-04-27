@@ -12,7 +12,7 @@ func (rc *routableCollections) read(ts taxiiStorer, rootPath string) error {
 		return err
 	}
 
-	routables = result.(routableCollections)
+	routables = result.data.(routableCollections)
 	*rc = routables
 	return err
 }

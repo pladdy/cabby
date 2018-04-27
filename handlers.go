@@ -37,9 +37,11 @@ type taxiiRange struct {
 
 // newRange returns a Range given a string from the 'Range' HTTP header string
 // the Range HTTP Header is specified by the request with the syntax 'items X-Y'
-func newTaxiiRange(items string) (hr taxiiRange, err error) {
+func newTaxiiRange(items string) (tr taxiiRange, err error) {
+	tr = taxiiRange{first: -1, last: -1}
+
 	if items == "" {
-		return hr, err
+		return tr, err
 	}
 
 	itemDelimiter := "-"
@@ -47,11 +49,27 @@ func newTaxiiRange(items string) (hr taxiiRange, err error) {
 	tokens := strings.Split(raw, itemDelimiter)
 
 	if len(tokens) == 2 {
-		hr.first, err = strconv.ParseInt(tokens[0], 10, 64)
-		hr.last, err = strconv.ParseInt(tokens[1], 10, 64)
-		return hr, err
+		tr.first, err = strconv.ParseInt(tokens[0], 10, 64)
+		tr.last, err = strconv.ParseInt(tokens[1], 10, 64)
+		return tr, err
 	}
-	return hr, errors.New("Invalid range specified")
+	return tr, errors.New("Invalid range specified")
+}
+
+func (t *taxiiRange) Valid() bool {
+	if t.first < 0 && t.last < 0 {
+		return false
+	}
+
+	if t.first > t.last {
+		return false
+	}
+
+	return true
+}
+
+func (t *taxiiRange) String() string {
+	return "items " + strconv.FormatInt(t.first, 10) + "-" + strconv.FormatInt(t.last, 10)
 }
 
 func splitAcceptHeader(h string) (string, string) {
@@ -231,5 +249,12 @@ func resourceToJSON(v interface{}) string {
 
 func writeContent(w http.ResponseWriter, contentType, content string) {
 	w.Header().Set("Content-Type", contentType)
+	io.WriteString(w, content)
+}
+
+func writePartialContent(w http.ResponseWriter, tr taxiiRange, contentType, content string) {
+	w.WriteHeader(http.StatusPartialContent)
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Range", tr.String())
 	io.WriteString(w, content)
 }

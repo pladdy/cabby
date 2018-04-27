@@ -10,7 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type readFunction func(*sql.Rows) (interface{}, error)
+type readFunction func(*sql.Rows) (taxiiResult, error)
 
 type sqliteDB struct {
 	db        *sql.DB
@@ -18,6 +18,17 @@ type sqliteDB struct {
 	extension string
 	path      string
 	driver    string
+}
+
+func newSQLiteDB(path string) (*sqliteDB, error) {
+	var s sqliteDB
+
+	s = sqliteDB{dbName: "sqlite", extension: "sql", driver: "sqlite3", path: path}
+	if s.path == "" {
+		return &s, errors.New("No database location specfied in config")
+	}
+	err := s.connect(s.path)
+	return &s, err
 }
 
 var statements = map[string]map[string]string{
@@ -89,15 +100,14 @@ var statements = map[string]map[string]string{
 	},
 }
 
-func newSQLiteDB(path string) (*sqliteDB, error) {
-	var s sqliteDB
+func newTaxiiQuery(command, resource string) (taxiiQuery, error) {
+	var err error
+	statement := statements[command][resource]
 
-	s = sqliteDB{dbName: "sqlite", extension: "sql", driver: "sqlite3", path: path}
-	if s.path == "" {
-		return &s, errors.New("No database location specfied in config")
+	if statement == "" {
+		return taxiiQuery{}, fmt.Errorf("invalid command %v and resource %v", command, resource)
 	}
-	err := s.connect(s.path)
-	return &s, err
+	return taxiiQuery{resource: resource, statement: statement}, err
 }
 
 /* connector methods */
@@ -114,82 +124,76 @@ func (s *sqliteDB) disconnect() {
 	s.db.Close()
 }
 
-/* parser methods */
+/* query methods */
 
+// withPagination for SQL has to increment the first and last; SQL rowids start at index 1, no 0
 func withPagination(query string, tr taxiiRange) string {
-	if tr.first == 0 && tr.last == 0 {
+	if !tr.Valid() {
 		return query
 	}
-	return fmt.Sprintf("%v where rowid between %v and %v", query, tr.first, tr.last)
-}
-
-func (s *sqliteDB) parse(command, resource string) (taxiiQuery, error) {
-	var err error
-	statement := statements[command][resource]
-
-	if statement == "" {
-		return taxiiQuery{}, fmt.Errorf("invalid command %v and resource %v", command, resource)
-	}
-	return taxiiQuery{resource: resource, query: statement}, err
+	return fmt.Sprintf("%v where rowid between %v and %v", query, tr.first+1, tr.last+1)
 }
 
 /* read methods */
 
-func (s *sqliteDB) read(resource string, args []interface{}, trs ...taxiiRange) (interface{}, error) {
-	var result interface{}
-
-	tq, err := s.parse("read", resource)
+func (s *sqliteDB) read(resource string, args []interface{}, trs ...taxiiRange) (result taxiiResult, err error) {
+	tq, err := newTaxiiQuery("read", resource)
 	if err != nil {
 		return result, err
 	}
 
 	if len(trs) > 0 {
-		tq.query = withPagination(tq.query, trs[0])
+		tq.statement = withPagination(tq.statement, trs[0])
 	}
 
-	rows, err := s.db.Query(tq.query, args...)
+	rows, err := s.db.Query(tq.statement, args...)
 	if err != nil {
-		return result, fmt.Errorf("%v in statement: %v", err, tq.query)
+		return result, fmt.Errorf("%v in statement: %v", err, tq.statement)
 	}
 
-	return s.readRows(tq.resource, rows)
+	result, err = s.readRows(tq, rows)
+
+	if len(trs) > 0 {
+		result.withPagination(trs[0])
+	}
+	return result, err
 }
 
 /* read helpers */
 
-func (s *sqliteDB) readAPIRoot(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readAPIRoot(rows *sql.Rows) (taxiiResult, error) {
 	var apiRoot taxiiAPIRoot
 	var err error
 
 	for rows.Next() {
 		var versions string
 		if err := rows.Scan(&apiRoot.Title, &apiRoot.Description, &versions, &apiRoot.MaxContentLength); err != nil {
-			return apiRoot, err
+			return taxiiResult{data: apiRoot}, err
 		}
 		apiRoot.Versions = strings.Split(versions, ",")
 	}
 
 	err = rows.Err()
-	return apiRoot, err
+	return taxiiResult{data: apiRoot}, err
 }
 
-func (s *sqliteDB) readAPIRoots(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readAPIRoots(rows *sql.Rows) (taxiiResult, error) {
 	var tas taxiiAPIRoots
 	var err error
 
 	for rows.Next() {
 		var path string
 		if err := rows.Scan(&path); err != nil {
-			return tas, err
+			return taxiiResult{data: tas}, err
 		}
 		tas.RootPaths = append(tas.RootPaths, path)
 	}
 
 	err = rows.Err()
-	return tas, err
+	return taxiiResult{data: tas}, err
 }
 
-func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readCollections(rows *sql.Rows) (taxiiResult, error) {
 	tcs := taxiiCollections{}
 	var err error
 
@@ -198,33 +202,33 @@ func (s *sqliteDB) readCollections(rows *sql.Rows) (interface{}, error) {
 		var mediaTypes string
 
 		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
-			return tcs, err
+			return taxiiResult{data: tcs}, err
 		}
 		tc.MediaTypes = strings.Split(mediaTypes, ",")
 		tcs.Collections = append(tcs.Collections, tc)
 	}
 
 	err = rows.Err()
-	return tcs, err
+	return taxiiResult{data: tcs}, err
 }
 
-func (s *sqliteDB) readCollectionAccess(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readCollectionAccess(rows *sql.Rows) (taxiiResult, error) {
 	var tcas []taxiiCollectionAccess
 	var err error
 
 	for rows.Next() {
 		var tca taxiiCollectionAccess
 		if err := rows.Scan(&tca.ID, &tca.CanRead, &tca.CanWrite); err != nil {
-			return tca, err
+			return taxiiResult{data: tcas}, err
 		}
 		tcas = append(tcas, tca)
 	}
 
 	err = rows.Err()
-	return tcas, err
+	return taxiiResult{data: tcas}, err
 }
 
-func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readDiscovery(rows *sql.Rows) (taxiiResult, error) {
 	td := taxiiDiscovery{}
 	var apiRoots []string
 	var err error
@@ -232,7 +236,7 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 	for rows.Next() {
 		var apiRoot string
 		if err := rows.Scan(&td.Title, &td.Description, &td.Contact, &td.Default, &apiRoot); err != nil {
-			return td, err
+			return taxiiResult{data: td}, err
 		}
 		if apiRoot != "No API Roots defined" {
 			apiRoots = append(apiRoots, apiRoot)
@@ -241,10 +245,10 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (interface{}, error) {
 
 	err = rows.Err()
 	td.APIRoots = apiRoots
-	return td, err
+	return taxiiResult{data: td}, err
 }
 
-func (s *sqliteDB) readManifest(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readManifest(rows *sql.Rows) (taxiiResult, error) {
 	tm := taxiiManifest{}
 	var err error
 
@@ -253,7 +257,7 @@ func (s *sqliteDB) readManifest(rows *sql.Rows) (interface{}, error) {
 		var versions string
 
 		if err := rows.Scan(&tme.ID, &tme.DateAdded, &versions); err != nil {
-			return tm, err
+			return taxiiResult{data: tm}, err
 		}
 
 		tme.Versions = strings.Split(string(versions), ",")
@@ -261,26 +265,27 @@ func (s *sqliteDB) readManifest(rows *sql.Rows) (interface{}, error) {
 	}
 
 	err = rows.Err()
-	return tm, err
+	return taxiiResult{data: tm}, err
 }
 
-func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (taxiiResult, error) {
 	rs := routableCollections{}
 
 	for rows.Next() {
 		var collectionID taxiiID
 		if err := rows.Scan(&collectionID); err != nil {
-			return rs, err
+			return taxiiResult{data: rs}, err
 		}
 		rs.CollectionIDs = append(rs.CollectionIDs, collectionID)
 	}
 
 	err := rows.Err()
-	return rs, err
+	return taxiiResult{data: rs}, err
 }
 
-func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}, err error) {
+func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, err error) {
 	defer rows.Close()
+	result.query = tq
 
 	resourceReader := map[string]readFunction{
 		"routableCollections":   s.readRoutableCollections,
@@ -296,42 +301,42 @@ func (s *sqliteDB) readRows(resource string, rows *sql.Rows) (result interface{}
 		"taxiiUser":             s.readUser,
 	}
 
-	if resourceReader[resource] != nil {
-		result, err = resourceReader[resource](rows)
+	if resourceReader[tq.resource] != nil {
+		result, err = resourceReader[tq.resource](rows)
 		return
 	}
-	err = errors.New("Unknown resource name '" + resource)
+	err = errors.New("Unknown resource name '" + tq.resource)
 	return
 }
 
-func (s *sqliteDB) readStixObjects(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readStixObjects(rows *sql.Rows) (taxiiResult, error) {
 	sos := stixObjects{}
 	var err error
 
 	for rows.Next() {
 		var object []byte
 		if err := rows.Scan(&object); err != nil {
-			return sos, err
+			return taxiiResult{data: sos}, err
 		}
 		sos.Objects = append(sos.Objects, object)
 	}
 
 	err = rows.Err()
-	return sos, err
+	return taxiiResult{data: sos}, err
 }
 
-func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
+func (s *sqliteDB) readUser(rows *sql.Rows) (taxiiResult, error) {
 	var valid bool
 	var err error
 
 	for rows.Next() {
 		if err := rows.Scan(&valid); err != nil {
-			return valid, err
+			return taxiiResult{data: valid}, err
 		}
 	}
 
 	err = rows.Err()
-	return valid, err
+	return taxiiResult{data: valid}, err
 }
 
 /* create methods */
@@ -339,13 +344,13 @@ func (s *sqliteDB) readUser(rows *sql.Rows) (interface{}, error) {
 func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan error) {
 	defer close(errs)
 
-	tq, err := s.parse("create", resource)
+	tq, err := newTaxiiQuery("create", resource)
 	if err != nil {
 		errs <- err
 		return
 	}
 
-	tx, stmt, err := batchWriteTx(s, tq.query, errs)
+	tx, stmt, err := batchWriteTx(s, tq.statement, errs)
 	if err != nil {
 		return
 	}
@@ -365,7 +370,7 @@ func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan e
 		i++
 		if i >= maxWrites {
 			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
-			tx, stmt, err = batchWriteTx(s, tq.query, errs)
+			tx, stmt, err = batchWriteTx(s, tq.statement, errs)
 			if err != nil {
 				return
 			}

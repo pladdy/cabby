@@ -193,8 +193,12 @@ func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
 	// create request and add a range to it
 	var req *http.Request
 	req = withAuthContext(httptest.NewRequest("GET", collectionsURL(), nil))
-	last := 1
-	req.Header.Set("Range", "items 0-"+strconv.Itoa(last))
+
+	first := 0
+	last := 0
+	records := 1
+
+	req.Header.Set("Range", "items "+strconv.Itoa(first)+"-"+strconv.Itoa(last))
 
 	res := httptest.NewRecorder()
 	handleTaxiiCollections(ts)(res, req)
@@ -207,12 +211,12 @@ func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if res.Code != http.StatusOK {
-		t.Error("Got:", res.Code, "Expected:", http.StatusOK)
+	if res.Code != http.StatusPartialContent {
+		t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
 	}
 
-	if len(collections.Collections) != last {
-		t.Error("Got:", len(collections.Collections), "Expected:", last)
+	if len(collections.Collections) != records {
+		t.Error("Got:", len(collections.Collections), "Expected:", records)
 	}
 }
 

@@ -19,7 +19,7 @@ func (t *taxiiManifest) read(ts taxiiStorer, collectionID string) error {
 		return err
 	}
 
-	tm = result.(taxiiManifest)
+	tm = result.data.(taxiiManifest)
 	*t = tm
 	return err
 }

@@ -34,38 +34,6 @@ func TestSQLiteConnectFailDriver(t *testing.T) {
 	}
 }
 
-/* sqlite parser */
-
-func TestSQLiteParse(t *testing.T) {
-	tests := []struct {
-		command string
-		model   string
-	}{
-		{"create", "taxiiCollection"},
-	}
-
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	for _, test := range tests {
-		result, err := s.parse(test.command, test.model)
-
-		if err != nil {
-			t.Error("Got:", result.query, "Expected no empty")
-		}
-	}
-}
-
-func TestSQLiteParseInvalid(t *testing.T) {
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.parse("noCommand", "fail")
-	if err == nil {
-		t.Error("Query should be undefined")
-	}
-}
-
 /* sqlite reader functions */
 
 func TestSQLiteRead(t *testing.T) {
@@ -97,7 +65,7 @@ func TestSQLiteRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	tc := result.(taxiiCollections)
+	tc := result.data.(taxiiCollections)
 
 	if len(tc.Collections) == 0 {
 		t.Error("Collections returned should be > 0")
@@ -120,7 +88,7 @@ func TestSQLiteReadFail(t *testing.T) {
 
 	result, err := s.read("taxiiCollection", []interface{}{"user1"})
 
-	switch result := result.(type) {
+	switch result := result.data.(type) {
 	case error:
 		err = result.(error)
 	}
@@ -182,7 +150,7 @@ func TestReadRowsInvalid(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.readRows("invalid", rows)
+	_, err = s.readRows(taxiiQuery{statement: "invalid"}, rows)
 
 	if err == nil {
 		t.Error("Expected an error")
@@ -202,7 +170,7 @@ func TestSQLiteReadDiscoveryNoAPIRoot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	discovery := td.(taxiiDiscovery)
+	discovery := td.data.(taxiiDiscovery)
 
 	if len(discovery.APIRoots) == 0 {
 		t.Error("Got:", discovery.APIRoots, "Expected a non-empty API Roots")

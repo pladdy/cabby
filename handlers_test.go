@@ -94,15 +94,17 @@ func TestLastURLPathToken(t *testing.T) {
 }
 
 func TestNewTaxiiRange(t *testing.T) {
+	invalidRange := taxiiRange{first: -1, last: -1}
+
 	tests := []struct {
 		input       string
 		resultRange taxiiRange
 		isError     bool
 	}{
 		{"items 0-10", taxiiRange{first: 0, last: 10}, false},
-		{"items 0 10", taxiiRange{}, true},
-		{"items 10", taxiiRange{}, true},
-		{"", taxiiRange{}, false},
+		{"items 0 10", invalidRange, true},
+		{"items 10", invalidRange, true},
+		{"", invalidRange, false},
 	}
 
 	for _, test := range tests {
@@ -113,6 +115,23 @@ func TestNewTaxiiRange(t *testing.T) {
 
 		if err != nil && test.isError == false {
 			t.Error("Got:", err, "Expected: no error")
+		}
+	}
+}
+
+func TestTaxiiRangeValid(t *testing.T) {
+	tests := []struct {
+		tr       taxiiRange
+		expected bool
+	}{
+		{taxiiRange{first: 1, last: 0}, false},
+		{taxiiRange{first: 0, last: 0}, true},
+	}
+
+	for _, test := range tests {
+		result := test.tr.Valid()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
 		}
 	}
 }
