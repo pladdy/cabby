@@ -33,6 +33,7 @@ const (
 type taxiiRange struct {
 	first int64
 	last  int64
+	total int64
 }
 
 // newRange returns a Range given a string from the 'Range' HTTP header string
@@ -69,7 +70,12 @@ func (t *taxiiRange) Valid() bool {
 }
 
 func (t *taxiiRange) String() string {
-	return "items " + strconv.FormatInt(t.first, 10) + "-" + strconv.FormatInt(t.last, 10)
+	return "items " +
+		strconv.FormatInt(t.first, 10) +
+		"-" +
+		strconv.FormatInt(t.last, 10) +
+		"/" +
+		strconv.FormatInt(t.total, 10)
 }
 
 func splitAcceptHeader(h string) (string, string) {
@@ -252,9 +258,8 @@ func writeContent(w http.ResponseWriter, contentType, content string) {
 	io.WriteString(w, content)
 }
 
-func writePartialContent(w http.ResponseWriter, tr taxiiRange, contentType, content string) {
+func writePartialContent(w http.ResponseWriter, contentType, content string) {
 	w.WriteHeader(http.StatusPartialContent)
 	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Content-Range", tr.String())
 	io.WriteString(w, content)
 }

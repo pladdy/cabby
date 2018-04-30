@@ -119,6 +119,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 	}{
 		{s.readAPIRoot},
 		{s.readAPIRoots},
+		{s.readCollection},
 		{s.readCollections},
 		{s.readCollectionAccess},
 		{s.readDiscovery},

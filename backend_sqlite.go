@@ -68,17 +68,22 @@ var statements = map[string]map[string]string{
 															  inner join taxii_user_collection tuc
 															    on tu.email = tuc.email
 															where tu.email = ?`,
-		"taxiiCollections": `select id, title, description, can_read, can_write, media_types
-												 from (
-												   select c.rowid, c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
-													 from
-													   taxii_collection c
-													   inner join taxii_user_collection uc
-													     on c.id = uc.collection_id
-													 where
-													   uc.email = ?
-													   and (uc.can_read = 1 or uc.can_write = 1)
-													 )`,
+		"taxiiCollections": `with data as (
+													 select rowid, id, title, description, can_read, can_write, media_types, 1 count
+													 from (
+														 select c.rowid, c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
+														 from
+															 taxii_collection c
+															 inner join taxii_user_collection uc
+																 on c.id = uc.collection_id
+														 where
+															 uc.email = ?
+															 and (uc.can_read = 1 or uc.can_write = 1)
+													 )
+												 )
+												 select id, title, description, can_read, can_write, media_types, min(rowid), max(rowid), (select sum(count) from data)
+												 from data
+												 group by id, title, description, can_read, can_write, media_types`,
 		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
 											   case
 											     when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
@@ -127,11 +132,18 @@ func (s *sqliteDB) disconnect() {
 /* query methods */
 
 // withPagination for SQL has to increment the first and last; SQL rowids start at index 1, no 0
+// this function operates off of a huge assumption, which is 'from data' is the from clause
+// 'from data' is short for 'from a subquery called data that has rowid in it...'
+// this is gross
 func withPagination(query string, tr taxiiRange) string {
 	if !tr.Valid() {
 		return query
 	}
-	return fmt.Sprintf("%v where rowid between %v and %v", query, tr.first+1, tr.last+1)
+
+	return strings.Replace(query,
+		"from data",
+		fmt.Sprintf("from data where rowid between %v and %v", tr.first+1, tr.last+1),
+		-1)
 }
 
 /* read methods */
@@ -193,8 +205,9 @@ func (s *sqliteDB) readAPIRoots(rows *sql.Rows) (taxiiResult, error) {
 	return taxiiResult{data: tas}, err
 }
 
-func (s *sqliteDB) readCollections(rows *sql.Rows) (taxiiResult, error) {
+func (s *sqliteDB) readCollection(rows *sql.Rows) (taxiiResult, error) {
 	tcs := taxiiCollections{}
+	tr := taxiiResult{}
 	var err error
 
 	for rows.Next() {
@@ -202,14 +215,39 @@ func (s *sqliteDB) readCollections(rows *sql.Rows) (taxiiResult, error) {
 		var mediaTypes string
 
 		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes); err != nil {
-			return taxiiResult{data: tcs}, err
+			tr.data = tcs
+			return tr, err
 		}
 		tc.MediaTypes = strings.Split(mediaTypes, ",")
 		tcs.Collections = append(tcs.Collections, tc)
 	}
 
+	tr.data = tcs
 	err = rows.Err()
-	return taxiiResult{data: tcs}, err
+	return tr, err
+}
+
+func (s *sqliteDB) readCollections(rows *sql.Rows) (taxiiResult, error) {
+	tcs := taxiiCollections{}
+	tr := taxiiResult{}
+	var err error
+
+	for rows.Next() {
+		var tc taxiiCollection
+		var mediaTypes string
+
+		if err := rows.Scan(&tc.ID, &tc.Title, &tc.Description, &tc.CanRead, &tc.CanWrite, &mediaTypes,
+			&tr.itemStart, &tr.itemEnd, &tr.items); err != nil {
+			tr.data = tcs
+			return tr, err
+		}
+		tc.MediaTypes = strings.Split(mediaTypes, ",")
+		tcs.Collections = append(tcs.Collections, tc)
+	}
+
+	tr.data = tcs
+	err = rows.Err()
+	return tr, err
 }
 
 func (s *sqliteDB) readCollectionAccess(rows *sql.Rows) (taxiiResult, error) {
@@ -293,7 +331,7 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 		"stixObjects":           s.readStixObjects,
 		"taxiiAPIRoot":          s.readAPIRoot,
 		"taxiiAPIRoots":         s.readAPIRoots,
-		"taxiiCollection":       s.readCollections,
+		"taxiiCollection":       s.readCollection,
 		"taxiiCollections":      s.readCollections,
 		"taxiiCollectionAccess": s.readCollectionAccess,
 		"taxiiDiscovery":        s.readDiscovery,

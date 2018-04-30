@@ -48,22 +48,19 @@ func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 	}
 
 	if tr.Valid() {
-		writePartialContent(w, tr, taxiiContentType, resourceToJSON(result))
+		tr.total = result.items
+		w.Header().Set("Content-Range", tr.String())
+		writePartialContent(w, taxiiContentType, resourceToJSON(result.data))
 	} else {
-		writeContent(w, taxiiContentType, resourceToJSON(result))
+		writeContent(w, taxiiContentType, resourceToJSON(result.data))
 	}
 }
 
-func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
-	var result interface{}
-	var err error
-
+func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
 	if lastURLPathToken(r.URL.Path) == "collections" {
-		result, err = readTaxiiCollections(ts, r, user)
-	} else {
-		result, err = readTaxiiCollection(ts, r, user)
+		return readTaxiiCollections(ts, r, user)
 	}
-	return result, err
+	return readTaxiiCollection(ts, r, user)
 }
 
 func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
@@ -113,38 +110,39 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
-func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
+func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
+	var result taxiiResult
 	id := lastURLPathToken(r.URL.Path)
 
 	tc, err := newTaxiiCollection(id)
 	if err != nil {
-		return tc, err
+		return result, err
 	}
 
-	err = tc.read(ts, user)
+	result, err = tc.read(ts, user)
 	if err != nil {
-		return tc, err
+		return result, err
 	}
 
 	// if the read returns no data
 	if tc.ID.String() != id {
-		return tc, errors.New("Invalid collection")
+		return result, errors.New("Invalid collection")
 	}
-	return tc, err
+	return result, err
 }
 
-func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (interface{}, error) {
+func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
 	tcs := taxiiCollections{}
 
-	err := tcs.read(ts, user, takeRequestRange(r))
+	result, err := tcs.read(ts, user, takeRequestRange(r))
 	if err != nil {
-		return tcs, err
+		return result, err
 	}
 
 	if len(tcs.Collections) == 0 {
-		return tcs, errors.New("No collections available for this user")
+		return result, errors.New("No collections available for this user")
 	}
-	return tcs, err
+	return result, err
 }
 
 /* models */
@@ -201,22 +199,20 @@ func (tc *taxiiCollection) ensureID() error {
 	return err
 }
 
-func (tc *taxiiCollection) read(ts taxiiStorer, u string) error {
+func (tc *taxiiCollection) read(ts taxiiStorer, u string) (taxiiResult, error) {
 	collection := *tc
 
 	result, err := ts.read("taxiiCollection", []interface{}{u, tc.ID.String()})
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	tcs := result.data.(taxiiCollections)
 	collection = firstTaxiiCollection(tcs)
 	*tc = collection
 
-	return err
+	return result, err
 }
-
-/* taxiiCollection helpers */
 
 func firstTaxiiCollection(tcs taxiiCollections) taxiiCollection {
 	if len(tcs.Collections) > 0 {
@@ -229,15 +225,15 @@ type taxiiCollections struct {
 	Collections []taxiiCollection `json:"collections"`
 }
 
-func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tr taxiiRange) error {
+func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tr taxiiRange) (taxiiResult, error) {
 	collections := *tcs
 
 	result, err := ts.read("taxiiCollections", []interface{}{u}, tr)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	collections = result.data.(taxiiCollections)
 	*tcs = collections
-	return err
+	return result, err
 }

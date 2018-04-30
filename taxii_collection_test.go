@@ -218,6 +218,11 @@ func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
 	if len(collections.Collections) != records {
 		t.Error("Got:", len(collections.Collections), "Expected:", records)
 	}
+
+	tr := taxiiRange{first: int64(first), last: int64(last), total: int64(records)}
+	if res.Header().Get("Content-Range") != tr.String() {
+		t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", tr.String())
+	}
 }
 
 func TestHandleTaxiiCollectionsGetInvalidRange(t *testing.T) {
@@ -455,25 +460,6 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	}
 }
 
-// func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
-// 	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
-// 	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
-//
-// 	ts := getStorer()
-// 	defer ts.disconnect()
-//
-// 	id, err := newTaxiiID()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
-//
-// 	err = testCollection.create(ts, testUser, "api_root")
-// 	if err == nil {
-// 		t.Error("Expected a query error")
-// 	}
-// }
-
 func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	defer setupSQLite()
 
@@ -553,7 +539,7 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	}
 
 	tc := taxiiCollection{ID: id}
-	err = tc.read(ts, testUser)
+	_, err = tc.read(ts, testUser)
 
 	if tc.Title != "a title" {
 		t.Error("Got:", tc.Title, "Expected", "a title")
@@ -581,7 +567,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	}
 
 	tcs := taxiiCollections{}
-	err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiRange{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -607,7 +593,7 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiRange{})
 	if err == nil {
 		t.Error("Expected a write error")
 	}
