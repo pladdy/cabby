@@ -70,12 +70,16 @@ func (t *taxiiRange) Valid() bool {
 }
 
 func (t *taxiiRange) String() string {
-	return "items " +
+	s := "items " +
 		strconv.FormatInt(t.first, 10) +
 		"-" +
-		strconv.FormatInt(t.last, 10) +
-		"/" +
-		strconv.FormatInt(t.total, 10)
+		strconv.FormatInt(t.last, 10)
+
+	if t.total > 0 {
+		s += "/" + strconv.FormatInt(t.total, 10)
+	}
+
+	return s
 }
 
 func splitAcceptHeader(h string) (string, string) {

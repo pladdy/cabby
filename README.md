@@ -55,7 +55,22 @@ curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: applicatio
 
 #### View API Root
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
+```
+
+#### View Collections
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+# view 1 of 2 with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# view 1 0f 2 parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
 #### Create a collection in API Root
@@ -68,6 +83,9 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 
 Check it:
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
@@ -75,12 +93,15 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
   "title": "another collection",
-  "id": "352abc04-a474-4e22-9f4d-944ca508e68c"
+  "id": "411abc04-a474-4e22-9f4d-944ca508e68c"
 }' | jq .
 ```
 
 Check it:
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
 ```
 
@@ -94,11 +115,17 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 
 #### View Objects
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
 ```
 
 #### View Manifest
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' | jq .
 ```
 

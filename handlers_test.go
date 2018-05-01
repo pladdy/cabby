@@ -136,6 +136,23 @@ func TestTaxiiRangeValid(t *testing.T) {
 	}
 }
 
+func TestTaxiiRangeString(t *testing.T) {
+	tests := []struct {
+		tr       taxiiRange
+		expected string
+	}{
+		{taxiiRange{first: 0, last: 0}, "items 0-0"},
+		{taxiiRange{first: 0, last: 0, total: 50}, "items 0-0/50"},
+	}
+
+	for _, test := range tests {
+		result := test.tr.String()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
 func TestRecoverFromPanic(t *testing.T) {
 	w := httptest.NewRecorder()
 	defer recoverFromPanic(w)
