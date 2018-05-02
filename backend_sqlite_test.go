@@ -125,6 +125,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 		{s.readDiscovery},
 		{s.readManifest},
 		{s.readRoutableCollections},
+		{s.readStixObject},
 		{s.readStixObjects},
 		{s.readUser},
 	}

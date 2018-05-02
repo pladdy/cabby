@@ -46,6 +46,7 @@ var (
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
+	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/objects/"
 )
 
 func createAPIRoot(testStorer taxiiStorer) {

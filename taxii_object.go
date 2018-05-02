@@ -36,40 +36,53 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	b, err := s.NewBundle()
+	tr, err := newTaxiiRange(r.Header.Get("Range"))
+	if err != nil {
+		rangeNotSatisfiable(w, err)
+		return
+	}
+	r = withTaxiiRange(r, tr)
+
+	result, err := getStixObjects(ts, r)
+	if err != nil {
+		resourceNotFound(w, errors.New("Unable to process request"))
+		return
+	}
+
+	b, err := stixObjectsToBundle(result.data.(stixObjects))
 	if err != nil {
 		resourceNotFound(w, errors.New("Unable to create bundle"))
 		return
 	}
 
+	writeContent(w, stixContentType, resourceToJSON(b))
+}
+
+func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
+	sos := stixObjects{}
 	stixID := getStixID(r.URL.Path)
 	collectionID := getCollectionID(r.URL.Path)
 
-	sos, err := getStixObjects(ts, collectionID, stixID)
+	result, err := sos.read(ts, collectionID, stixID, takeRequestRange(r))
 	if err != nil {
 		log.WithFields(
-			log.Fields{"fn": "handleGetTaxiiObjects", "error": err, "stixID": stixID, "collection": collectionID},
+			log.Fields{"fn": "getStixObjects", "error": err, "stixID": stixID, "collectionID": collectionID},
 		).Error("failed to get objects")
-		resourceNotFound(w, errors.New("Unable to process request"))
-		return
+	}
+	return result, err
+}
+
+func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
+	b, err := s.NewBundle()
+	if err != nil {
+		return b, err
 	}
 
 	for _, o := range sos.Objects {
 		b.Objects = append(b.Objects, o)
 	}
-	writeContent(w, stixContentType, resourceToJSON(b))
-}
 
-func getStixObjects(ts taxiiStorer, collectionID, stixID string) (stixObjects, error) {
-	sos := stixObjects{}
-	var err error
-
-	if len(stixID) > 0 {
-		err = sos.read(ts, collectionID, stixID)
-	} else {
-		err = sos.read(ts, collectionID)
-	}
-	return sos, err
+	return b, err
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {

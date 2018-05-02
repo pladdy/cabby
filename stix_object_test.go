@@ -45,7 +45,7 @@ func TestStixObjectsRead(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	sos.read(ts, testID)
+	sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
 
 	if len(sos.Objects) != 3 {
 		t.Error("Expected 3 objects")
@@ -67,7 +67,7 @@ func TestStixObjectsReadFail(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	err = sos.read(ts, testID)
+	_, err = sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
 
 	if err == nil {
 		t.Error("Expected an error")

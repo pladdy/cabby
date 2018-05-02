@@ -33,25 +33,22 @@ type stixObjects struct {
 	Objects [][]byte
 }
 
-func (s *stixObjects) read(ts taxiiStorer, collectionID string, stixID ...string) error {
+func (s *stixObjects) read(ts taxiiStorer, cid, sid string, tr taxiiRange) (result taxiiResult, err error) {
 	sos := *s
 
-	var result taxiiResult
-	var err error
-
-	if len(stixID) > 0 {
-		result, err = ts.read("stixObject", []interface{}{collectionID, stixID[0]})
+	if len(sid) > 0 {
+		result, err = ts.read("stixObject", []interface{}{cid, sid})
 	} else {
-		result, err = ts.read("stixObjects", []interface{}{collectionID})
+		result, err = ts.read("stixObjects", []interface{}{cid}, tr)
 	}
 
 	if err != nil {
-		return err
+		return
 	}
-	sos = result.data.(stixObjects)
 
+	sos = result.data.(stixObjects)
 	*s = sos
-	return err
+	return
 }
 
 /* helper */

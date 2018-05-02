@@ -6,12 +6,21 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	s "github.com/pladdy/stones"
 )
+
+func objectsURL() string {
+	u, err := url.Parse(testObjectsURL)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return u.String()
+}
 
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
@@ -115,6 +124,25 @@ func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
 
 	if len(bundle.Objects) != 2 {
 		t.Error("Got:", len(bundle.Objects), "Expected 2 objects")
+	}
+}
+
+func TestHandleTaxiiObjectsGetInvalidRange(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", objectsURL(), nil))
+	req.Header.Set("Range", "invalid range")
+
+	res := httptest.NewRecorder()
+	handleTaxiiObjects(ts, 2048)(res, req)
+
+	if res.Code != http.StatusRequestedRangeNotSatisfiable {
+		t.Error("Got:", res.Code, "Expected:", http.StatusRequestedRangeNotSatisfiable)
 	}
 }
 

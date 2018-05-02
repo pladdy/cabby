@@ -51,7 +51,13 @@ var statements = map[string]map[string]string{
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
 		"stixObject":          `select object from stix_objects where collection_id = ? and id = ?`,
-		"stixObjects":         `select object from stix_objects where collection_id = ?`,
+		"stixObjects": `with data as (
+										  select rowid, object, 1 count
+										  from   stix_objects where collection_id = ?
+										)
+										select   object, (select min(rowid)), (select max(rowid)), (select sum(count) from data)
+										from     data
+										group by object`,
 		"taxiiAPIRoot": `select title, description, versions, max_content_length
 		                 from taxii_api_root
 		                 where api_root_path = ?`,
@@ -81,7 +87,9 @@ var statements = map[string]map[string]string{
 															 and (uc.can_read = 1 or uc.can_write = 1)
 													 )
 												 )
-												 select id, title, description, can_read, can_write, media_types, min(rowid), max(rowid), (select sum(count) from data)
+												 select
+												   id, title, description, can_read, can_write, media_types,
+												   (select min(rowid)), (select max(rowid)), (select sum(count) from data)
 												 from data
 												 group by id, title, description, can_read, can_write, media_types`,
 		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
@@ -131,10 +139,11 @@ func (s *sqliteDB) disconnect() {
 
 /* query methods */
 
-// withPagination for SQL has to increment the first and last; SQL rowids start at index 1, no 0
-// this function operates off of a huge assumption, which is 'from data' is the from clause
-// 'from data' is short for 'from a subquery called data that has rowid in it...'
-// this is gross
+// withPagination for SQL has to increment the first and last fields of the taxiiRange because SQL rowids
+// start at index 1, not 0.
+// Warning:
+//   this function operates off of a huge assumption, which is 'from data' is the from clause
+//   'from data' is short for 'from a subquery called data that has rowid in it...'; this is gross
 func withPagination(query string, tr taxiiRange) string {
 	if !tr.Valid() {
 		return query
@@ -327,7 +336,7 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 
 	resourceReader := map[string]readFunction{
 		"routableCollections":   s.readRoutableCollections,
-		"stixObject":            s.readStixObjects,
+		"stixObject":            s.readStixObject,
 		"stixObjects":           s.readStixObjects,
 		"taxiiAPIRoot":          s.readAPIRoot,
 		"taxiiAPIRoots":         s.readAPIRoots,
@@ -347,13 +356,30 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 	return
 }
 
-func (s *sqliteDB) readStixObjects(rows *sql.Rows) (taxiiResult, error) {
+func (s *sqliteDB) readStixObject(rows *sql.Rows) (taxiiResult, error) {
 	sos := stixObjects{}
 	var err error
 
 	for rows.Next() {
 		var object []byte
 		if err := rows.Scan(&object); err != nil {
+			return taxiiResult{data: sos}, err
+		}
+		sos.Objects = append(sos.Objects, object)
+	}
+
+	err = rows.Err()
+	return taxiiResult{data: sos}, err
+}
+
+func (s *sqliteDB) readStixObjects(rows *sql.Rows) (taxiiResult, error) {
+	sos := stixObjects{}
+	tr := taxiiResult{}
+	var err error
+
+	for rows.Next() {
+		var object []byte
+		if err := rows.Scan(&object, &tr.itemStart, &tr.itemEnd, &tr.items); err != nil {
 			return taxiiResult{data: sos}, err
 		}
 		sos.Objects = append(sos.Objects, object)
