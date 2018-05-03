@@ -55,9 +55,8 @@ var statements = map[string]map[string]string{
 										  select rowid, object, 1 count
 										  from   stix_objects where collection_id = ?
 										)
-										select   object, (select min(rowid)), (select max(rowid)), (select sum(count) from data)
-										from     data
-										group by object`,
+										select object, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+										from   data`,
 		"taxiiAPIRoot": `select title, description, versions, max_content_length
 		                 from taxii_api_root
 		                 where api_root_path = ?`,
@@ -89,9 +88,8 @@ var statements = map[string]map[string]string{
 												 )
 												 select
 												   id, title, description, can_read, can_write, media_types,
-												   (select min(rowid)), (select max(rowid)), (select sum(count) from data)
-												 from data
-												 group by id, title, description, can_read, can_write, media_types`,
+												   (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+												 from data`,
 		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
 											   case
 											     when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
@@ -100,10 +98,14 @@ var statements = map[string]map[string]string{
 											   taxii_discovery td
 											   left join taxii_api_root tar
 											     on td.id = tar.discovery_id`,
-		"taxiiManifest": `select id, min(created) date_added, group_concat(modified) versions -- media_types omitted for now
-											from stix_objects
-											where collection_id = ?
-											group by id`,
+		"taxiiManifest": `with data as (
+			                  select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count -- media_types omitted for now
+											  from stix_objects
+											  where collection_id = ?
+											  group by id
+											)
+											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+											from data`,
 		"taxiiUser": `select 1
 									from
 									  taxii_user tu
@@ -297,22 +299,25 @@ func (s *sqliteDB) readDiscovery(rows *sql.Rows) (taxiiResult, error) {
 
 func (s *sqliteDB) readManifest(rows *sql.Rows) (taxiiResult, error) {
 	tm := taxiiManifest{}
+	tr := taxiiResult{}
 	var err error
 
 	for rows.Next() {
 		tme := taxiiManifestEntry{}
 		var versions string
 
-		if err := rows.Scan(&tme.ID, &tme.DateAdded, &versions); err != nil {
-			return taxiiResult{data: tm}, err
+		if err := rows.Scan(&tme.ID, &tme.DateAdded, &versions, &tr.itemStart, &tr.itemEnd, &tr.items); err != nil {
+			tr.data = tm
+			return tr, err
 		}
 
 		tme.Versions = strings.Split(string(versions), ",")
 		tm.Objects = append(tm.Objects, tme)
 	}
 
+	tr.data = tm
 	err = rows.Err()
-	return taxiiResult{data: tm}, err
+	return tr, err
 }
 
 func (s *sqliteDB) readRoutableCollections(rows *sql.Rows) (taxiiResult, error) {
@@ -386,7 +391,8 @@ func (s *sqliteDB) readStixObjects(rows *sql.Rows) (taxiiResult, error) {
 	}
 
 	err = rows.Err()
-	return taxiiResult{data: sos}, err
+	tr.data = sos
+	return tr, err
 }
 
 func (s *sqliteDB) readUser(rows *sql.Rows) (taxiiResult, error) {

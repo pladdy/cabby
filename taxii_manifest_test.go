@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -55,5 +56,47 @@ func TestHandleTaxiiManifestFail(t *testing.T) {
 	status, _ := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected", http.StatusNotFound)
+	}
+}
+
+func TestHandleTaxiiManifestInvalidRange(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", u, nil))
+	req.Header.Set("Range", "invalid range")
+
+	res := httptest.NewRecorder()
+	handleTaxiiManifest(ts)(res, req)
+
+	if res.Code != http.StatusRequestedRangeNotSatisfiable {
+		t.Error("Got:", res.Code, "Expected:", http.StatusRequestedRangeNotSatisfiable)
+	}
+}
+
+func TestHandleTaxiiManifestRange(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", u, nil))
+	req.Header.Set("Range", "items 0-0")
+
+	res := httptest.NewRecorder()
+	handleTaxiiManifest(ts)(res, req)
+
+	if res.Code != http.StatusPartialContent {
+		t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
 	}
 }

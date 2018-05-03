@@ -1,4 +1,4 @@
-.PHONY: config test
+.PHONY: clean config cover fmt reportcard run sqlite test test_failures test_install test_run
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
