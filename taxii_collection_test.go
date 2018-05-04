@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strconv"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
@@ -64,8 +66,8 @@ func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
 	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
 	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
 
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }
 
@@ -134,10 +136,10 @@ func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
 	byteBody, _ := ioutil.ReadAll(res.Body)
 	status, body := res.Code, string(byteBody)
 
-	expected := `{"title":"Bad Request","description":"No user specified","http_status":"400"}` + "\n"
+	expected := `{"title":"Unauthorized","description":"No user specified","http_status":"401"}` + "\n"
 
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	if status != http.StatusUnauthorized {
+		t.Error("Got:", status, "Expected:", http.StatusUnauthorized)
 	}
 	if body != expected {
 		t.Error("Got:", body, "Expected:", expected)
@@ -168,13 +170,77 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	defer ts.disconnect()
 
 	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/fail", nil)
-	expected := `{"title":"Bad Request","description":"uuid: incorrect UUID length: fail","http_status":"400"}` + "\n"
+	expected := `{"title":"Resource not found","description":"uuid: incorrect UUID length: fail","http_status":"404"}` + "\n"
 
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 	if result != expected {
 		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
+	defer setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// post an additional collection
+	newID := "82407036-edf9-4c75-9a56-e72697c53e90"
+	createCollection(ts, newID)
+
+	// create request and add a range to it
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", collectionsURL(), nil))
+
+	first := 0
+	last := 0
+	records := 1
+
+	req.Header.Set("Range", "items "+strconv.Itoa(first)+"-"+strconv.Itoa(last))
+
+	res := httptest.NewRecorder()
+	handleTaxiiCollections(ts)(res, req)
+
+	body, _ := ioutil.ReadAll(res.Body)
+
+	var collections taxiiCollections
+	err := json.Unmarshal([]byte(body), &collections)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.Code != http.StatusPartialContent {
+		t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
+	}
+
+	if len(collections.Collections) != records {
+		t.Error("Got:", len(collections.Collections), "Expected:", records)
+	}
+
+	tr := taxiiRange{first: int64(first), last: int64(last), total: int64(records)}
+	if res.Header().Get("Content-Range") != tr.String() {
+		t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", tr.String())
+	}
+}
+
+func TestHandleTaxiiCollectionsGetInvalidRange(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", collectionsURL(), nil))
+	req.Header.Set("Range", "invalid range")
+
+	res := httptest.NewRecorder()
+	handleTaxiiCollections(ts)(res, req)
+
+	if res.Code != http.StatusRequestedRangeNotSatisfiable {
+		t.Error("Got:", res.Code, "Expected:", http.StatusRequestedRangeNotSatisfiable)
 	}
 }
 
@@ -190,7 +256,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 	}
 
 	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/"+id.String(), nil)
-	expected := `{"title":"Resource not found","description":"Invalid Collection","http_status":"404"}` + "\n"
+	expected := `{"title":"Resource not found","description":"Invalid collection","http_status":"404"}` + "\n"
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -247,8 +313,8 @@ func TestHandleTaxiiCollectionsGetReadError(t *testing.T) {
 	}
 
 	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", u.String(), nil)
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }
 
@@ -276,23 +342,14 @@ func TestReadTaxiiCollection(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	w := httptest.NewRecorder()
-
-	readTaxiiCollection(ts, w, testID, testUser)
-
-	if w.Code != http.StatusOK {
-		t.Error("Got:", w.Code, "Expected:", http.StatusOK)
+	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", testCollectionURL, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 }
 
 func TestReadTaxiiCollectionsFailRead(t *testing.T) {
 	defer setupSQLite()
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	w := httptest.NewRecorder()
-	user := "foo"
 
 	s := getSQLiteDB()
 	defer s.disconnect()
@@ -302,10 +359,12 @@ func TestReadTaxiiCollectionsFailRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	readTaxiiCollections(ts, w, user)
+	ts := getStorer()
+	defer ts.disconnect()
+	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
 
-	if w.Code != http.StatusBadRequest {
-		t.Error("Got:", w.Code, "Expected:", http.StatusBadRequest)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }
 
@@ -401,25 +460,6 @@ func TestTaxiiCollectionCreate(t *testing.T) {
 	}
 }
 
-// func TestTaxiiCollectionCreateFailQuery(t *testing.T) {
-// 	renameFile("backend/sqlite/create/taxiiCollection.sql", "backend/sqlite/create/taxiiCollection.sql.testing")
-// 	defer renameFile("backend/sqlite/create/taxiiCollection.sql.testing", "backend/sqlite/create/taxiiCollection.sql")
-//
-// 	ts := getStorer()
-// 	defer ts.disconnect()
-//
-// 	id, err := newTaxiiID()
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	testCollection := taxiiCollection{ID: id, Title: "test collection", Description: "a test collection"}
-//
-// 	err = testCollection.create(ts, testUser, "api_root")
-// 	if err == nil {
-// 		t.Error("Expected a query error")
-// 	}
-// }
-
 func TestTaxiiCollectionCreateFailWrite(t *testing.T) {
 	defer setupSQLite()
 
@@ -499,7 +539,7 @@ func TestTaxiiCollectionRead(t *testing.T) {
 	}
 
 	tc := taxiiCollection{ID: id}
-	err = tc.read(ts, testUser)
+	_, err = tc.read(ts, testUser)
 
 	if tc.Title != "a title" {
 		t.Error("Got:", tc.Title, "Expected", "a title")
@@ -527,7 +567,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	}
 
 	tcs := taxiiCollections{}
-	err = tcs.read(ts, testUser)
+	_, err = tcs.read(ts, testUser, taxiiRange{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -553,7 +593,7 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = tcs.read(ts, testUser)
+	_, err = tcs.read(ts, testUser, taxiiRange{})
 	if err == nil {
 		t.Error("Expected a write error")
 	}

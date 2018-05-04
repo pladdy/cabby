@@ -76,7 +76,7 @@ func (td *taxiiDiscovery) read(ts taxiiStorer) error {
 	if err != nil {
 		return err
 	}
-	discovery = result.(taxiiDiscovery)
+	discovery = result.data.(taxiiDiscovery)
 
 	*td = discovery
 	return err

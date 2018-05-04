@@ -41,10 +41,12 @@ var (
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
 		MaxContentLength: eightMB}
-	testDiscovery = taxiiDiscovery{Title: "test discovery",
+	testCollectionURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/"
+	testDiscovery     = taxiiDiscovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
+	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/objects/"
 )
 
 func createAPIRoot(testStorer taxiiStorer) {
@@ -54,8 +56,8 @@ func createAPIRoot(testStorer taxiiStorer) {
 	}
 }
 
-func createCollection(testStorer taxiiStorer) {
-	id, err := newTaxiiID(testID)
+func createCollection(testStorer taxiiStorer, cid string) {
+	id, err := newTaxiiID(cid)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -181,7 +183,7 @@ func setupSQLite() {
 	createDiscovery(ts)
 	createAPIRoot(ts)
 	createUser(ts)
-	createCollection(ts)
+	createCollection(ts, testID)
 }
 
 func tearDownSQLite() {

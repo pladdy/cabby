@@ -6,12 +6,21 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	s "github.com/pladdy/stones"
 )
+
+func objectsURL() string {
+	u, err := url.Parse(testObjectsURL)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return u.String()
+}
 
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
@@ -43,7 +52,7 @@ func TestHandleGetTaxiiObjectsFail(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	u := objectsURL()
 	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
 	u = u + stixID
 
@@ -90,14 +99,13 @@ func TestHandleTaxiiObjectGet(t *testing.T) {
 
 func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
 	setupSQLite()
-
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	postBundle(u, "testdata/multiple_versions.json")
+	postBundle(objectsURL(), "testdata/multiple_versions.json")
 
 	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
+	u := objectsURL()
 	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
 	u = u + stixID
 	maxContent := int64(2048)
@@ -118,18 +126,67 @@ func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiObjectsGet(t *testing.T) {
+func TestHandleTaxiiObjectsGetInvalidRange(t *testing.T) {
 	setupSQLite()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	postBundle(u, "testdata/malware_bundle.json")
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", objectsURL(), nil))
+	req.Header.Set("Range", "invalid range")
+
+	res := httptest.NewRecorder()
+	handleTaxiiObjects(ts, 2048)(res, req)
+
+	if res.Code != http.StatusRequestedRangeNotSatisfiable {
+		t.Error("Got:", res.Code, "Expected:", http.StatusRequestedRangeNotSatisfiable)
+	}
+}
+
+func TestHandleTaxiiObjectsGetRange(t *testing.T) {
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/multiple_versions.json")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	// create request and add a range to it that's invalid
+	var req *http.Request
+	req = withAuthContext(httptest.NewRequest("GET", objectsURL(), nil))
+	req.Header.Set("Range", "items 0-0")
+
+	res := httptest.NewRecorder()
+	handleTaxiiObjects(ts, 2048)(res, req)
+
+	if res.Code != http.StatusPartialContent {
+		t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
+	}
+
+	body, _ := ioutil.ReadAll(res.Body)
+
+	var bundle s.Bundle
+	err := json.Unmarshal(body, &bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bundle.Objects) != 1 {
+		t.Error("Got:", len(bundle.Objects), "Expected: 1")
+	}
+}
+
+func TestHandleTaxiiObjectsGet(t *testing.T) {
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/malware_bundle.json")
 
 	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
 	maxContent := int64(2048)
-	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", objectsURL(), nil)
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected", http.StatusOK)
 	}
@@ -149,11 +206,10 @@ func TestHandleTaxiiObjectsGetCollectionUnauthorized(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
 	maxContent := int64(2048)
 
 	// omit a context with the testUser name in it
-	req := httptest.NewRequest("GET", u, nil)
+	req := httptest.NewRequest("GET", objectsURL(), nil)
 	res := httptest.NewRecorder()
 	h := handleTaxiiObjects(ts, maxContent)
 	h(res, req)
@@ -169,13 +225,12 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
 	bundleFile, _ := os.Open("testdata/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)
 
 	maxContent := int64(2048)
 	b := bytes.NewBuffer(bundle)
-	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected", http.StatusOK)
@@ -205,13 +260,12 @@ func TestHandleTaxiiObjectsPostContentTooBig(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
 	bundleFile, _ := os.Open("testdata/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)
 
 	maxContent := int64(1)
 	b := bytes.NewBuffer(bundle)
-	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
 
 	if status != http.StatusRequestEntityTooLarge {
 		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
@@ -224,12 +278,10 @@ func TestHandleTaxiiObjectsPostInvalidBundle(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
 	bundle := []byte(`{"foo":"bar"}`)
-
 	maxContent := int64(2048)
 	b := bytes.NewBuffer(bundle)
-	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -241,8 +293,7 @@ func TestHandleTaxiiObjectsMethodNotAllowed(t *testing.T) {
 	defer ts.disconnect()
 
 	maxContent := int64(1)
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "PUT", u, nil)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "PUT", objectsURL(), nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Expected status to be:", http.StatusMethodNotAllowed)
@@ -253,7 +304,6 @@ func TestHandleTaxiiObjectPostCollectionUnauthorized(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
 	bundleFile, _ := os.Open("testdata/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)
 
@@ -261,7 +311,7 @@ func TestHandleTaxiiObjectPostCollectionUnauthorized(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	// omit a context with the testUser name in it
-	req := httptest.NewRequest("POST", u, b)
+	req := httptest.NewRequest("POST", objectsURL(), b)
 	res := httptest.NewRecorder()
 	h := handleTaxiiObjects(ts, maxContent)
 	h(res, req)
