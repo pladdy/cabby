@@ -177,6 +177,39 @@ func TestResourceToJSON(t *testing.T) {
 	}
 }
 
+func TestRequireAcceptStix(t *testing.T) {
+	mockHandler := func(w http.ResponseWriter, r *http.Request) {
+		accept := r.Header.Get("Accept")
+		io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
+	}
+	mockHandler = withAcceptStix(mockHandler)
+
+	tests := []struct {
+		acceptHeader string
+		responseCode int
+	}{
+		{"application/vnd.oasis.stix+json; version=2.0", http.StatusOK},
+		{"application/vnd.oasis.stix+json", http.StatusOK},
+		{"application/vnd.oasis.stix+json;verion=2.0", http.StatusOK},
+		{"", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.stix+jsonp", http.StatusUnsupportedMediaType},
+		{"application/vnd.oasis.stix+jsonp; version=3.0", http.StatusUnsupportedMediaType},
+	}
+
+	for _, test := range tests {
+		req := httptest.NewRequest("GET", "/test", nil)
+		req.Header.Add("Accept", test.acceptHeader)
+		res := httptest.NewRecorder()
+
+		mockHandler(res, req)
+		body, _ := ioutil.ReadAll(res.Body)
+
+		if res.Code != test.responseCode {
+			t.Error("Got:", res.Code, string(body), "Expected:", http.StatusOK)
+		}
+	}
+}
+
 func TestRequireAcceptTaxii(t *testing.T) {
 	mockHandler := func(w http.ResponseWriter, r *http.Request) {
 		accept := r.Header.Get("Accept")

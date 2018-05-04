@@ -120,6 +120,18 @@ func takeRequestRange(r *http.Request) taxiiRange {
 	return tr
 }
 
+func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
+
+		if contentType != stixContentType {
+			unsupportedMediaType(w, fmt.Errorf("Invalid 'Accept' Header: %v", contentType))
+			return
+		}
+		h(w, r)
+	}
+}
+
 func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
@@ -263,7 +275,7 @@ func writeContent(w http.ResponseWriter, contentType, content string) {
 }
 
 func writePartialContent(w http.ResponseWriter, contentType, content string) {
-	w.WriteHeader(http.StatusPartialContent)
 	w.Header().Set("Content-Type", contentType)
+	w.WriteHeader(http.StatusPartialContent)
 	io.WriteString(w, content)
 }

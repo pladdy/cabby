@@ -48,6 +48,9 @@ In another terminal, run a server:
 
 #### View TAXII Root
 ```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 # without a trailing slash
 curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
@@ -67,10 +70,12 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
 # parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
-# view 1 of 2 with headers
+# view 1 of N with headers
 curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' && echo
-# view 1 0f 2 parsed json
+# view 1 0f N parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+# view 2nd of N parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 1-1' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
 #### Create a collection in API Root
@@ -110,15 +115,20 @@ In the above example, new collections were added.  Kill the server (CTRL+C) and 
 
 Now post a bundle of STIX 2.0 data:
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
 ```
 
 #### View Objects
 ```sh
 # with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
 # parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+
+# view 1 of N with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+# view 1 0f N parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
 ```
 
 #### View Manifest

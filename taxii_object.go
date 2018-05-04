@@ -55,7 +55,13 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	writeContent(w, stixContentType, resourceToJSON(b))
+	if tr.Valid() {
+		tr.total = result.items
+		w.Header().Set("Content-Range", tr.String())
+		writePartialContent(w, stixContentType, resourceToJSON(b))
+	} else {
+		writeContent(w, stixContentType, resourceToJSON(b))
+	}
 }
 
 func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
@@ -82,6 +88,9 @@ func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
 		b.Objects = append(b.Objects, o)
 	}
 
+	if len(b.Objects) == 0 {
+		err = errors.New("No data returned, empty bundle")
+	}
 	return b, err
 }
 

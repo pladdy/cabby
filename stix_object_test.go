@@ -47,8 +47,8 @@ func TestStixObjectsRead(t *testing.T) {
 	sos := stixObjects{}
 	sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
 
-	if len(sos.Objects) != 3 {
-		t.Error("Expected 3 objects")
+	if len(sos.Objects) == 3 {
+		t.Error("Got:", len(sos.Objects), "Expected: 1")
 	}
 }
 

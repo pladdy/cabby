@@ -56,7 +56,7 @@ var statements = map[string]map[string]string{
 										  from   stix_objects where collection_id = ?
 										)
 										select object, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
-										from   data`,
+										from data`,
 		"taxiiAPIRoot": `select title, description, versions, max_content_length
 		                 from taxii_api_root
 		                 where api_root_path = ?`,
