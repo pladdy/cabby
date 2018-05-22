@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -29,6 +30,32 @@ const (
 	taxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
 	taxiiContentType   = "application/vnd.oasis.taxii+json"
 )
+
+type taxiiFilter struct {
+	addedAfter   string
+	collectionID string
+	pagination   taxiiRange
+	stixID       string
+}
+
+func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
+	tf.stixID = takeStixID(r)
+	tf.collectionID = takeCollectionID(r)
+	tf.pagination = takeRequestRange(r)
+	return
+}
+
+func (tf *taxiiFilter) setAddedAfter(addedAfter string) error {
+	filter := *tf
+
+	t, err := time.Parse(time.RFC3339Nano, addedAfter)
+	if err == nil {
+		filter.addedAfter = t.Format(time.RFC3339Nano)
+	}
+
+	*tf = filter
+	return err
+}
 
 type taxiiRange struct {
 	first int64
@@ -103,11 +130,16 @@ func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 		return taxiiCollectionAccess{}
 	}
 
-	tid, err := newTaxiiID(getCollectionID(r.URL.Path))
+	tid, err := newTaxiiID(takeCollectionID(r))
 	if err != nil {
 		return taxiiCollectionAccess{}
 	}
 	return ca[tid]
+}
+
+func takeCollectionID(r *http.Request) string {
+	var collectionIndex = 3
+	return getToken(r.URL.Path, collectionIndex)
 }
 
 func takeRequestRange(r *http.Request) taxiiRange {
@@ -118,6 +150,11 @@ func takeRequestRange(r *http.Request) taxiiRange {
 		return taxiiRange{}
 	}
 	return tr
+}
+
+func takeStixID(r *http.Request) string {
+	var stixIDIndex = 5
+	return getToken(r.URL.Path, stixIDIndex)
 }
 
 func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
@@ -231,7 +268,7 @@ func recoverFromPanic(w http.ResponseWriter) {
 func getToken(s string, i int) string {
 	tokens := strings.Split(s, "/")
 
-	if len(tokens) >= i {
+	if len(tokens) > i {
 		return tokens[i]
 	}
 	return ""
@@ -240,16 +277,6 @@ func getToken(s string, i int) string {
 func getAPIRoot(p string) string {
 	var rootIndex = 1
 	return getToken(p, rootIndex)
-}
-
-func getCollectionID(p string) string {
-	var collectionIndex = 3
-	return getToken(p, collectionIndex)
-}
-
-func getStixID(p string) string {
-	var stixIDIndex = 5
-	return getToken(p, stixIDIndex)
 }
 
 func lastURLPathToken(u string) string {

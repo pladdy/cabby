@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -89,6 +90,31 @@ func TestLastURLPathToken(t *testing.T) {
 		result := lastURLPathToken(test.path)
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestSetTaxiiFilter(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+		err      error
+	}{
+		{"2016-04-06T20:03:48.000Z", "2016-04-06T20:03:48Z", nil},
+		{"2016-04-06T20:03:48.0122Z", "2016-04-06T20:03:48.0122Z", nil},
+		{"2016-04-06 20:03:48.0122Z", "2016-04-06 20:03:48.0122Z", errors.New("not nil")},
+	}
+
+	for _, test := range tests {
+		tf := taxiiFilter{}
+		err := tf.setAddedAfter(test.input)
+
+		if err == nil && tf.addedAfter != test.expected {
+			t.Error("Got:", tf.addedAfter, "Expected:", test.expected)
+		}
+
+		if test.err != nil && err == nil {
+			t.Error("Got:", err, "Expected:", test.err)
 		}
 	}
 }

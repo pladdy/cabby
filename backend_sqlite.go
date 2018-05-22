@@ -50,10 +50,18 @@ var statements = map[string]map[string]string{
 	},
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
-		"stixObject":          `select object from stix_objects where collection_id = ? and id = ?`,
+		"stixObject": `select object
+                   from stix_objects
+									 where
+									   collection_id = ?
+										 and id = ?
+										 $filter`,
 		"stixObjects": `with data as (
 										  select rowid, object, 1 count
-										  from   stix_objects where collection_id = ?
+										  from stix_objects
+											where
+											  collection_id = ?
+												$filter
 										)
 										select object, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
 										from data`,
@@ -101,7 +109,9 @@ var statements = map[string]map[string]string{
 		"taxiiManifest": `with data as (
 			                  select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count -- media_types omitted for now
 											  from stix_objects
-											  where collection_id = ?
+											  where
+												  collection_id = ?
+													$filter
 											  group by id
 											)
 											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
@@ -141,6 +151,18 @@ func (s *sqliteDB) disconnect() {
 
 /* query methods */
 
+// withFilter takes a query string, attempts to replace the $filter place holder in it with taxiiFilters if they're
+// set
+func withFilter(query string, tf taxiiFilter) string {
+	var filter string
+
+	if len(tf.addedAfter) > 0 {
+		filter += fmt.Sprintf("and created_at > %v", tf.addedAfter)
+	}
+
+	return strings.Replace(query, "$filter", filter, -1)
+}
+
 // withPagination for SQL has to increment the first and last fields of the taxiiRange because SQL rowids
 // start at index 1, not 0.
 // Warning:
@@ -159,14 +181,15 @@ func withPagination(query string, tr taxiiRange) string {
 
 /* read methods */
 
-func (s *sqliteDB) read(resource string, args []interface{}, trs ...taxiiRange) (result taxiiResult, err error) {
+func (s *sqliteDB) read(resource string, args []interface{}, tf ...taxiiFilter) (result taxiiResult, err error) {
 	tq, err := newTaxiiQuery("read", resource)
 	if err != nil {
 		return result, err
 	}
 
-	if len(trs) > 0 {
-		tq.statement = withPagination(tq.statement, trs[0])
+	if len(tf) > 0 {
+		tq.statement = withPagination(tq.statement, tf[0].pagination)
+		tq.statement = withFilter(tq.statement, tf[0])
 	}
 
 	rows, err := s.db.Query(tq.statement, args...)
@@ -176,8 +199,8 @@ func (s *sqliteDB) read(resource string, args []interface{}, trs ...taxiiRange) 
 
 	result, err = s.readRows(tq, rows)
 
-	if len(trs) > 0 {
-		result.withPagination(trs[0])
+	if len(tf) > 0 {
+		result.withPagination(tf[0].pagination)
 	}
 	return result, err
 }

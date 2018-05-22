@@ -45,7 +45,8 @@ func TestStixObjectsRead(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
+	tf := taxiiFilter{collectionID: testID, pagination: taxiiRange{first: 0, last: 0}}
+	sos.read(ts, tf)
 
 	if len(sos.Objects) == 3 {
 		t.Error("Got:", len(sos.Objects), "Expected: 1")
@@ -67,7 +68,8 @@ func TestStixObjectsReadFail(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	_, err = sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
+	tf := taxiiFilter{collectionID: testID, pagination: taxiiRange{first: 0, last: 0}}
+	_, err = sos.read(ts, tf)
 
 	if err == nil {
 		t.Error("Expected an error")
@@ -143,8 +145,8 @@ func TestWriteBundleNoDuplicates(t *testing.T) {
 	}
 }
 
-func TestNewStixObjectError(t *testing.T) {
-	b, err := newStixObject([]byte(`{"foo": "bar"`))
+func TestBytesToStixObjectError(t *testing.T) {
+	b, err := bytesToStixObject([]byte(`{"foo": "bar"`))
 	if err == nil {
 		t.Error("Expected error for bundle:", b)
 	}

@@ -18,10 +18,11 @@ func handleTaxiiManifest(ts taxiiStorer) http.HandlerFunc {
 		}
 		r = withTaxiiRange(r, tr)
 
-		result, err := m.read(ts, getCollectionID(r.URL.Path), takeRequestRange(r))
+		tf := newTaxiiFilter(r)
+		result, err := m.read(ts, takeCollectionID(r), tf)
 		if err != nil {
 			log.WithFields(
-				log.Fields{"fn": "handleTaxiiManifest", "id": getCollectionID(r.URL.Path), "error": err},
+				log.Fields{"fn": "handleTaxiiManifest", "id": takeCollectionID(r), "error": err},
 			).Error("failed to read manifest")
 			resourceNotFound(w, errors.New("Unable to get manifest"))
 			return
@@ -50,10 +51,10 @@ type taxiiManifest struct {
 	Objects []taxiiManifestEntry `json:"objects"`
 }
 
-func (t *taxiiManifest) read(ts taxiiStorer, collectionID string, tr taxiiRange) (taxiiResult, error) {
+func (t *taxiiManifest) read(ts taxiiStorer, collectionID string, tf taxiiFilter) (taxiiResult, error) {
 	tm := *t
 
-	result, err := ts.read("taxiiManifest", []interface{}{collectionID}, tr)
+	result, err := ts.read("taxiiManifest", []interface{}{collectionID}, tf)
 	if err != nil {
 		return result, err
 	}

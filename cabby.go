@@ -70,8 +70,7 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 		route = "/" + path + "/"
 	}
 
-	sm.HandleFunc(route,
-		withRequestLogging(h))
+	sm.HandleFunc(route, withRequestLogging(h))
 }
 
 func setupHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {

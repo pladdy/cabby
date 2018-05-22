@@ -48,6 +48,9 @@ reportcard: fmt
 run:
 	go run $(BUILD_TAGS) $(GO_FILES)
 
+run_log:
+	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
+
 sqlite:
 	rm -rf db/
 	mkdir db

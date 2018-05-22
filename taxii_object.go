@@ -65,33 +65,16 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 }
 
 func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
+	tf := newTaxiiFilter(r)
 	sos := stixObjects{}
-	stixID := getStixID(r.URL.Path)
-	collectionID := getCollectionID(r.URL.Path)
 
-	result, err := sos.read(ts, collectionID, stixID, takeRequestRange(r))
+	result, err := sos.read(ts, tf)
 	if err != nil {
 		log.WithFields(
-			log.Fields{"fn": "getStixObjects", "error": err, "stixID": stixID, "collectionID": collectionID},
+			log.Fields{"fn": "getStixObjects", "error": err, "taxiiFilter": tf},
 		).Error("failed to get objects")
 	}
 	return result, err
-}
-
-func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
-	b, err := s.NewBundle()
-	if err != nil {
-		return b, err
-	}
-
-	for _, o := range sos.Objects {
-		b.Objects = append(b.Objects, o)
-	}
-
-	if len(b.Objects) == 0 {
-		err = errors.New("No data returned, empty bundle")
-	}
-	return b, err
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
@@ -120,7 +103,7 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 
 	status.TotalCount = int64(len(bundle.Objects))
 	writeContent(w, taxiiContentType, resourceToJSON(status))
-	go writeBundle(bundle, getCollectionID(r.URL.Path), ts)
+	go writeBundle(bundle, takeCollectionID(r), ts)
 }
 
 /* helpers */

@@ -567,7 +567,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	}
 
 	tcs := taxiiCollections{}
-	_, err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -593,7 +593,7 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiFilter{})
 	if err == nil {
 		t.Error("Expected a write error")
 	}
