@@ -37,7 +37,37 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiObjectsFail(t *testing.T) {
+func TestHandleTaxiiObjectGet(t *testing.T) {
+	setupSQLite()
+
+	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	postBundle(u, "testdata/malware_bundle.json")
+
+	// read the bundle back
+	ts := getStorer()
+	defer ts.disconnect()
+
+	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
+	u = u + stixID
+	maxContent := int64(2048)
+
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var bundle s.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(bundle.Objects) != 1 {
+		t.Error("Expected 1 object")
+	}
+}
+
+func TestHandleGetTaxiiObjectsGetFailNoObjects(t *testing.T) {
 	defer setupSQLite()
 
 	// drop the table so it can't be read
@@ -68,13 +98,10 @@ func TestHandleGetTaxiiObjectsFail(t *testing.T) {
 	}
 }
 
-func TestHandleTaxiiObjectGet(t *testing.T) {
+func TestHandleGetTaxiiObjectsGetFailNoBundle(t *testing.T) {
 	setupSQLite()
 
 	u := "https://localhost/api_root/collections/" + testID + "/objects/"
-	postBundle(u, "testdata/malware_bundle.json")
-
-	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -82,19 +109,9 @@ func TestHandleTaxiiObjectGet(t *testing.T) {
 	u = u + stixID
 	maxContent := int64(2048)
 
-	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected", http.StatusOK)
-	}
-
-	var bundle s.Bundle
-	err := json.Unmarshal([]byte(body), &bundle)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(bundle.Objects) != 1 {
-		t.Error("Expected 1 object")
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected", http.StatusNotFound)
 	}
 }
 

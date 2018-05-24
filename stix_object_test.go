@@ -76,6 +76,13 @@ func TestStixObjectsReadFail(t *testing.T) {
 	}
 }
 
+func TestStixObjectsToBundleEmptyBundle(t *testing.T) {
+	_, err := stixObjectsToBundle(stixObjects{})
+	if err == nil {
+		t.Error("Got:", err, "Expected: not nil")
+	}
+}
+
 func TestWriteBundle(t *testing.T) {
 	setupSQLite()
 	writeMalwareBundle()
