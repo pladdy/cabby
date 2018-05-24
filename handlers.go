@@ -46,18 +46,6 @@ func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
 	return
 }
 
-func (tf *taxiiFilter) setAddedAfter(addedAfter string) error {
-	filter := *tf
-
-	t, err := time.Parse(time.RFC3339Nano, addedAfter)
-	if err == nil {
-		filter.addedAfter = t.Format(time.RFC3339Nano)
-	}
-
-	*tf = filter
-	return err
-}
-
 type taxiiRange struct {
 	first int64
 	last  int64
