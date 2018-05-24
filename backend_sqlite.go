@@ -157,7 +157,10 @@ func withFilter(query string, tf taxiiFilter) string {
 	var filter string
 
 	if len(tf.addedAfter) > 0 {
-		filter += fmt.Sprintf("and created_at > %v", tf.addedAfter)
+		filter += `and (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', created_at))
+	                             + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', created_at))) * 1000 >
+														   (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))
+													 	   + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))) * 1000`
 	}
 
 	return strings.Replace(query, "$filter", filter, -1)

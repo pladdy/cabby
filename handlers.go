@@ -42,6 +42,7 @@ func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
 	tf.stixID = takeStixID(r)
 	tf.collectionID = takeCollectionID(r)
 	tf.pagination = takeRequestRange(r)
+	tf.addedAfter = takeAddedAfter(r)
 	return
 }
 
@@ -119,6 +120,19 @@ func splitAcceptHeader(h string) (string, string) {
 	}
 
 	return first, second
+}
+
+func takeAddedAfter(r *http.Request) string {
+	q := r.URL.Query()
+	af := q["added_after"]
+
+	if len(af) > 0 {
+		t, err := time.Parse(time.RFC3339Nano, af[0])
+		if err == nil {
+			return t.Format(time.RFC3339Nano)
+		}
+	}
+	return ""
 }
 
 func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
