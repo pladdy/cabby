@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -223,22 +222,11 @@ func TestHandleTaxiiObjectsGet(t *testing.T) {
 func TestHandleTaxiiObjectsGetAddedAfter(t *testing.T) {
 	setupSQLite()
 
-	var tm time.Time
-
-	// seed data but wait each post so we get new created timestamps
-	for i := range []int{0, 1, 2} {
-		info.Printf("posting bundle...%v\n", i)
-
-		tm = time.Now().In(time.UTC)
-		postBundle(objectsURL(), fmt.Sprintf("testdata/added_after_%v.json", i))
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
 	maxContent := int64(2048)
+	tm := slowlyPostBundle()
 	u := objectsURL() + "?added_after=" + tm.Format(time.RFC3339Nano)
 
 	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)

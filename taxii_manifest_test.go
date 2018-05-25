@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestHandleTaxiiManifest(t *testing.T) {
@@ -31,6 +32,33 @@ func TestHandleTaxiiManifest(t *testing.T) {
 	}
 
 	expected := 3
+	if len(manifest.Objects) != expected {
+		t.Error("Got:", len(manifest.Objects), "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiManifestAddedAfter(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+	tm := slowlyPostBundle()
+	u = u + "?added_after=" + tm.Format(time.RFC3339Nano)
+
+	status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var manifest taxiiManifest
+	err := json.Unmarshal([]byte(body), &manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := 1
 	if len(manifest.Objects) != expected {
 		t.Error("Got:", len(manifest.Objects), "Expected:", expected)
 	}

@@ -186,6 +186,19 @@ func setupSQLite() {
 	createCollection(ts, testID)
 }
 
+// slowly post the malware bundle test files; used for pull back objects that are added after
+// the returned time (which is just before the last bundle is posted to the server
+func slowlyPostBundle() (tm time.Time) {
+	for i := range []int{0, 1, 2} {
+		info.Printf("posting bundle...%v\n", i)
+
+		tm = time.Now().In(time.UTC)
+		postBundle(objectsURL(), fmt.Sprintf("testdata/added_after_%v.json", i))
+		time.Sleep(100 * time.Millisecond)
+	}
+	return
+}
+
 func tearDownSQLite() {
 	os.Remove(testDB)
 }
