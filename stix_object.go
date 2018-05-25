@@ -65,7 +65,8 @@ func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
 	}
 
 	if len(b.Objects) == 0 {
-		err = errors.New("No data returned, empty bundle")
+		log.Warn("Can't return an empty bundle, returning error to caller")
+		return b, errors.New("No data returned, empty bundle")
 	}
 	return b, err
 }

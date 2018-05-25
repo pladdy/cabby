@@ -123,13 +123,6 @@ func loadTestConfig() {
 	config = Config{}.parse(testConfig)
 }
 
-func renameFile(from, to string) {
-	err := os.Rename(from, to)
-	if err != nil {
-		fail.Fatal("Failed to rename file: ", from, " to: ", to)
-	}
-}
-
 func postBundle(u, bundlePath string) {
 	ts := getStorer()
 	defer ts.disconnect()
@@ -144,6 +137,13 @@ func postBundle(u, bundlePath string) {
 
 	// give time for bundle to be persisted
 	time.Sleep(100 * time.Millisecond)
+}
+
+func renameFile(from, to string) {
+	err := os.Rename(from, to)
+	if err != nil {
+		fail.Fatal("Failed to rename file: ", from, " to: ", to)
+	}
 }
 
 func setupSQLite() {
@@ -194,7 +194,6 @@ func slowlyPostBundle() (tm time.Time) {
 
 		tm = time.Now().In(time.UTC)
 		postBundle(objectsURL(), fmt.Sprintf("testdata/added_after_%v.json", i))
-		time.Sleep(100 * time.Millisecond)
 	}
 	return
 }
