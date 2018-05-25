@@ -100,8 +100,9 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		resourceNotFound(w, errors.New("Unable to process status"))
 	}
-
 	status.TotalCount = int64(len(bundle.Objects))
+
+	w.Header().Set("Connection", "close")
 	writeContent(w, taxiiContentType, resourceToJSON(status))
 	go writeBundle(bundle, takeCollectionID(r), ts)
 }
@@ -133,4 +134,29 @@ func contentTooLarge(r, m int64) bool {
 		return true
 	}
 	return false
+}
+
+func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
+	writeErrs := make(chan error, len(b.Objects))
+	writes := make(chan interface{}, minBuffer)
+
+	go ts.create("stixObject", writes, writeErrs)
+
+	for _, object := range b.Objects {
+		so, err := bytesToStixObject(object)
+		if err != nil {
+			writeErrs <- err
+			continue
+		}
+		log.WithFields(log.Fields{"stix_id": so.RawID}).Info("Sending to data store")
+		writes <- []interface{}{so.RawID, so.Type, so.Created, so.Modified, so.Object, cid}
+	}
+
+	close(writes)
+
+	// is this dumb?  errors are logged in the taxiiStorer...what's the point of having them here?
+	// ie: do i need to be passing an error channel around?
+	for e := range writeErrs {
+		log.Error(e)
+	}
 }

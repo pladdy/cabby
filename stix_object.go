@@ -70,28 +70,3 @@ func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
 	}
 	return b, err
 }
-
-func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
-	writeErrs := make(chan error, len(b.Objects))
-	writes := make(chan interface{}, minBuffer)
-
-	go ts.create("stixObject", writes, writeErrs)
-
-	for _, object := range b.Objects {
-		so, err := bytesToStixObject(object)
-		if err != nil {
-			writeErrs <- err
-			continue
-		}
-		log.WithFields(log.Fields{"stix_id": so.RawID}).Info("Sending to data store")
-		writes <- []interface{}{so.RawID, so.Type, so.Created, so.Modified, so.Object, cid}
-	}
-
-	close(writes)
-
-	// is this dumb?  errors are logged in the taxiiStorer...what's the point of having them here?
-	// ie: do i need to be passing an error channel around?
-	for e := range writeErrs {
-		log.Error(e)
-	}
-}

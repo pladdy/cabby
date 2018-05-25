@@ -139,7 +139,7 @@ func postBundle(u, bundlePath string) {
 		fail.Println("Failed to post bundle")
 	}
 
-	// give time for bundle to be persisted
+	// give time for bundle to be persisted; handler returns a status object, bundle gets processed
 	time.Sleep(250 * time.Millisecond)
 }
 
@@ -197,6 +197,10 @@ func slowlyPostBundle() (tm time.Time) {
 		info.Printf("posting bundle...%v\n", i)
 
 		tm = time.Now().In(time.UTC)
+
+		// pause for effect
+		time.Sleep(100 * time.Millisecond)
+
 		postBundle(objectsURL(), fmt.Sprintf("testdata/added_after_%v.json", i))
 	}
 	return
