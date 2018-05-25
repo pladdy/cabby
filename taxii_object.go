@@ -102,9 +102,10 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 	}
 	status.TotalCount = int64(len(bundle.Objects))
 
+	// write status and close connection
 	w.Header().Set("Connection", "close")
 	writeContent(w, taxiiContentType, resourceToJSON(status))
-	go writeBundle(bundle, takeCollectionID(r), ts)
+	writeBundle(bundle, takeCollectionID(r), ts)
 }
 
 /* helpers */
