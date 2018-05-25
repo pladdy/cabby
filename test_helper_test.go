@@ -133,10 +133,14 @@ func postBundle(u, bundlePath string) {
 
 	maxContent := int64(2048)
 	b := bytes.NewBuffer(bundleContent)
-	handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+
+	if status != http.StatusOK {
+		fail.Println("Failed to post bundle")
+	}
 
 	// give time for bundle to be persisted
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(250 * time.Millisecond)
 }
 
 func renameFile(from, to string) {
