@@ -17,6 +17,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type handlerTestFunction func(http.HandlerFunc, string, string, *bytes.Buffer) (int, string)
+
 const (
 	testAPIRootPath = "cabby_test_root"
 	testConfig      = "testdata/config/testing_config.json"
@@ -48,6 +50,22 @@ var (
 		Default:     "https://localhost/taxii/"}
 	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/objects/"
 )
+
+// attemptHandlerTest attempts a handler test by trying it up to maxTries times
+func attemptHandlerTest(hf http.HandlerFunc, method, u string, b *bytes.Buffer) (int, string) {
+	status, body := handlerTest(hf, method, u, b)
+	maxTries := 3
+
+	for i := 1; i <= maxTries; i++ {
+		if status == http.StatusOK {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+		status, body = handlerTest(hf, method, u, b)
+	}
+	return status, body
+}
 
 func createAPIRoot(testStorer taxiiStorer) {
 	err := testAPIRoot.create(testStorer, testAPIRootPath)

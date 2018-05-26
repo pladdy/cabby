@@ -82,7 +82,7 @@ func TestHandleTaxiiManifestFilter(t *testing.T) {
 		u := "https://localhost/api_root/collections/" + testID + "/manifest/"
 		u = u + "?" + test.filter
 
-		status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
+		status, body := attemptHandlerTest(handleTaxiiManifest(ts), "GET", u, nil)
 		if status != http.StatusOK {
 			t.Error("Got:", status, "Expected", http.StatusOK)
 		}

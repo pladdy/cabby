@@ -229,7 +229,7 @@ func TestHandleTaxiiObjectsGetAddedAfter(t *testing.T) {
 	tm := slowlyPostBundle()
 	u := objectsURL() + "?added_after=" + tm.Format(time.RFC3339Nano)
 
-	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+	status, body := attemptHandlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected", http.StatusOK)
 	}
