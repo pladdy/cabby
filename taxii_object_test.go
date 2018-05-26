@@ -245,6 +245,53 @@ func TestHandleTaxiiObjectsGetAddedAfter(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
+	tests := []struct {
+		filter      string
+		objects     int
+		shouldError bool
+	}{
+		{"type=indicator", 1, false},
+		{"type=indicator,malware", 2, false},
+		{"type=foo", 0, true},
+		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
+	}
+
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/malware_bundle.json")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	for _, test := range tests {
+		maxContent := int64(2048)
+		u := objectsURL() + "?" + test.filter
+
+		status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+
+		if test.shouldError {
+			if status != http.StatusNotFound {
+				t.Error("Got:", status, "Expected", http.StatusNotFound)
+			}
+			continue
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected", http.StatusOK)
+		}
+
+		var bundle s.Bundle
+		err := json.Unmarshal([]byte(body), &bundle)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(bundle.Objects) != test.objects {
+			t.Error("Got:", len(bundle.Objects), "Expected:", test.objects)
+		}
+	}
+}
+
 func TestHandleTaxiiObjectsGetCollectionUnauthorized(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()

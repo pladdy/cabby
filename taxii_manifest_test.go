@@ -64,6 +64,42 @@ func TestHandleTaxiiManifestAddedAfter(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiManifestFilter(t *testing.T) {
+	tests := []struct {
+		filter string
+	}{
+		{"type=indicator"},
+		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"},
+	}
+
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/malware_bundle.json")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	for _, test := range tests {
+		u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+		u = u + "?" + test.filter
+
+		status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected", http.StatusOK)
+		}
+
+		var manifest taxiiManifest
+		err := json.Unmarshal([]byte(body), &manifest)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expected := 1
+		if len(manifest.Objects) != expected {
+			t.Error("Got:", len(manifest.Objects), "Expected:", expected)
+		}
+	}
+}
+
 func TestHandleTaxiiManifestFail(t *testing.T) {
 	defer setupSQLite()
 

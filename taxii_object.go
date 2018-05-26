@@ -68,7 +68,7 @@ func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
 	tf := newTaxiiFilter(r)
 	sos := stixObjects{}
 
-	result, err := sos.read(ts, tf)
+	result, err := sos.read(ts, tf, takeObjectID(r))
 	if err != nil {
 		log.WithFields(
 			log.Fields{"fn": "getStixObjects", "error": err, "taxiiFilter": tf},

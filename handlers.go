@@ -36,13 +36,15 @@ type taxiiFilter struct {
 	collectionID string
 	pagination   taxiiRange
 	stixID       string
+	stixTypes    []string
 }
 
 func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
-	tf.stixID = takeStixID(r)
+	tf.addedAfter = takeAddedAfter(r)
 	tf.collectionID = takeCollectionID(r)
 	tf.pagination = takeRequestRange(r)
-	tf.addedAfter = takeAddedAfter(r)
+	tf.stixID = takeStixID(r)
+	tf.stixTypes = takeStixTypes(r)
 	return
 }
 
@@ -154,9 +156,29 @@ func takeRequestRange(r *http.Request) taxiiRange {
 	return tr
 }
 
+func takeObjectID(r *http.Request) string {
+	var objectIDIndex = 5
+	return getToken(r.URL.Path, objectIDIndex)
+}
+
 func takeStixID(r *http.Request) string {
-	var stixIDIndex = 5
-	return getToken(r.URL.Path, stixIDIndex)
+	q := r.URL.Query()
+	si := q["id"]
+
+	if len(si) > 0 {
+		return si[0]
+	}
+	return ""
+}
+
+func takeStixTypes(r *http.Request) []string {
+	q := r.URL.Query()
+	st := q["type"]
+
+	if len(st) > 0 {
+		return strings.Split(st[0], ",")
+	}
+	return []string{}
 }
 
 func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
@@ -190,79 +212,33 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 			unauthorized(w, errors.New("Invalid user"))
 		}
 
+		mills := int64(1000)
+
+		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{
-			"url":    r.URL,
-			"method": r.Method,
-			"user":   user,
+			"method":   r.Method,
+			"start_ts": start.UnixNano() / mills,
+			"url":      r.URL,
+			"user":     user,
 		}).Info("Request made to server")
 
 		h(w, r)
+
+		end := time.Now().In(time.UTC)
+		elapsed := time.Since(start)
+		log.WithFields(log.Fields{
+			"elapsed_ts": elapsed.Nanoseconds() / mills,
+			"method":     r.Method,
+			"end_ts":     end.UnixNano() / mills,
+			"url":        r.URL,
+			"user":       user,
+		}).Info("Request made to server")
 	}
 }
 
 func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
 	ctx := context.WithValue(r.Context(), requestRange, tr)
 	return r.WithContext(ctx)
-}
-
-/* http status functions */
-
-func errorStatus(w http.ResponseWriter, title string, err error, status int) {
-	errString := fmt.Sprintf("%v", err)
-
-	te := taxiiError{Title: title, Description: errString, HTTPStatus: status}
-
-	log.WithFields(log.Fields{
-		"error":       err,
-		"title":       title,
-		"http status": status,
-	}).Error("Returning error in response")
-
-	w.Header().Set("Content-Type", taxiiContentType)
-	http.Error(w, resourceToJSON(te), status)
-}
-
-func badRequest(w http.ResponseWriter, err error) {
-	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
-}
-
-func methodNotAllowed(w http.ResponseWriter, err error) {
-	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
-}
-
-func resourceNotFound(w http.ResponseWriter, err error) {
-	errorStatus(w, "Resource not found", err, http.StatusNotFound)
-}
-
-func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
-	err := fmt.Errorf("content length is %v, content length can't be bigger than %v", rc, mc)
-	errorStatus(w, "Request too large", err, http.StatusRequestEntityTooLarge)
-}
-
-func rangeNotSatisfiable(w http.ResponseWriter, err error) {
-	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
-}
-
-func unauthorized(w http.ResponseWriter, err error) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
-}
-
-func unsupportedMediaType(w http.ResponseWriter, err error) {
-	errorStatus(w, "Unsupported Media Type", err, http.StatusUnsupportedMediaType)
-}
-
-/* catch undefined route */
-
-func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
-	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
-}
-
-func recoverFromPanic(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		log.Error("Panic!")
-		resourceNotFound(w, errors.New("Resource not found"))
-	}
 }
 
 /* helpers */

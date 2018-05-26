@@ -22,11 +22,11 @@ type stixObjects struct {
 	Objects [][]byte
 }
 
-func (s *stixObjects) read(ts taxiiStorer, tf taxiiFilter) (result taxiiResult, err error) {
+func (s *stixObjects) read(ts taxiiStorer, tf taxiiFilter, objectID string) (result taxiiResult, err error) {
 	sos := *s
 
-	if len(tf.stixID) > 0 {
-		result, err = ts.read("stixObject", []interface{}{tf.collectionID, tf.stixID}, tf)
+	if len(objectID) > 0 {
+		result, err = ts.read("stixObject", []interface{}{tf.collectionID, objectID}, tf)
 	} else {
 		result, err = ts.read("stixObjects", []interface{}{tf.collectionID}, tf)
 	}

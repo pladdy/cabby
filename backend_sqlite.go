@@ -163,6 +163,15 @@ func withFilter(query string, tf taxiiFilter) string {
 													 	   + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))) * 1000`
 	}
 
+	if len(tf.stixID) > 0 {
+		filter += ` and id = '` + tf.stixID + "'"
+	}
+
+	if len(tf.stixTypes) > 0 {
+		types := strings.Join(tf.stixTypes, "', '")
+		filter += ` and type in ('` + types + "')"
+	}
+
 	return strings.Replace(query, "$filter", filter, -1)
 }
 
@@ -197,6 +206,7 @@ func (s *sqliteDB) read(resource string, args []interface{}, tf ...taxiiFilter) 
 
 	rows, err := s.db.Query(tq.statement, args...)
 	if err != nil {
+		log.WithFields(log.Fields{"statement": tq.statement, "args": args, "err": err}).Error("Failed to query")
 		return result, fmt.Errorf("%v in statement: %v", err, tq.statement)
 	}
 

@@ -46,7 +46,7 @@ func TestStixObjectsRead(t *testing.T) {
 
 	sos := stixObjects{}
 	tf := taxiiFilter{collectionID: testID, pagination: taxiiRange{first: 0, last: 0}}
-	sos.read(ts, tf)
+	sos.read(ts, tf, "")
 
 	if len(sos.Objects) == 3 {
 		t.Error("Got:", len(sos.Objects), "Expected: 1")
@@ -69,7 +69,7 @@ func TestStixObjectsReadFail(t *testing.T) {
 
 	sos := stixObjects{}
 	tf := taxiiFilter{collectionID: testID, pagination: taxiiRange{first: 0, last: 0}}
-	_, err = sos.read(ts, tf)
+	_, err = sos.read(ts, tf, "")
 
 	if err == nil {
 		t.Error("Expected an error")
