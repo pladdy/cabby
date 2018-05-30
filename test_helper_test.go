@@ -20,15 +20,15 @@ import (
 type handlerTestFunction func(http.HandlerFunc, string, string, *bytes.Buffer) (int, string)
 
 const (
-	testAPIRootPath = "cabby_test_root"
-	testConfig      = "testdata/config/testing_config.json"
-	testDB          = "testdata/test.db"
-	testID          = "82407036-edf9-4c75-9a56-e72697c53e99"
-	testPass        = "test"
-	testPort        = 1234
-	testUser        = "test@cabby.com"
-	discoveryURL    = "https://localhost:1234/taxii/"
-	eightMB         = 8388608
+	testAPIRootPath  = "cabby_test_root"
+	testConfig       = "testdata/config/testing_config.json"
+	testDB           = "testdata/test.db"
+	testCollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
+	testPass         = "test"
+	testPort         = 1234
+	testUser         = "test@cabby.com"
+	discoveryURL     = "https://localhost:1234/taxii/"
+	eightMB          = 8388608
 )
 
 var (
@@ -43,12 +43,12 @@ var (
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
 		MaxContentLength: eightMB}
-	testCollectionURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/"
+	testCollectionURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testCollectionID + "/"
 	testDiscovery     = taxiiDiscovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
-	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testID + "/objects/"
+	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testCollectionID + "/objects/"
 )
 
 // attemptHandlerTest attempts a handler test by trying it up to maxTries times
@@ -149,7 +149,7 @@ func postBundle(u, bundlePath string) {
 	bundleFile, _ := os.Open(bundlePath)
 	bundleContent, _ := ioutil.ReadAll(bundleFile)
 
-	maxContent := int64(2048)
+	maxContent := int64(4096)
 	b := bytes.NewBuffer(bundleContent)
 	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
 
@@ -205,7 +205,7 @@ func setupSQLite() {
 	createDiscovery(ts)
 	createAPIRoot(ts)
 	createUser(ts)
-	createCollection(ts, testID)
+	createCollection(ts, testCollectionID)
 }
 
 // slowly post the malware bundle test files; used for pull back objects that are added after
@@ -230,7 +230,7 @@ func tearDownSQLite() {
 
 // create a context for the testUser and give it read/write access to the test collection
 func withAuthContext(r *http.Request) *http.Request {
-	tid, err := newTaxiiID(testID)
+	tid, err := newTaxiiID(testCollectionID)
 	if err != nil {
 		log.Fatal(err)
 	}

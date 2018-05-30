@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
@@ -51,20 +52,24 @@ var statements = map[string]map[string]string{
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
 		"stixObject": `select object
-                   from stix_objects
+									 from stix_objects_data
 									 where
 									   collection_id = ?
 										 and id = ?
-										 $filter`,
+										 $version`,
 		"stixObjects": `with data as (
 										  select rowid, object, 1 count
-										  from stix_objects
+										  from stix_objects_data
 											where
 											  collection_id = ?
-												$filter
+												$addedAfter
+												$id
+												$types
+												$version
 										)
 										select object, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
-										from data`,
+										from data
+										$paginate`,
 		"taxiiAPIRoot": `select title, description, versions, max_content_length
 		                 from taxii_api_root
 		                 where api_root_path = ?`,
@@ -97,7 +102,8 @@ var statements = map[string]map[string]string{
 												 select
 												   id, title, description, can_read, can_write, media_types,
 												   (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
-												 from data`,
+												 from data
+												 $paginate`,
 		"taxiiDiscovery": `select td.title, td.description, td.contact, td.default_url,
 											   case
 											     when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
@@ -108,14 +114,18 @@ var statements = map[string]map[string]string{
 											     on td.id = tar.discovery_id`,
 		"taxiiManifest": `with data as (
 			                  select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count -- media_types omitted for now
-											  from stix_objects
+											  from stix_objects_data
 											  where
 												  collection_id = ?
-													$filter
+													$addedAfter
+													$id
+													$types
+													$version
 											  group by id
 											)
 											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
-											from data`,
+											from data
+											$paginate`,
 		"taxiiUser": `select 1
 									from
 									  taxii_user tu
@@ -151,44 +161,74 @@ func (s *sqliteDB) disconnect() {
 
 /* query methods */
 
-// withFilter takes a query string, attempts to replace the $filter place holder in it with taxiiFilters if they're
+func filterVersion(version string) string {
+	t, err := time.Parse(time.RFC3339Nano, version)
+	if err == nil {
+		return `and (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', modified))
+	                        + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', modified))) * 1000 =
+								(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '` + t.Format(time.RFC3339Nano) + `'))
+													+ strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '` + t.Format(time.RFC3339Nano) + `'))) * 1000`
+	}
+
+	filter := " and version "
+
+	switch version {
+	case "all":
+		filter = ""
+	case "first":
+		filter += "in ('first', 'only')"
+	default:
+		filter += "in ('last', 'only')"
+	}
+	return filter
+}
+
+// withFilter takes a query string, attempts to replace $<filter> place holders in it with taxiiFilters if they're
 // set
 func withFilter(query string, tf taxiiFilter) string {
-	var filter string
+	var addedAfter string
+	var stixID string
+	var stixTypes string
+	var version string
 
 	if len(tf.addedAfter) > 0 {
-		filter += `and (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', created_at))
+		addedAfter = `and (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', created_at))
 	                             + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', created_at))) * 1000 >
-														   (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))
+											(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))
 													 	   + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '` + tf.addedAfter + `'))) * 1000`
 	}
+	query = strings.Replace(query, "$addedAfter", addedAfter, -1)
 
 	if len(tf.stixID) > 0 {
-		filter += ` and id = '` + tf.stixID + "'"
+		stixID = ` and id = '` + tf.stixID + "'"
 	}
+	query = strings.Replace(query, "$id", stixID, -1)
 
 	if len(tf.stixTypes) > 0 {
 		types := strings.Join(tf.stixTypes, "', '")
-		filter += ` and type in ('` + types + "')"
+		stixTypes = ` and type in ('` + types + "')"
 	}
+	query = strings.Replace(query, "$types", stixTypes, -1)
 
-	return strings.Replace(query, "$filter", filter, -1)
+	version = filterVersion(tf.version)
+	query = strings.Replace(query, "$version", version, -1)
+
+	return query
 }
 
-// withPagination for SQL has to increment the first and last fields of the taxiiRange because SQL rowids
-// start at index 1, not 0.
+// withPagination for SQL uses limit/offset to paginate
 // Warning:
-//   this function operates off of a huge assumption, which is 'from data' is the from clause
-//   'from data' is short for 'from a subquery called data that has rowid in it...'; this is gross
+//   this function requires a $paginate string placeholder in the query for pagination logic to be
+//   interpolated in
 func withPagination(query string, tr taxiiRange) string {
-	if !tr.Valid() {
-		return query
+	var paginate string
+
+	if tr.Valid() {
+		limit := tr.last - tr.first
+		paginate = fmt.Sprintf("limit %v offset %v", limit+1, tr.first)
 	}
 
-	return strings.Replace(query,
-		"from data",
-		fmt.Sprintf("from data where rowid between %v and %v", tr.first+1, tr.last+1),
-		-1)
+	return strings.Replace(query, "$paginate", paginate, -1)
 }
 
 /* read methods */

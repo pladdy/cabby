@@ -39,7 +39,8 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 func TestHandleTaxiiObjectGet(t *testing.T) {
 	setupSQLite()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	//u := "https://localhost/api_root/collections/" + testCollectionID + "/objects/"
+	u := objectsURL()
 	postBundle(u, "testdata/malware_bundle.json")
 
 	// read the bundle back
@@ -63,6 +64,57 @@ func TestHandleTaxiiObjectGet(t *testing.T) {
 
 	if len(bundle.Objects) != 1 {
 		t.Error("Expected 1 object")
+	}
+}
+
+func TestHandleTaxiiObjectGetFilter(t *testing.T) {
+	tests := []struct {
+		filter      string
+		objects     int
+		shouldError bool
+	}{
+		{"version=2016-06-06T20:03:48.000Z", 1, false},
+		{"version=all", 3, false},
+		{"version=first", 1, false},
+		{"version=foo", 1, false}, // invalid, defaults to 'last'
+	}
+
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/multiple_versions.json")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	for _, test := range tests {
+		maxContent := int64(2048)
+
+		u := objectsURL()
+		stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
+		u = u + stixID
+		u = u + "/" + "?" + test.filter
+
+		status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
+
+		if test.shouldError {
+			if status != http.StatusNotFound {
+				t.Error("Got:", status, "Expected", http.StatusNotFound)
+			}
+			continue
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected", http.StatusOK, "Filter:", test.filter)
+		}
+
+		var bundle s.Bundle
+		err := json.Unmarshal([]byte(body), &bundle)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(bundle.Objects) != test.objects {
+			t.Error("Got:", len(bundle.Objects), "Expected:", test.objects)
+		}
 	}
 }
 
@@ -100,7 +152,7 @@ func TestHandleGetTaxiiObjectsGetFailNoObjects(t *testing.T) {
 func TestHandleGetTaxiiObjectsGetFailNoBundle(t *testing.T) {
 	setupSQLite()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/objects/"
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -125,7 +177,7 @@ func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
 	u := objectsURL()
 	stixID := "indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f"
 	u = u + stixID
-	maxContent := int64(2048)
+	maxContent := int64(4096)
 
 	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)
 	if status != http.StatusOK {
@@ -138,8 +190,8 @@ func TestHandleTaxiiObjectGetMultipleVersions(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(bundle.Objects) != 2 {
-		t.Error("Got:", len(bundle.Objects), "Expected 2 objects")
+	if len(bundle.Objects) != 1 {
+		t.Error("Got:", len(bundle.Objects), "Expected 1 object")
 	}
 }
 
@@ -255,6 +307,10 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 		{"type=indicator,malware", 2, false},
 		{"type=foo", 0, true},
 		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
+		{"version=2016-04-06T20:06:37.000Z", 1, false},
+		{"version=all", 3, false},
+		{"version=first", 3, false},
+		{"version=foo", 3, false}, // invalid, defaults to 'last'
 	}
 
 	setupSQLite()
@@ -277,7 +333,7 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 		}
 
 		if status != http.StatusOK {
-			t.Error("Got:", status, "Expected", http.StatusOK)
+			t.Error("Got:", status, "Expected", http.StatusOK, "Filter:", test.filter)
 		}
 
 		var bundle s.Bundle
@@ -336,7 +392,7 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 
 	expectedCount := 3
 	var count int
-	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testCollectionID + "'").Scan(&count)
 	if err != nil {
 		t.Error(err)
 	}

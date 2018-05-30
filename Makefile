@@ -65,7 +65,7 @@ test_failures: test_install
 test_install:
 	go test -tags json1 -i
 
-test_run:
+test_run: test_install
 ifdef test
 	go test $(BUILD_TAGS) -v -run $(test)
 else

@@ -30,6 +30,43 @@ create table stix_objects (
   create index stix_objects_type on stix_objects (type);
   create index stix_objects_version on stix_objects (id, type, modified);
 
+  drop view if exists stix_objects_id_aggregate;
+
+  create view stix_objects_id_aggregate as
+    select rowid,
+           id,
+           type,
+           collection_id,
+           min(modified) first,
+           max(modified) last
+    from stix_objects
+    group by id,
+             type,
+             collection_id;
+
+  drop view if exists stix_objects_data;
+
+  create view stix_objects_data as
+    select
+      so.rowid,
+      so.id,
+      so.type,
+      so.created,
+      so.modified,
+      so.object,
+      so.collection_id,
+      case when so.modified = sa.first and so.modified = sa.last then 'only'
+           when so.modified = sa.last then 'last'
+           when so.modified = sa.first then 'first'
+      end version,
+      so.created_at,
+      so.updated_at
+    from
+      stix_objects so
+      left join stix_objects_id_aggregate sa
+        on so.id = sa.id
+        and so.collection_id = sa.collection_id;
+
 /* taxii */
 
 drop table if exists taxii_api_root;

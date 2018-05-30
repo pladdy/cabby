@@ -18,10 +18,9 @@ import (
 type key int
 
 const (
-	userName         key = 0
-	userCollections  key = 1
-	maxContentLength key = 2
-	requestRange     key = 3
+	userName        key = 0
+	userCollections key = 1
+	requestRange    key = 2
 )
 
 const (
@@ -37,6 +36,7 @@ type taxiiFilter struct {
 	pagination   taxiiRange
 	stixID       string
 	stixTypes    []string
+	version      string
 }
 
 func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
@@ -45,6 +45,7 @@ func newTaxiiFilter(r *http.Request) (tf taxiiFilter) {
 	tf.pagination = takeRequestRange(r)
 	tf.stixID = takeStixID(r)
 	tf.stixTypes = takeStixTypes(r)
+	tf.version = takeVersion(r)
 	return
 }
 
@@ -179,6 +180,16 @@ func takeStixTypes(r *http.Request) []string {
 		return strings.Split(st[0], ",")
 	}
 	return []string{}
+}
+
+func takeVersion(r *http.Request) string {
+	q := r.URL.Query()
+	v := q["version"]
+
+	if len(v) > 0 {
+		return v[0]
+	}
+	return ""
 }
 
 func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
