@@ -39,7 +39,6 @@ func TestBundleFromBytesInvalidBundle(t *testing.T) {
 func TestHandleTaxiiObjectGet(t *testing.T) {
 	setupSQLite()
 
-	//u := "https://localhost/api_root/collections/" + testCollectionID + "/objects/"
 	u := objectsURL()
 	postBundle(u, "testdata/malware_bundle.json")
 
