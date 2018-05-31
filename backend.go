@@ -23,7 +23,7 @@ type taxiiQuery struct {
 }
 
 type taxiiReader interface {
-	read(resource string, args []interface{}, tr ...taxiiRange) (taxiiResult, error)
+	read(resource string, args []interface{}, tf ...taxiiFilter) (taxiiResult, error)
 }
 
 type taxiiResult struct {

@@ -48,6 +48,9 @@ reportcard: fmt
 run:
 	go run $(BUILD_TAGS) $(GO_FILES)
 
+run_log:
+	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
+
 sqlite:
 	rm -rf db/
 	mkdir db
@@ -62,7 +65,7 @@ test_failures: test_install
 test_install:
 	go test -tags json1 -i
 
-test_run:
+test_run: test_install
 ifdef test
 	go test $(BUILD_TAGS) -v -run $(test)
 else

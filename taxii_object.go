@@ -65,33 +65,16 @@ func handleGetTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reques
 }
 
 func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
+	tf := newTaxiiFilter(r)
 	sos := stixObjects{}
-	stixID := getStixID(r.URL.Path)
-	collectionID := getCollectionID(r.URL.Path)
 
-	result, err := sos.read(ts, collectionID, stixID, takeRequestRange(r))
+	result, err := sos.read(ts, tf, takeObjectID(r))
 	if err != nil {
 		log.WithFields(
-			log.Fields{"fn": "getStixObjects", "error": err, "stixID": stixID, "collectionID": collectionID},
+			log.Fields{"fn": "getStixObjects", "error": err, "taxiiFilter": tf},
 		).Error("failed to get objects")
 	}
 	return result, err
-}
-
-func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
-	b, err := s.NewBundle()
-	if err != nil {
-		return b, err
-	}
-
-	for _, o := range sos.Objects {
-		b.Objects = append(b.Objects, o)
-	}
-
-	if len(b.Objects) == 0 {
-		err = errors.New("No data returned, empty bundle")
-	}
-	return b, err
 }
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
@@ -117,10 +100,10 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 	if err != nil {
 		resourceNotFound(w, errors.New("Unable to process status"))
 	}
-
 	status.TotalCount = int64(len(bundle.Objects))
+
 	writeContent(w, taxiiContentType, resourceToJSON(status))
-	go writeBundle(bundle, getCollectionID(r.URL.Path), ts)
+	go writeBundle(bundle, takeCollectionID(r), ts)
 }
 
 /* helpers */
@@ -150,4 +133,29 @@ func contentTooLarge(r, m int64) bool {
 		return true
 	}
 	return false
+}
+
+func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
+	writeErrs := make(chan error, len(b.Objects))
+	writes := make(chan interface{}, minBuffer)
+
+	go ts.create("stixObject", writes, writeErrs)
+
+	for _, object := range b.Objects {
+		so, err := bytesToStixObject(object)
+		if err != nil {
+			writeErrs <- err
+			continue
+		}
+		log.WithFields(log.Fields{"stix_id": so.RawID}).Info("Sending to data store")
+		writes <- []interface{}{so.RawID, so.Type, so.Created, so.Modified, so.Object, cid}
+	}
+
+	close(writes)
+
+	// is this dumb?  errors are logged in the taxiiStorer...what's the point of having them here?
+	// ie: do i need to be passing an error channel around?
+	for e := range writeErrs {
+		log.Error(e)
+	}
 }

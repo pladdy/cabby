@@ -5,19 +5,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestHandleTaxiiManifest(t *testing.T) {
 	setupSQLite()
 
-	u := "https://localhost/api_root/collections/" + testID + "/objects/"
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/objects/"
 	postBundle(u, "testdata/malware_bundle.json")
 
 	// read the bundle back
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u = "https://localhost/api_root/collections/" + testID + "/manifest/"
+	u = "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
 
 	status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
 	if status != http.StatusOK {
@@ -36,6 +37,78 @@ func TestHandleTaxiiManifest(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiManifestAddedAfter(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
+	tm := slowlyPostBundle()
+	u = u + "?added_after=" + tm.Format(time.RFC3339Nano)
+
+	status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected", http.StatusOK)
+	}
+
+	var manifest taxiiManifest
+	err := json.Unmarshal([]byte(body), &manifest)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := 1
+	if len(manifest.Objects) != expected {
+		t.Error("Got:", len(manifest.Objects), "Expected:", expected)
+	}
+}
+
+func TestHandleTaxiiManifestFilter(t *testing.T) {
+	tests := []struct {
+		filter  string
+		objects int
+	}{
+		{"type=indicator", 1},
+		{"type=indicator,malware", 2},
+		{"type=foo", 0},
+		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1},
+		{"version=2016-04-06T20:06:37.000Z", 1},
+		{"version=all", 4},
+		{"version=first", 3},
+		{"version=foo", 3}, // invalid, defaults to 'last'
+		// composite filters
+		{"type=indicator,malware&version=all", 3},
+	}
+
+	setupSQLite()
+	postBundle(objectsURL(), "testdata/multi_filter.json")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	for _, test := range tests {
+		u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
+		u = u + "?" + test.filter
+
+		status, body := attemptHandlerTest(handleTaxiiManifest(ts), "GET", u, nil)
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected", http.StatusOK, "Filter:", test.filter)
+		}
+
+		var manifest taxiiManifest
+		err := json.Unmarshal([]byte(body), &manifest)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(manifest.Objects) != test.objects {
+			t.Error("Got:", len(manifest.Objects), "Expected:", test.objects, "Filter:", test.filter)
+		}
+	}
+}
+
 func TestHandleTaxiiManifestFail(t *testing.T) {
 	defer setupSQLite()
 
@@ -51,7 +124,7 @@ func TestHandleTaxiiManifestFail(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
 
 	status, _ := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)
 	if status != http.StatusNotFound {
@@ -65,7 +138,7 @@ func TestHandleTaxiiManifestInvalidRange(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
 
 	// create request and add a range to it that's invalid
 	var req *http.Request
@@ -86,7 +159,7 @@ func TestHandleTaxiiManifestRange(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	u := "https://localhost/api_root/collections/" + testID + "/manifest/"
+	u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
 
 	// create request and add a range to it that's invalid
 	var req *http.Request

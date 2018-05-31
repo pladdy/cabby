@@ -181,7 +181,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 }
 
 func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	ts := getStorer()
 	defer ts.disconnect()
@@ -197,6 +197,7 @@ func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
 	first := 0
 	last := 0
 	records := 1
+	totalRecords := 2
 
 	req.Header.Set("Range", "items "+strconv.Itoa(first)+"-"+strconv.Itoa(last))
 
@@ -219,7 +220,7 @@ func TestHandleTaxiiCollectionsGetRange(t *testing.T) {
 		t.Error("Got:", len(collections.Collections), "Expected:", records)
 	}
 
-	tr := taxiiRange{first: int64(first), last: int64(last), total: int64(records)}
+	tr := taxiiRange{first: int64(first), last: int64(last), total: int64(totalRecords)}
 	if res.Header().Get("Content-Range") != tr.String() {
 		t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", tr.String())
 	}
@@ -567,7 +568,7 @@ func TestTaxiiCollectionsRead(t *testing.T) {
 	}
 
 	tcs := taxiiCollections{}
-	_, err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -593,7 +594,7 @@ func TestTaxiiCollectionsReadFailWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tcs.read(ts, testUser, taxiiRange{})
+	_, err = tcs.read(ts, testUser, taxiiFilter{})
 	if err == nil {
 		t.Error("Expected a write error")
 	}

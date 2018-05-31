@@ -132,9 +132,10 @@ func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (taxiiRes
 }
 
 func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
+	tf := newTaxiiFilter(r)
 	tcs := taxiiCollections{}
 
-	result, err := tcs.read(ts, user, takeRequestRange(r))
+	result, err := tcs.read(ts, user, tf)
 	if err != nil {
 		return result, err
 	}
@@ -225,10 +226,10 @@ type taxiiCollections struct {
 	Collections []taxiiCollection `json:"collections"`
 }
 
-func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tr taxiiRange) (taxiiResult, error) {
+func (tcs *taxiiCollections) read(ts taxiiStorer, u string, tf taxiiFilter) (taxiiResult, error) {
 	collections := *tcs
 
-	result, err := ts.read("taxiiCollections", []interface{}{u}, tr)
+	result, err := ts.read("taxiiCollections", []interface{}{u}, tf)
 	if err != nil {
 		return result, err
 	}

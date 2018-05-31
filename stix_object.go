@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 
 	s "github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
@@ -17,29 +18,17 @@ type stixObject struct {
 	CollectionID taxiiID
 }
 
-func newStixObject(b []byte) (stixObject, error) {
-	var so stixObject
-	err := json.Unmarshal(b, &so)
-	if err != nil {
-		return stixObject{}, err
-	}
-
-	so.ID, err = s.MarshalStixID(so.RawID)
-	so.Object = b
-	return so, err
-}
-
 type stixObjects struct {
 	Objects [][]byte
 }
 
-func (s *stixObjects) read(ts taxiiStorer, cid, sid string, tr taxiiRange) (result taxiiResult, err error) {
+func (s *stixObjects) read(ts taxiiStorer, tf taxiiFilter, objectID string) (result taxiiResult, err error) {
 	sos := *s
 
-	if len(sid) > 0 {
-		result, err = ts.read("stixObject", []interface{}{cid, sid})
+	if len(objectID) > 0 {
+		result, err = ts.read("stixObject", []interface{}{tf.collectionID, objectID}, tf)
 	} else {
-		result, err = ts.read("stixObjects", []interface{}{cid}, tr)
+		result, err = ts.read("stixObjects", []interface{}{tf.collectionID}, tf)
 	}
 
 	if err != nil {
@@ -51,29 +40,33 @@ func (s *stixObjects) read(ts taxiiStorer, cid, sid string, tr taxiiRange) (resu
 	return
 }
 
-/* helper */
+/* helpers */
 
-func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
-	writeErrs := make(chan error, len(b.Objects))
-	writes := make(chan interface{}, minBuffer)
-
-	go ts.create("stixObject", writes, writeErrs)
-
-	for _, object := range b.Objects {
-		so, err := newStixObject(object)
-		if err != nil {
-			writeErrs <- err
-			continue
-		}
-		log.WithFields(log.Fields{"stix_id": so.RawID}).Info("Sending to data store")
-		writes <- []interface{}{so.RawID, so.Type, so.Created, so.Modified, so.Object, cid}
+func bytesToStixObject(b []byte) (stixObject, error) {
+	var so stixObject
+	err := json.Unmarshal(b, &so)
+	if err != nil {
+		return stixObject{}, err
 	}
 
-	close(writes)
+	so.ID, err = s.MarshalStixID(so.RawID)
+	so.Object = b
+	return so, err
+}
 
-	// is this dumb?  errors are logged in the taxiiStorer...what's the point of having them here?
-	// ie: do i need to be passing an error channel around?
-	for e := range writeErrs {
-		log.Error(e)
+func stixObjectsToBundle(sos stixObjects) (s.Bundle, error) {
+	b, err := s.NewBundle()
+	if err != nil {
+		return b, err
 	}
+
+	for _, o := range sos.Objects {
+		b.Objects = append(b.Objects, o)
+	}
+
+	if len(b.Objects) == 0 {
+		log.Warn("Can't return an empty bundle, returning error to caller")
+		return b, errors.New("No data returned, empty bundle")
+	}
+	return b, err
 }

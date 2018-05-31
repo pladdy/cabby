@@ -33,7 +33,7 @@ func writeMalwareBundle() {
 	// write the bundle
 	ts := getStorer()
 	defer ts.disconnect()
-	writeBundle(bundle, testID, ts)
+	writeBundle(bundle, testCollectionID, ts)
 }
 
 /* tests */
@@ -45,10 +45,12 @@ func TestStixObjectsRead(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
+	tf := taxiiFilter{collectionID: testCollectionID, pagination: taxiiRange{first: 0, last: 0}}
+	sos.read(ts, tf, "")
 
-	if len(sos.Objects) == 3 {
-		t.Error("Got:", len(sos.Objects), "Expected: 1")
+	expected := 1
+	if len(sos.Objects) != expected {
+		t.Error("Got:", len(sos.Objects), "Expected:", expected)
 	}
 }
 
@@ -67,10 +69,18 @@ func TestStixObjectsReadFail(t *testing.T) {
 	defer ts.disconnect()
 
 	sos := stixObjects{}
-	_, err = sos.read(ts, testID, "", taxiiRange{first: 0, last: 0})
+	tf := taxiiFilter{collectionID: testCollectionID, pagination: taxiiRange{first: 0, last: 0}}
+	_, err = sos.read(ts, tf, "")
 
 	if err == nil {
 		t.Error("Expected an error")
+	}
+}
+
+func TestStixObjectsToBundleEmptyBundle(t *testing.T) {
+	_, err := stixObjectsToBundle(stixObjects{})
+	if err == nil {
+		t.Error("Got:", err, "Expected: not nil")
 	}
 }
 
@@ -84,7 +94,7 @@ func TestWriteBundle(t *testing.T) {
 
 	expectedCount := 3
 	var count int
-	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testCollectionID + "'").Scan(&count)
 	if err != nil {
 		t.Error(err)
 	}
@@ -102,7 +112,7 @@ func TestWriteBundleBadObject(t *testing.T) {
 	// write the bundle
 	ts := getStorer()
 	defer ts.disconnect()
-	writeBundle(bundle, testID, ts)
+	writeBundle(bundle, testCollectionID, ts)
 
 	// check for persistence
 	s := getSQLiteDB()
@@ -110,7 +120,7 @@ func TestWriteBundleBadObject(t *testing.T) {
 
 	expectedCount := 0
 	var count int
-	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testCollectionID + "'").Scan(&count)
 	if err != nil {
 		t.Error(err)
 	}
@@ -133,7 +143,7 @@ func TestWriteBundleNoDuplicates(t *testing.T) {
 
 	expectedCount := 3
 	var count int
-	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testID + "'").Scan(&count)
+	err := s.db.QueryRow("select count(*) from stix_objects where collection_id = '" + testCollectionID + "'").Scan(&count)
 	if err != nil {
 		t.Error(err)
 	}
@@ -143,8 +153,8 @@ func TestWriteBundleNoDuplicates(t *testing.T) {
 	}
 }
 
-func TestNewStixObjectError(t *testing.T) {
-	b, err := newStixObject([]byte(`{"foo": "bar"`))
+func TestBytesToStixObjectError(t *testing.T) {
+	b, err := bytesToStixObject([]byte(`{"foo": "bar"`))
 	if err == nil {
 		t.Error("Expected error for bundle:", b)
 	}
