@@ -121,7 +121,7 @@ var statements = map[string]map[string]string{
 													$id
 													$types
 													$version
-											  group by id
+											  group by rowid, id
 											)
 											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
 											from data

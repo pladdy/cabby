@@ -66,20 +66,23 @@ func TestHandleTaxiiManifestAddedAfter(t *testing.T) {
 
 func TestHandleTaxiiManifestFilter(t *testing.T) {
 	tests := []struct {
-		filter      string
-		objects     int
-		shouldError bool
+		filter  string
+		objects int
 	}{
-		{"type=indicator", 1, false},
-		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
-		{"version=2016-04-06T20:06:37.000Z", 1, false},
-		{"version=all", 3, false},
-		{"version=first", 3, false},
-		{"version=foo", 3, false}, // invalid, defaults to 'last'
+		{"type=indicator", 1},
+		{"type=indicator,malware", 2},
+		{"type=foo", 0},
+		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1},
+		{"version=2016-04-06T20:06:37.000Z", 1},
+		{"version=all", 4},
+		{"version=first", 3},
+		{"version=foo", 3}, // invalid, defaults to 'last'
+		// composite filters
+		{"type=indicator,malware&version=all", 3},
 	}
 
 	setupSQLite()
-	postBundle(objectsURL(), "testdata/malware_bundle.json")
+	postBundle(objectsURL(), "testdata/multi_filter.json")
 
 	ts := getStorer()
 	defer ts.disconnect()
@@ -90,11 +93,8 @@ func TestHandleTaxiiManifestFilter(t *testing.T) {
 
 		status, body := attemptHandlerTest(handleTaxiiManifest(ts), "GET", u, nil)
 
-		if test.shouldError {
-			if status != http.StatusNotFound {
-				t.Error("Got:", status, "Expected", http.StatusNotFound)
-			}
-			continue
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected", http.StatusOK, "Filter:", test.filter)
 		}
 
 		var manifest taxiiManifest

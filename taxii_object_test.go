@@ -308,13 +308,15 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 		{"type=foo", 0, true},
 		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
 		{"version=2016-04-06T20:06:37.000Z", 1, false},
-		{"version=all", 3, false},
+		{"version=all", 4, false},
 		{"version=first", 3, false},
 		{"version=foo", 3, false}, // invalid, defaults to 'last'
+		// composite filters
+		{"type=indicator,malware&version=all", 3, false},
 	}
 
 	setupSQLite()
-	postBundle(objectsURL(), "testdata/malware_bundle.json")
+	postBundle(objectsURL(), "testdata/multi_filter.json")
 
 	ts := getStorer()
 	defer ts.disconnect()
@@ -327,7 +329,7 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 
 		if test.shouldError {
 			if status != http.StatusNotFound {
-				t.Error("Got:", status, "Expected", http.StatusNotFound)
+				t.Error("Got:", status, "Expected", http.StatusNotFound, "Filter:", test.filter)
 			}
 			continue
 		}
@@ -343,7 +345,7 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 		}
 
 		if len(bundle.Objects) != test.objects {
-			t.Error("Got:", len(bundle.Objects), "Expected:", test.objects)
+			t.Error("Got:", len(bundle.Objects), "Expected:", test.objects, "Filter:", test.filter)
 		}
 	}
 }

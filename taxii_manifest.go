@@ -48,7 +48,7 @@ func withStixContentType(m taxiiManifest) taxiiManifest {
 }
 
 type taxiiManifest struct {
-	Objects []taxiiManifestEntry `json:"objects"`
+	Objects []taxiiManifestEntry `json:"objects,omitempty"`
 }
 
 func (t *taxiiManifest) read(ts taxiiStorer, collectionID string, tf taxiiFilter) (taxiiResult, error) {
