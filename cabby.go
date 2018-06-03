@@ -38,6 +38,7 @@ func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
 	if rootPath != "" {
 		registerCollectionRoutes(ts, ar, rootPath, sm)
 		registerRoute(sm, rootPath+"/collections", withAcceptTaxii(handleTaxiiCollections(ts)))
+		registerRoute(sm, rootPath+"/status", withAcceptTaxii(handleTaxiiStatus(ts)))
 		registerRoute(sm, rootPath, withAcceptTaxii(handleTaxiiAPIRoot(ts)))
 	}
 }

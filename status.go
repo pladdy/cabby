@@ -28,6 +28,10 @@ func badRequest(w http.ResponseWriter, err error) {
 	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
 }
 
+func internalServerError(w http.ResponseWriter, err error) {
+	errorStatus(w, "Internal Server Error", err, http.StatusInternalServerError)
+}
+
 func methodNotAllowed(w http.ResponseWriter, err error) {
 	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
 }

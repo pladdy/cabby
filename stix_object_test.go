@@ -33,7 +33,7 @@ func writeMalwareBundle() {
 	// write the bundle
 	ts := getStorer()
 	defer ts.disconnect()
-	writeBundle(bundle, testCollectionID, ts)
+	writeBundle(bundle, testCollectionID, ts, taxiiStatus{})
 }
 
 /* tests */
@@ -112,7 +112,7 @@ func TestWriteBundleBadObject(t *testing.T) {
 	// write the bundle
 	ts := getStorer()
 	defer ts.disconnect()
-	writeBundle(bundle, testCollectionID, ts)
+	writeBundle(bundle, testCollectionID, ts, taxiiStatus{})
 
 	// check for persistence
 	s := getSQLiteDB()

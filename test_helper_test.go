@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -49,6 +50,7 @@ var (
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
 	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testCollectionID + "/objects/"
+	testStatusURL  = "https://localhost:1234/" + testAPIRootPath + "/status/"
 )
 
 // attemptHandlerTest attempts a handler test by trying it up to maxTries times
@@ -141,7 +143,7 @@ func loadTestConfig() {
 	config = Config{}.parse(testConfig)
 }
 
-func postBundle(u, bundlePath string) {
+func postBundle(u, bundlePath string) (string, error) {
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -151,14 +153,21 @@ func postBundle(u, bundlePath string) {
 
 	maxContent := int64(4096)
 	b := bytes.NewBuffer(bundleContent)
-	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
+	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
 
 	if status != http.StatusOK {
 		fail.Println("Failed to post bundle")
 	}
 
+	var returnedStatus taxiiStatus
+	err := json.Unmarshal([]byte(body), &returnedStatus)
+	if err != nil {
+		return "", err
+	}
+
 	// give time for bundle to be persisted; handler returns a status object, bundle gets processed
 	time.Sleep(250 * time.Millisecond)
+	return returnedStatus.ID.String(), err
 }
 
 func renameFile(from, to string) {

@@ -1,5 +1,32 @@
 package main
 
+import (
+	"net/http"
+)
+
+/* handler */
+
+func handleTaxiiStatus(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		statusID, err := newTaxiiID(takeStatusID(r))
+		if err != nil {
+			resourceNotFound(w, err)
+			return
+		}
+
+		status := taxiiStatus{ID: statusID}
+		err = status.read(ts)
+		if err != nil {
+			resourceNotFound(w, err)
+			return
+		}
+
+		writeContent(w, taxiiContentType, resourceToJSON(status))
+	})
+}
+
+/* model */
+
 type taxiiStatus struct {
 	ID               taxiiID  `json:"id"`
 	Status           string   `json:"status"`
@@ -13,12 +40,42 @@ type taxiiStatus struct {
 	Pendings         []string `json:"pendings"`
 }
 
-func newTaxiiStatus() (taxiiStatus, error) {
+func newTaxiiStatus(objects int) (taxiiStatus, error) {
 	id, err := newTaxiiID()
 	if err != nil {
 		return taxiiStatus{}, err
 	}
 
-	// TODO: need to persist the id to a status table...
-	return taxiiStatus{ID: id}, err
+	count := int64(objects)
+	return taxiiStatus{ID: id, Status: "pending", TotalCount: count, PendingCount: count}, err
+}
+
+func (s *taxiiStatus) create(ts taxiiStorer) error {
+	err := createResource(
+		ts,
+		"taxiiStatus",
+		[]interface{}{s.ID, s.Status, s.TotalCount, s.SuccessCount, s.FailureCount, s.PendingCount})
+
+	return err
+}
+
+func (s *taxiiStatus) read(ts taxiiStorer) error {
+	status := *s
+
+	result, err := ts.read("taxiiStatus", []interface{}{s.ID.String()})
+	if err != nil {
+		return err
+	}
+	status = result.data.(taxiiStatus)
+
+	*s = status
+	return err
+}
+
+func (s *taxiiStatus) update(ts taxiiStorer, status string) error {
+	err := ts.update(
+		"taxiiStatus",
+		[]interface{}{status, s.TotalCount, s.SuccessCount, s.FailureCount, s.PendingCount, s.ID})
+
+	return err
 }
