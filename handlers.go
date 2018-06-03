@@ -147,6 +147,11 @@ func takeCollectionID(r *http.Request) string {
 	return getToken(r.URL.Path, collectionIndex)
 }
 
+func takeObjectID(r *http.Request) string {
+	var objectIDIndex = 5
+	return getToken(r.URL.Path, objectIDIndex)
+}
+
 func takeRequestRange(r *http.Request) taxiiRange {
 	ctx := r.Context()
 
@@ -157,9 +162,9 @@ func takeRequestRange(r *http.Request) taxiiRange {
 	return tr
 }
 
-func takeObjectID(r *http.Request) string {
-	var objectIDIndex = 5
-	return getToken(r.URL.Path, objectIDIndex)
+func takeStatusID(r *http.Request) string {
+	var statusIndex = 3
+	return getToken(r.URL.Path, statusIndex)
 }
 
 func takeStixID(r *http.Request) string {

@@ -44,6 +44,8 @@ var statements = map[string]map[string]string{
 		                           values (?, ?)`,
 		"taxiiDiscovery": `insert into taxii_discovery (title, description, contact, default_url)
 		                   values (?, ?, ?, ?)`,
+		"taxiiStatus": `insert into taxii_status (id, status, total_count, success_count, failure_count, pending_count)
+		                values (?, ?, ?, ?, ?, ?)`,
 		"taxiiUser": `insert into taxii_user (email) values (?)`,
 		"taxiiUserCollection": `insert into taxii_user_collection (email, collection_id, can_read, can_write)
 		                        values (?, ?, ?, ?)`,
@@ -126,12 +128,24 @@ var statements = map[string]map[string]string{
 											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
 											from data
 											$paginate`,
+		"taxiiStatus": `select status, total_count, success_count, pending_count, failure_count
+		                from taxii_status
+										where id = ?`,
 		"taxiiUser": `select 1
 									from
 									  taxii_user tu
 									  inner join taxii_user_pass tup
 									    on tu.email = tup.email
 									where tu.email = ? and tup.pass = ?`,
+	},
+	"update": map[string]string{
+		"taxiiStatus": `update taxii_status
+		                set status = ?,
+										    total_count = ?,
+												success_count = ?,
+												failure_count = ?,
+												pending_count = ?
+		                where id = ?`,
 	},
 }
 
@@ -426,6 +440,7 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 		"taxiiCollectionAccess": s.readCollectionAccess,
 		"taxiiDiscovery":        s.readDiscovery,
 		"taxiiManifest":         s.readManifest,
+		"taxiiStatus":           s.readStatus,
 		"taxiiUser":             s.readUser,
 	}
 
@@ -435,6 +450,20 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 	}
 	err = errors.New("Unknown resource name '" + tq.resource)
 	return
+}
+
+func (s *sqliteDB) readStatus(rows *sql.Rows) (taxiiResult, error) {
+	var st taxiiStatus
+	var err error
+
+	for rows.Next() {
+		if err := rows.Scan(&st.Status, &st.TotalCount, &st.SuccessCount, &st.FailureCount, &st.PendingCount); err != nil {
+			return taxiiResult{data: st}, err
+		}
+	}
+
+	err = rows.Err()
+	return taxiiResult{data: st}, err
 }
 
 func (s *sqliteDB) readStixObject(rows *sql.Rows) (taxiiResult, error) {
@@ -540,4 +569,21 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt 
 	}
 
 	return
+}
+
+/* update */
+
+func (s *sqliteDB) update(resource string, args []interface{}) error {
+	tq, err := newTaxiiQuery("update", resource)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.db.Exec(tq.statement, args...)
+	if err != nil {
+		log.WithFields(log.Fields{"statement": tq.statement, "args": args, "err": err}).Error("Failed to execute")
+		return fmt.Errorf("%v in statement: %v", err, tq.statement)
+	}
+
+	return err
 }

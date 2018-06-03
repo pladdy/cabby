@@ -96,14 +96,18 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	status, err := newTaxiiStatus()
+	status, err := newTaxiiStatus(len(bundle.Objects))
 	if err != nil {
-		resourceNotFound(w, errors.New("Unable to process status"))
+		internalServerError(w, errors.New("Unable to create status resource"))
 	}
-	status.TotalCount = int64(len(bundle.Objects))
+
+	err = status.create(ts)
+	if err != nil {
+		internalServerError(w, errors.New("Unable to store status resource"))
+	}
 
 	writeContent(w, taxiiContentType, resourceToJSON(status))
-	go writeBundle(bundle, takeCollectionID(r), ts)
+	go writeBundle(bundle, takeCollectionID(r), ts, status)
 }
 
 /* helpers */
@@ -135,7 +139,20 @@ func contentTooLarge(r, m int64) bool {
 	return false
 }
 
-func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
+func updateStatus(errs chan error, s taxiiStatus, ts taxiiStorer) {
+	failures := int64(0)
+	for _ = range errs {
+		failures++
+	}
+
+	s.FailureCount = failures
+	s.SuccessCount = s.TotalCount - failures
+	s.PendingCount = s.TotalCount - s.SuccessCount - failures
+
+	s.update(ts, "complete")
+}
+
+func writeBundle(b s.Bundle, cid string, ts taxiiStorer, s taxiiStatus) {
 	writeErrs := make(chan error, len(b.Objects))
 	writes := make(chan interface{}, minBuffer)
 
@@ -152,10 +169,5 @@ func writeBundle(b s.Bundle, cid string, ts taxiiStorer) {
 	}
 
 	close(writes)
-
-	// is this dumb?  errors are logged in the taxiiStorer...what's the point of having them here?
-	// ie: do i need to be passing an error channel around?
-	for e := range writeErrs {
-		log.Error(e)
-	}
+	updateStatus(writeErrs, s, ts)
 }

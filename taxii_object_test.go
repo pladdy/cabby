@@ -117,7 +117,7 @@ func TestHandleTaxiiObjectGetFilter(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiObjectsGetFailNoObjects(t *testing.T) {
+func TestHandleTaxiiObjectsGetFailNoObjects(t *testing.T) {
 	defer setupSQLite()
 
 	// drop the table so it can't be read
@@ -148,7 +148,7 @@ func TestHandleGetTaxiiObjectsGetFailNoObjects(t *testing.T) {
 	}
 }
 
-func TestHandleGetTaxiiObjectsGetFailNoBundle(t *testing.T) {
+func TestHandleTaxiiObjectsGetFailNoBundle(t *testing.T) {
 	setupSQLite()
 
 	u := "https://localhost/api_root/collections/" + testCollectionID + "/objects/"
@@ -432,6 +432,29 @@ func TestHandleTaxiiObjectsPostInvalidBundle(t *testing.T) {
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+}
+
+func TestHandleTaxiiObjectsPostServerError(t *testing.T) {
+	defer setupSQLite()
+
+	db := getSQLiteDB()
+	defer db.disconnect()
+
+	db.db.Exec("drop table taxii_status")
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundle, _ := ioutil.ReadAll(bundleFile)
+
+	maxContent := int64(2048)
+	b := bytes.NewBuffer(bundle)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
+
+	if status != http.StatusInternalServerError {
+		t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
 	}
 }
 

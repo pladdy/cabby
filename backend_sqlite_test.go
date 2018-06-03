@@ -125,6 +125,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 		{s.readDiscovery},
 		{s.readManifest},
 		{s.readRoutableCollections},
+		{s.readStatus},
 		{s.readStixObject},
 		{s.readStixObjects},
 		{s.readUser},
@@ -303,5 +304,31 @@ func TestSQLiteCreateMaxWrites(t *testing.T) {
 
 	if collections != writes {
 		t.Error("Got:", collections, "Expected:", writes)
+	}
+}
+
+func TestSQLiteUpdateFailResource(t *testing.T) {
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	err := s.update("foo", []interface{}{})
+
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
+func TestSQLiteUpdateFailExec(t *testing.T) {
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	s.db.Exec("drop table taxii_status")
+
+	err := s.update("taxiiStatus", []interface{}{})
+
+	if err == nil {
+		t.Error("Expected error")
 	}
 }
