@@ -275,24 +275,21 @@ func TestSQLiteCreateMaxWrites(t *testing.T) {
 	defer s.disconnect()
 
 	toCreate := make(chan interface{}, 10)
-	defer close(toCreate)
 	errs := make(chan error, 10)
 
 	go s.create("taxiiCollection", toCreate, errs)
-
-	// check errors while testing
-	go func(t *testing.T) {
-		for e := range errs {
-			fail.Println("Should not have an error during test.  Error:", e)
-			t.Fatal(e)
-		}
-	}(t)
 
 	writes := maxWrites
 	for i := 0; i < writes; i++ {
 		iStr := strconv.FormatInt(int64(i), 10)
 		args := []interface{}{"test" + iStr, "apiRoot" + iStr, t.Name(), "description", "media_type"}
 		toCreate <- args
+	}
+	close(toCreate)
+
+	for e := range errs {
+		fail.Println("Should not have an error during test.  Error:", e)
+		t.Fatal(e)
 	}
 
 	var collections int
