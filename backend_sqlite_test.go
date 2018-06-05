@@ -284,7 +284,6 @@ func TestSQLiteCreateMaxWrites(t *testing.T) {
 	go func(t *testing.T) {
 		for e := range errs {
 			fail.Println("Should not have an error during test.  Error:", e)
-			close(toCreate)
 			t.Fatal(e)
 		}
 	}(t)
