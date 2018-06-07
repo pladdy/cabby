@@ -6,10 +6,10 @@ make sqlite
 
 # set up user
 TEST_USER=test@cabby.com
+PASS=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
 
-pass=`printf test | sha256sum | cut -d '-' -f 1 | xargs`
 sqlite3 db/cabby.db "insert into taxii_user (email) values('${TEST_USER}')"
-sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('${TEST_USER}', '${pass}')"
+sqlite3 db/cabby.db "insert into taxii_user_pass (email, pass) values('${TEST_USER}', '${PASS}')"
 
 # set up discovery
 sqlite3 db/cabby.db "

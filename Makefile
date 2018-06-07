@@ -1,4 +1,4 @@
-.PHONY: clean config cover fmt reportcard run sqlite test test_failures test_install test_run
+.PHONY: build clean config cover fmt reportcard run sqlite test test_failures test_install test_run
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
@@ -6,10 +6,14 @@ BUILD_TAGS=-tags json1
 all: config cert dependencies
 
 build:
-	go build $(BUILD_TAGS) -o bin/cabby $(GO_FILES)
+	go build $(BUILD_TAGS) -o cabby $(GO_FILES)
+	tar -czf cabby_1.0.orig.tar.gz cabby
+
+build-db: sqlite
+	build/setup_db
 
 clean:
-	rm -rf bin/ db/
+	rm -rf db/
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 
 cert:
@@ -39,6 +43,10 @@ dependencies:
 
 fmt:
 	go fmt -x
+
+install:
+	sudo cp build/cabby.service /lib/systemd/system/.
+	sudo chmod 755 /lib/systemd/system/cabby.service
 
 reportcard: fmt
 	gocyclo -over 10 .

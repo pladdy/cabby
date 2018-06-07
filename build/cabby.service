@@ -1,0 +1,25 @@
+[Unit]
+Description=Cabby TAXII 2 Server
+ConditionPathExists=/opt/go/src/cabby/bin/cabby
+After=network.target
+StartLimitInterval=10
+
+[Service]
+Type=simple
+User=cabby
+Group=cabby
+Restart=on-failure
+RestartSec=5
+
+PermissionStartOn=true
+WorkingDirectory=/opt/go/src/cabby
+ExecStart=/opt/go/src/cabby/bin/cabby
+
+ExecStartPre=/bin/mkdir -p /var/log/cabby
+ExecStartPre=/bin/chown syslog:adm /var/log/cabby
+ExecStartPre=/bin/chmod 755 /var/log/cabby
+
+[Exec]
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=cabby
