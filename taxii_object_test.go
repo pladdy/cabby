@@ -379,8 +379,8 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
 
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected", http.StatusOK)
+	if status != http.StatusAccepted {
+		t.Error("Got:", status, "Expected", http.StatusAccepted)
 	}
 
 	// posting bundles is asynchronous, and when you post a status resource is returned
