@@ -69,16 +69,16 @@ func TestHandleTaxiiManifestFilter(t *testing.T) {
 		filter  string
 		objects int
 	}{
-		{"type=indicator", 1},
-		{"type=indicator,malware", 2},
-		{"type=foo", 0},
-		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1},
-		{"version=2016-04-06T20:06:37.000Z", 1},
-		{"version=all", 4},
-		{"version=first", 3},
-		{"version=foo", 3}, // invalid, defaults to 'last'
+		{"match[type]=indicator", 1},
+		{"match[type]=indicator,malware", 2},
+		{"match[type]=foo", 0},
+		{"match[id]=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1},
+		{"match[version]=2016-04-06T20:06:37.000Z", 1},
+		{"match[version]=all", 4},
+		{"match[version]=first", 3},
+		{"match[version]=foo", 3}, // invalid, defaults to 'last'
 		// composite filters
-		{"type=indicator,malware&version=all", 3},
+		{"match[type]=indicator,malware&match[version]=all", 3},
 	}
 
 	setupSQLite()

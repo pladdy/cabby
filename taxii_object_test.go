@@ -72,10 +72,10 @@ func TestHandleTaxiiObjectGetFilter(t *testing.T) {
 		objects     int
 		shouldError bool
 	}{
-		{"version=2016-06-06T20:03:48.000Z", 1, false},
-		{"version=all", 3, false},
-		{"version=first", 1, false},
-		{"version=foo", 1, false}, // invalid, defaults to 'last'
+		{"match[version]=2016-06-06T20:03:48.000Z", 1, false},
+		{"match[version]=all", 3, false},
+		{"match[version]=first", 1, false},
+		{"match[version]=foo", 1, false}, // invalid, defaults to 'last'
 	}
 
 	setupSQLite()
@@ -302,16 +302,16 @@ func TestHandleTaxiiObjectsGetFilter(t *testing.T) {
 		objects     int
 		shouldError bool
 	}{
-		{"type=indicator", 1, false},
-		{"type=indicator,malware", 2, false},
-		{"type=foo", 0, true},
-		{"id=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
-		{"version=2016-04-06T20:06:37.000Z", 1, false},
-		{"version=all", 4, false},
-		{"version=first", 3, false},
-		{"version=foo", 3, false}, // invalid, defaults to 'last'
+		{"match[type]=indicator", 1, false},
+		{"match[type]=indicator,malware", 2, false},
+		{"match[type]=foo", 0, true},
+		{"match[id]=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f", 1, false},
+		{"match[version]=2016-04-06T20:06:37.000Z", 1, false},
+		{"match[version]=all", 4, false},
+		{"match[version]=first", 3, false},
+		{"match[version]=foo", 3, false}, // invalid, defaults to 'last'
 		// composite filters
-		{"type=indicator,malware&version=all", 3, false},
+		{"match[type]=indicator,malware&match[version]=all", 3, false},
 	}
 
 	setupSQLite()
@@ -379,8 +379,8 @@ func TestHandleTaxiiObjectsPost(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
 
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected", http.StatusOK)
+	if status != http.StatusAccepted {
+		t.Error("Got:", status, "Expected", http.StatusAccepted)
 	}
 
 	// posting bundles is asynchronous, and when you post a status resource is returned
