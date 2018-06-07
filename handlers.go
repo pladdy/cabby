@@ -169,7 +169,7 @@ func takeStatusID(r *http.Request) string {
 
 func takeStixID(r *http.Request) string {
 	q := r.URL.Query()
-	si := q["id"]
+	si := q["match[id]"]
 
 	if len(si) > 0 {
 		return si[0]
@@ -179,7 +179,7 @@ func takeStixID(r *http.Request) string {
 
 func takeStixTypes(r *http.Request) []string {
 	q := r.URL.Query()
-	st := q["type"]
+	st := q["match[type]"]
 
 	if len(st) > 0 {
 		return strings.Split(st[0], ",")
@@ -189,7 +189,7 @@ func takeStixTypes(r *http.Request) []string {
 
 func takeVersion(r *http.Request) string {
 	q := r.URL.Query()
-	v := q["version"]
+	v := q["match[version]"]
 
 	if len(v) > 0 {
 		return v[0]
