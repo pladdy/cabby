@@ -106,6 +106,7 @@ func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Reque
 		internalServerError(w, errors.New("Unable to store status resource"))
 	}
 
+	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, taxiiContentType, resourceToJSON(status))
 	go writeBundle(bundle, takeCollectionID(r), ts, status)
 }
