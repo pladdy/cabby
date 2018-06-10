@@ -50,8 +50,6 @@ func registerCollectionRoutes(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, 
 		log.WithFields(log.Fields{"api_root": rootPath}).Error("Unable to read routable collections")
 	}
 
-	log.Info(rcs)
-
 	for _, collectionID := range rcs.CollectionIDs {
 		registerRoute(sm,
 			rootPath+"/collections/"+collectionID.String()+"/objects",

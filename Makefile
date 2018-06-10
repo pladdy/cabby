@@ -7,10 +7,14 @@ all: config cert dependencies
 
 build:
 	go build $(BUILD_TAGS) -o cabby $(GO_FILES)
-	tar -czf cabby_1.0.orig.tar.gz cabby
 
 build-db: sqlite
 	build/setup_db
+
+build-linux:
+	vagrant up
+	@echo Magic has happend to make a debian...
+	vagrant destroy -f
 
 clean:
 	rm -rf db/
@@ -43,10 +47,6 @@ dependencies:
 
 fmt:
 	go fmt -x
-
-install:
-	sudo cp build/cabby.service /lib/systemd/system/.
-	sudo chmod 755 /lib/systemd/system/cabby.service
 
 reportcard: fmt
 	gocyclo -over 10 .
