@@ -118,6 +118,12 @@ Now post a bundle of STIX 2.0 data:
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
 ```
 
+#### Check status
+From the above POST, you get a status object.  You can query it from the server
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/status/191cd890-2a12-4672-9a87-7c846d837119/' | jq .
+```
+
 #### View Objects
 ```sh
 # with headers
@@ -137,6 +143,12 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+js
 curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' && echo
 # parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' | jq .
+```
+
+#### Filter objects
+Filters on 'match' requires square brackers that need to be escaped:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[type\]=indicator' | jq .
 ```
 
 ## Resources

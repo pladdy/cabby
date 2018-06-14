@@ -11,10 +11,9 @@ build:
 build-db: sqlite
 	build/setup_db
 
-build-linux:
+build-debian:
 	vagrant up
 	@echo Magic has happend to make a debian...
-	vagrant destroy -f
 
 clean:
 	rm -rf db/

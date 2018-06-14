@@ -19,7 +19,6 @@ Vagrant.configure("2") do |config|
     s.inline = <<-OUT
       apt-get update
       apt-get install -y ruby-dev build-essential
-      apt-get install -y sqlite
       gem install --no-ri --no-doc fpm
     OUT
   end
@@ -67,7 +66,7 @@ Vagrant.configure("2") do |config|
       if [ $? -eq 0 ]; then
         mv cabby /vagrant/build/usr/local/bin
         cd /vagrant
-        fpm -s dir -t deb -n cabby -C build .
+        fpm -f -s dir -t deb -n cabby -C build .
       fi
     OUT
   end

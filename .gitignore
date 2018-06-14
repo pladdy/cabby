@@ -3,7 +3,6 @@
 *.dll
 *.so
 *.dylib
-build/cabby
 
 # Test binary, build with `go test -c`
 *.test

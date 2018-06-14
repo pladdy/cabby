@@ -2,13 +2,17 @@ package main
 
 import (
 	"crypto/tls"
+	"flag"
 	"net/http"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultConfig = "config/cabby.json"
+const (
+	defaultConfig     = "config/cabby.json"
+	defatulConfigPath = "/etc/cabby/cabby.json"
+)
 
 func newCabby(configPath string) (*http.Server, error) {
 	var server http.Server
@@ -119,6 +123,11 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
+	// set up flag, but don't use; overwrite with defalut dev config path for now
+	var configPath = flag.String("config", defatulConfigPath, "path to cabby config file")
+	flag.Parse()
+	*configPath = defaultConfig
+
 	server, err := newCabby(defaultConfig)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Panic("Can't start server")
