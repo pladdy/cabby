@@ -14,6 +14,7 @@
 .glide/
 
 # App specific
+build/etc/cabby/server.*
 build/usr/local/bin/cabby
 build/cabby
 .env

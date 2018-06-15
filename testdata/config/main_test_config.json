@@ -1,10 +1,12 @@
 {
-  "host": "localhost",
-  "port": 1235,
-  "ssl_cert": "server.crt",
-  "ssl_key": "server.key",
-  "data_store": {
-    "name": "sqlite",
-    "path": "testdata/test.db"
+  "development": {
+    "host": "localhost",
+    "port": 1235,
+    "ssl_cert": "server.crt",
+    "ssl_key": "server.key",
+    "data_store": {
+      "name": "sqlite",
+      "path": "testdata/test.db"
+    }
   }
 }

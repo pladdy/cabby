@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+mkdir -p /etc/cabby
+openssl req -x509 -newkey rsa:4096 -nodes -keyout /etc/cabby/server.key -out /etc/cabby/server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
+chmod 600 /etc/cabby/server.key

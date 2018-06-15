@@ -228,12 +228,12 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 			unauthorized(w, errors.New("Invalid user"))
 		}
 
-		mills := int64(1000)
+		milliSecondOfNanoSeconds := int64(1000000)
 
 		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{
 			"method":   r.Method,
-			"start_ts": start.UnixNano() / mills,
+			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
 			"url":      r.URL,
 			"user":     user,
 		}).Info("Request made to server")
@@ -243,9 +243,9 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 		end := time.Now().In(time.UTC)
 		elapsed := time.Since(start)
 		log.WithFields(log.Fields{
-			"elapsed_ts": elapsed.Nanoseconds() / mills,
+			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"method":     r.Method,
-			"end_ts":     end.UnixNano() / mills,
+			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
 			"url":        r.URL,
 			"user":       user,
 		}).Info("Request made to server")

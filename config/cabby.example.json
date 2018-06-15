@@ -1,10 +1,22 @@
 {
-  "host": "localhost",
-  "port": 1234,
-  "ssl_cert": "server.crt",
-  "ssl_key": "server.key",
-  "data_store": {
-    "name": "sqlite",
-    "path": "db/cabby.db"
+  "development": {
+    "host": "localhost",
+    "port": 1234,
+    "ssl_cert": "server.crt",
+    "ssl_key": "server.key",
+    "data_store": {
+      "name": "sqlite",
+      "path": "db/cabby.db"
+    }
+  },
+  "production": {
+    "host": "localhost",
+    "port": 1234,
+    "ssl_cert": "/etc/cabby/server.crt",
+    "ssl_key": "/etc/cabby/server.key",
+    "data_store": {
+      "name": "sqlite",
+      "path": "/etc/cabby/cabby.db"
+    }
   }
 }

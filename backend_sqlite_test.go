@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewSQLiteDB(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
+	s, err := newSQLiteDB(testConfig().DataStore["path"])
 	if err != nil {
 		t.Error(err)
 	}
@@ -21,7 +21,7 @@ func TestNewSQLiteConnectFail(t *testing.T) {
 }
 
 func TestSQLiteConnectFailDriver(t *testing.T) {
-	s, err := newSQLiteDB(config.DataStore["path"])
+	s, err := newSQLiteDB(testConfig().DataStore["path"])
 	if err != nil {
 		t.Fatal(err)
 	}

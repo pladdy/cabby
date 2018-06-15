@@ -11,10 +11,6 @@ import (
 	"time"
 )
 
-func init() {
-	loadTestConfig()
-}
-
 /* helpers */
 
 func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
@@ -66,13 +62,13 @@ func requestFromTestServer(r *http.Request) (*http.Response, string) {
 
 // run server in go routine and return it
 func runTestServer() *http.Server {
-	server, err := newCabby(testConfig)
+	server, err := newCabby(testConfig())
 	if err != nil {
 		fail.Fatal(err)
 	}
 
 	go func() {
-		server.ListenAndServeTLS(config.SSLCert, config.SSLKey)
+		server.ListenAndServeTLS(testConfig().SSLCert, testConfig().SSLKey)
 	}()
 	return server
 }
@@ -127,12 +123,12 @@ func TestHSTS(t *testing.T) {
 }
 
 func TestMain(t *testing.T) {
-	renameFile(defaultConfig, defaultConfig+".testing")
-	renameFile("testdata/config/main_test_config.json", defaultConfig)
+	renameFile(defaultDevelopmentConfig, defaultDevelopmentConfig+".testing")
+	renameFile("testdata/config/main_test_config.json", defaultDevelopmentConfig)
 
 	defer func() {
-		renameFile(defaultConfig, "testdata/config/main_test_config.json")
-		renameFile(defaultConfig+".testing", defaultConfig)
+		renameFile(defaultDevelopmentConfig, "testdata/config/main_test_config.json")
+		renameFile(defaultDevelopmentConfig+".testing", defaultDevelopmentConfig)
 	}()
 
 	go func() {
@@ -164,12 +160,12 @@ func TestMain(t *testing.T) {
 }
 
 func TestMainPanic(t *testing.T) {
-	renameFile(defaultConfig, defaultConfig+".testing")
-	renameFile("testdata/config/no_datastore_config.json", defaultConfig)
+	renameFile(defaultDevelopmentConfig, defaultDevelopmentConfig+".testing")
+	renameFile("testdata/config/no_datastore_config.json", defaultDevelopmentConfig)
 
 	defer func() {
-		renameFile(defaultConfig, "testdata/config/no_datastore_config.json")
-		renameFile(defaultConfig+".testing", defaultConfig)
+		renameFile(defaultDevelopmentConfig, "testdata/config/no_datastore_config.json")
+		renameFile(defaultDevelopmentConfig+".testing", defaultDevelopmentConfig)
 	}()
 
 	p := panicChecker{}
@@ -218,16 +214,17 @@ func TestNewCabbyNoAPIRoots(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = newCabby(testConfig)
+	_, err = newCabby(testConfig())
 	if err == nil {
 		t.Error("Expected an error")
 	}
 }
 
 func TestNewCabbyFail(t *testing.T) {
-	defer loadTestConfig()
+	cs := configs{}.parse("testdata/config/no_datastore_config.json")
+	c := cs["testing"]
 
-	_, err := newCabby("testdata/config/no_datastore_config.json")
+	_, err := newCabby(c)
 	if err == nil {
 		t.Error("Expected an error")
 	}

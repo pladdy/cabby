@@ -2,11 +2,12 @@
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
+BUILD_PATH=build/cabby
 
 all: config cert dependencies
 
 build:
-	go build $(BUILD_TAGS) -o build/cabby $(GO_FILES)
+	go build $(BUILD_TAGS) -o $(BUILD_PATH) $(GO_FILES)
 
 build-db: sqlite
 	build/setup_db
@@ -20,7 +21,7 @@ clean:
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 
 cert:
-	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/ST=Maryland/L=Baltimore/O=Cabby TAXII 2.0/CN=pladdy"
+	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
 	chmod 600 server.key
 
 config:
