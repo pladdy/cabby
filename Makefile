@@ -6,7 +6,7 @@ BUILD_TAGS=-tags json1
 all: config cert dependencies
 
 build:
-	go build $(BUILD_TAGS) -o cabby $(GO_FILES)
+	go build $(BUILD_TAGS) -o build/cabby $(GO_FILES)
 
 build-db: sqlite
 	build/setup_db

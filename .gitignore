@@ -14,7 +14,8 @@
 .glide/
 
 # App specific
-cabby
+build/usr/local/bin/cabby
+build/cabby
 .env
 config/*
 !config/*example.json
