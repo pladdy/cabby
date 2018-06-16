@@ -34,11 +34,11 @@ Vagrant.configure("2") do |config|
       cd /opt/go/src/cabby
 
       make && make test && make build
+      cp build/cabby /vagrant/build/usr/local/bin
       fpm -f -s dir -t deb -n cabby -C build .
-      mv build/cabby /vagrant/build/usr/local/bin
 
       if [ $? -eq 0 ]; then
-        mv *.deb /vagrant
+        cp *.deb /vagrant
       fi
     OUT
   end

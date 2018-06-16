@@ -13,6 +13,7 @@ build-db: sqlite
 	build/setup_db
 
 build-debian:
+	cp config/cabby.json build/etc/cabby/
 	vagrant up
 	@echo Magic has happend to make a debian...
 

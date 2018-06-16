@@ -18,7 +18,7 @@ build/etc/cabby/server.*
 build/usr/local/bin/cabby
 build/cabby
 .env
-config/*
+config/cabby.json
 !config/*example.json
 !config/.env
 *.crt
