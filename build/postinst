@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -e
+
+/usr/sbin/adduser --system --group cabby
+
+echo "To finish setup:"
+echo "'sudo cabby_certs', or edit /etc/cabby/cabby.json to point to .crt and .key file"
+echo "'sudo CABBY_ENVIRONMENT=production cabby_db -u <email> -p <password>'"
+echo ""
+echo "For testing with cabby running on Vagrant VM with the repository README examples:"
+echo "'sudo CABBY_ENVIRONMENT=production cabby_db -u test@cabby.com -p test'"
+echo "'sudo CABBY_ENVIRONMENT=production cabby'"
+
+exit 0

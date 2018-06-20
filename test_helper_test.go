@@ -22,7 +22,7 @@ type handlerTestFunction func(http.HandlerFunc, string, string, *bytes.Buffer) (
 
 const (
 	testAPIRootPath  = "cabby_test_root"
-	testConfig       = "testdata/config/testing_config.json"
+	testConfigPath   = "testdata/config/testing_config.json"
 	testDB           = "testdata/test.db"
 	testCollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
 	testPass         = "test"
@@ -106,7 +106,7 @@ func createUser(testStorer taxiiStorer) {
 }
 
 func getStorer() taxiiStorer {
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	ts, err := newTaxiiStorer(testConfig().DataStore["name"], testConfig().DataStore["path"])
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -114,7 +114,7 @@ func getStorer() taxiiStorer {
 }
 
 func getSQLiteDB() *sqliteDB {
-	s, err := newSQLiteDB(config.DataStore["path"])
+	s, err := newSQLiteDB(testConfig().DataStore["path"])
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -139,8 +139,8 @@ func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, 
 	return res.Code, string(body)
 }
 
-func loadTestConfig() {
-	config = Config{}.parse(testConfig)
+func testConfig() config {
+	return configs{}.parse(testConfigPath)["testing"]
 }
 
 func postBundle(u, bundlePath string) (string, error) {
@@ -188,7 +188,7 @@ func setupSQLite() {
 		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
-	f, err := os.Open("backend/sqlite/schema.sql")
+	f, err := os.Open("build/debian/var/cabby/schema.sql")
 	if err != nil {
 		fail.Fatal("Couldn't open schema file: ", err)
 	}
@@ -203,9 +203,9 @@ func setupSQLite() {
 		fail.Fatal("Couldn't load schema: ", err)
 	}
 
-	loadTestConfig()
+	c := testConfig()
 
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	ts, err := newTaxiiStorer(c.DataStore["name"], c.DataStore["path"])
 	if err != nil {
 		fail.Fatal(err)
 	}

@@ -2,29 +2,39 @@ package main
 
 import (
 	"crypto/tls"
+	"flag"
 	"net/http"
+	"os"
 	"strconv"
 
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultConfig = "config/cabby.json"
+const (
+	cabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
+	defaultCabbyEnvironment  = "development"
+	defaultDevelopmentConfig = "config/cabby.json"
+	defaultProductionConfig  = "/etc/cabby/cabby.json"
+)
 
-func newCabby(configPath string) (*http.Server, error) {
+var cabbyConfigs = map[string]string{
+	"development": defaultDevelopmentConfig,
+	"production":  defaultProductionConfig,
+}
+
+func newCabby(c config) (*http.Server, error) {
 	var server http.Server
 
-	config = Config{}.parse(configPath)
-
-	ts, err := newTaxiiStorer(config.DataStore["name"], config.DataStore["path"])
+	ts, err := newTaxiiStorer(c.DataStore["name"], c.DataStore["path"])
 	if err != nil {
 		return &server, err
 	}
 
-	handler, err := setupHandler(ts, config.Port)
+	handler, err := setupHandler(ts, c.Port)
 	if err != nil {
 		return &server, err
 	}
-	return setupServer(ts, handler, config.Port), err
+	return setupServer(ts, handler, c), err
 }
 
 func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
@@ -49,8 +59,6 @@ func registerCollectionRoutes(ts taxiiStorer, ar taxiiAPIRoot, rootPath string, 
 	if err != nil {
 		log.WithFields(log.Fields{"api_root": rootPath}).Error("Unable to read routable collections")
 	}
-
-	log.Info(rcs)
 
 	for _, collectionID := range rcs.CollectionIDs {
 		registerRoute(sm,
@@ -94,8 +102,8 @@ func setupHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 }
 
 // server is set up with basic auth and HSTS applied to each handler
-func setupServer(ts taxiiStorer, h http.Handler, port int) *http.Server {
-	p := strconv.Itoa(config.Port)
+func setupServer(ts taxiiStorer, h http.Handler, c config) *http.Server {
+	p := strconv.Itoa(c.Port)
 	log.WithFields(log.Fields{"port": p}).Info("Server port configured")
 
 	return &http.Server{
@@ -121,10 +129,22 @@ func setupTLS() *tls.Config {
 }
 
 func main() {
-	server, err := newCabby(defaultConfig)
+	cabbyEnv := os.Getenv(cabbyEnvironmentVariable)
+	if len(cabbyEnv) == 0 {
+		cabbyEnv = defaultCabbyEnvironment
+	}
+	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
+
+	var configPath = flag.String("config", cabbyConfigs[cabbyEnv], "path to cabby config file")
+	flag.Parse()
+
+	cs := configs{}.parse(*configPath)
+	c := cs[cabbyEnv]
+
+	server, err := newCabby(c)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Panic("Can't start server")
 	}
 
-	log.Fatal(server.ListenAndServeTLS(config.SSLCert, config.SSLKey))
+	log.Fatal(server.ListenAndServeTLS(c.SSLCert, c.SSLKey))
 }

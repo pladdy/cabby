@@ -18,6 +18,15 @@ To run all tests: `make test`
 "Helper" functions are in `test_helper_test.go`.  The goal with this file was to put repetitive code that make the
 tests verbose into a DRY'er format.
 
+## Building
+Building debian package for a vagrant VM running ubuntu: `make debian-build`
+
+### References
+Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
+Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408
+Debian Policy Manual: https://www.debian.org/doc/debian-policy/#debian-policy-manual
+Dependencies in Debian: https://www.debian.org/doc/debian-policy/#s-binarydeps
+
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
 - port
@@ -26,8 +35,7 @@ The `make` task will generate certs and a default config file.  Edit the `config
 
 ## DB Setup
 Using Sqlite as a light-weight data store to run this in development mode.  Goal is to move to some kind of JSON store
-(rethinkdb or elasticsearch) in the future.
-`make sqlite`
+(rethinkdb or elasticsearch) in the future.  See below API examples for setup instructions.
 
 ## API Examples with a test user
 The examples below require
@@ -40,8 +48,8 @@ brew install sqlite
 brew install jq
 ```
 
-Set up the DB:
-`./scripts/setup_db`
+Set up the DB for dev/test:
+`make dev-db`
 
 In another terminal, run a server:
 `make run`
@@ -118,6 +126,12 @@ Now post a bundle of STIX 2.0 data:
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
 ```
 
+#### Check status
+From the above POST, you get a status object.  You can query it from the server
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/status/191cd890-2a12-4672-9a87-7c846d837119/' | jq .
+```
+
 #### View Objects
 ```sh
 # with headers
@@ -137,6 +151,12 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+js
 curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' && echo
 # parsed json
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' | jq .
+```
+
+#### Filter objects
+Filters on 'match' requires square brackers that need to be escaped:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[type\]=indicator' | jq .
 ```
 
 ## Resources

@@ -46,7 +46,7 @@ func TestHandleTaxiiDiscoveryNoDiscovery(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	h := handleTaxiiDiscovery(ts, config.Port)
+	h := handleTaxiiDiscovery(ts, testConfig().Port)
 	h(res, req)
 
 	if res.Code != http.StatusNotFound {
@@ -72,7 +72,7 @@ func TestHandleTaxiiDiscoveryError(t *testing.T) {
 
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	res := httptest.NewRecorder()
-	h := handleTaxiiDiscovery(ts, config.Port)
+	h := handleTaxiiDiscovery(ts, testConfig().Port)
 	h(res, req)
 
 	if res.Code != http.StatusNotFound {

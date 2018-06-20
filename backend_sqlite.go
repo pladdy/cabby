@@ -128,7 +128,7 @@ var statements = map[string]map[string]string{
 											select id, date_added, versions, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
 											from data
 											$paginate`,
-		"taxiiStatus": `select status, total_count, success_count, pending_count, failure_count
+		"taxiiStatus": `select id, status, total_count, success_count, pending_count, failure_count
 		                from taxii_status
 										where id = ?`,
 		"taxiiUser": `select 1
@@ -161,8 +161,10 @@ func newTaxiiQuery(command, resource string) (taxiiQuery, error) {
 
 /* connector methods */
 
-func (s *sqliteDB) connect(connection string) (err error) {
-	s.db, err = sql.Open(s.driver, connection)
+func (s *sqliteDB) connect(path string) (err error) {
+	// set foreign key pragma to true in connection
+	// https://github.com/mattn/go-sqlite3#connection-string
+	s.db, err = sql.Open(s.driver, path+"?_fk=true")
 	if err != nil {
 		log.Error(err)
 	}
@@ -457,7 +459,7 @@ func (s *sqliteDB) readStatus(rows *sql.Rows) (taxiiResult, error) {
 	var err error
 
 	for rows.Next() {
-		if err := rows.Scan(&st.Status, &st.TotalCount, &st.SuccessCount, &st.FailureCount, &st.PendingCount); err != nil {
+		if err := rows.Scan(&st.ID, &st.Status, &st.TotalCount, &st.SuccessCount, &st.FailureCount, &st.PendingCount); err != nil {
 			return taxiiResult{data: st}, err
 		}
 	}

@@ -9,13 +9,12 @@ import (
 )
 
 func TestParseConfig(t *testing.T) {
-	config = Config{}.parse("config/cabby.example.json")
-	defer loadTestConfig()
+	cs := configs{}.parse("config/cabby.example.json")
 
-	if config.Host != "localhost" {
+	if cs["development"].Host != "localhost" {
 		t.Error("Got:", "localhost", "Expected:", "localhost")
 	}
-	if config.Port != 1234 {
+	if cs["development"].Port != 1234 {
 		t.Error("Got:", strconv.Itoa(1234), "Expected:", strconv.Itoa(1234))
 	}
 }
@@ -27,7 +26,7 @@ func TestParseConfigNotFound(t *testing.T) {
 		}
 	}()
 
-	_ = Config{}.parse("foo/bar")
+	_ = configs{}.parse("foo/bar")
 	t.Error("Failed to panic with an unknown resource")
 }
 
@@ -42,6 +41,6 @@ func TestParseConfigInvalidJSON(t *testing.T) {
 	}()
 
 	ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	Config{}.parse(invalidJSON)
+	configs{}.parse(invalidJSON)
 	t.Error("Failed to panic with an unknown resource")
 }

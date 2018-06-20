@@ -3,7 +3,6 @@
 *.dll
 *.so
 *.dylib
-bin/*
 
 # Test binary, build with `go test -c`
 *.test
@@ -15,9 +14,11 @@ bin/*
 .glide/
 
 # App specific
-cabby
+build/debian/etc/cabby/*
+build/debian/usr/bin/cabby
+build/cabby
 .env
-config/*
+config/cabby.json
 !config/*example.json
 !config/.env
 *.crt
@@ -30,3 +31,5 @@ coverage.txt
 # Vagrant
 .vagrant
 *.log
+packages/
+*.deb

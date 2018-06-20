@@ -59,7 +59,7 @@ func TestHeaders(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	h := handleTaxiiDiscovery(ts, config.Port)
+	h := handleTaxiiDiscovery(ts, testConfig().Port)
 	s := httptest.NewServer(http.HandlerFunc(h))
 	defer s.Close()
 
@@ -279,7 +279,7 @@ func TestWithLoggingUnauthorized(t *testing.T) {
 	req := httptest.NewRequest("GET", discoveryURL, nil)
 	// omit adding a user to the context
 	res := httptest.NewRecorder()
-	withRequestLogging(handleTaxiiDiscovery(ts, config.Port))(res, req)
+	withRequestLogging(handleTaxiiDiscovery(ts, testConfig().Port))(res, req)
 
 	if res.Code != http.StatusUnauthorized {
 		t.Error("Got:", res.Code, "Expected: unauthorized")

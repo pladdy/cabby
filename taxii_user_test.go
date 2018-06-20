@@ -82,12 +82,8 @@ func TestNewTaxiiUserNoAccess(t *testing.T) {
 }
 
 func TestNewTaxiiUserFail(t *testing.T) {
-	defer loadTestConfig()
-
 	ts := getStorer()
 	defer ts.disconnect()
-
-	config = Config{}
 
 	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
 	if err == nil {

@@ -7,19 +7,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var config Config
+//var config Config
 
-// Config represents a cabby config file
-type Config struct {
-	Host      string
-	Port      int
-	SSLCert   string            `json:"ssl_cert"`
-	SSLKey    string            `json:"ssl_key"`
-	DataStore map[string]string `json:"data_store"`
-}
+type configs map[string]config
 
 // given a path to a config file parse it from json
-func (c Config) parse(file string) (pc Config) {
+func (c configs) parse(file string) (cs configs) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.WithFields(log.Fields{
@@ -28,7 +21,7 @@ func (c Config) parse(file string) (pc Config) {
 		}).Panic("Can't parse config file")
 	}
 
-	if err = json.Unmarshal(b, &pc); err != nil {
+	if err = json.Unmarshal(b, &cs); err != nil {
 		log.WithFields(log.Fields{
 			"file":  file,
 			"error": err,
@@ -36,4 +29,12 @@ func (c Config) parse(file string) (pc Config) {
 	}
 
 	return
+}
+
+type config struct {
+	Host      string
+	Port      int
+	SSLCert   string            `json:"ssl_cert"`
+	SSLKey    string            `json:"ssl_key"`
+	DataStore map[string]string `json:"data_store"`
 }

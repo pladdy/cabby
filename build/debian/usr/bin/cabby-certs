@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -e
+
+adduser --system --group cabby
+
+openssl req -x509 -newkey rsa:4096 -nodes -keyout /etc/cabby/server.key -out /etc/cabby/server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=cabby"
+chmod 600 /etc/cabby/server.key
+
+chown cabby:cabby /etc/cabby/server.key
+chown cabby:cabby /etc/cabby/server.crt

@@ -1,19 +1,26 @@
-.PHONY: clean config cover fmt reportcard run sqlite test test_failures test_install test_run
+.PHONY: build clean config cover fmt reportcard run sqlite test test_failures test_install test_run
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
+BUILD_PATH=build/cabby
 
 all: config cert dependencies
 
 build:
-	go build $(BUILD_TAGS) -o bin/cabby $(GO_FILES)
+	go build $(BUILD_TAGS) -o $(BUILD_PATH) $(GO_FILES)
+
+build-debian:
+	mkdir -p build/debian/etc/cabby/
+	cp config/cabby.json build/debian/etc/cabby/
+	vagrant up
+	@echo Magic has happend to make a debian...
 
 clean:
-	rm -rf bin/ db/
+	rm -rf db/
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 
 cert:
-	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/ST=Maryland/L=Baltimore/O=Cabby TAXII 2.0/CN=pladdy"
+	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
 	chmod 600 server.key
 
 config:
@@ -37,6 +44,9 @@ dependencies:
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
 
+dev-db:
+	build/debian/usr/bin/cabby_db -u test@cabby.com -p test
+
 fmt:
 	go fmt -x
 
@@ -50,11 +60,6 @@ run:
 
 run_log:
 	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
-
-sqlite:
-	rm -rf db/
-	mkdir db
-	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
 test: test_install
 	go test $(BUILD_TAGS) -v -cover ./...
