@@ -14,8 +14,8 @@
 .glide/
 
 # App specific
-build/etc/cabby/*
-build/usr/local/bin/cabby
+build/debian/etc/cabby/*
+build/debian/usr/bin/cabby
 build/cabby
 .env
 config/cabby.json
