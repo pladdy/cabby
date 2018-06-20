@@ -18,6 +18,11 @@ To run all tests: `make test`
 "Helper" functions are in `test_helper_test.go`.  The goal with this file was to put repetitive code that make the
 tests verbose into a DRY'er format.
 
+## Building
+Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408
+Debian Policy Manual: https://www.debian.org/doc/debian-policy/#debian-policy-manual
+Dependencies in Debian: https://www.debian.org/doc/debian-policy/#s-binarydeps
+
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
 - port
@@ -27,7 +32,6 @@ The `make` task will generate certs and a default config file.  Edit the `config
 ## DB Setup
 Using Sqlite as a light-weight data store to run this in development mode.  Goal is to move to some kind of JSON store
 (rethinkdb or elasticsearch) in the future.
-`make sqlite`
 
 ## API Examples with a test user
 The examples below require
@@ -40,8 +44,8 @@ brew install sqlite
 brew install jq
 ```
 
-Set up the DB:
-`./scripts/setup_db`
+Set up the DB for dev/test:
+`make dev-db`
 
 In another terminal, run a server:
 `make run`

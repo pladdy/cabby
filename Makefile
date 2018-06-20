@@ -9,11 +9,9 @@ all: config cert dependencies
 build:
 	go build $(BUILD_TAGS) -o $(BUILD_PATH) $(GO_FILES)
 
-build-db: sqlite
-	build/setup_db
-
 build-debian:
-	cp config/cabby.json build/etc/cabby/
+	mkdir -p build/debian/etc/cabby/
+	cp config/cabby.json build/debian/etc/cabby/
 	vagrant up
 	@echo Magic has happend to make a debian...
 
@@ -46,6 +44,9 @@ dependencies:
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
 
+dev-db:
+	build/debian/usr/bin/cabby_db -u test@cabby.com -p test
+
 fmt:
 	go fmt -x
 
@@ -59,11 +60,6 @@ run:
 
 run_log:
 	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
-
-sqlite:
-	rm -rf db/
-	mkdir db
-	sqlite3 db/cabby.db '.read backend/sqlite/schema.sql'
 
 test: test_install
 	go test $(BUILD_TAGS) -v -cover ./...

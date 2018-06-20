@@ -188,7 +188,7 @@ func setupSQLite() {
 		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
-	f, err := os.Open("backend/sqlite/schema.sql")
+	f, err := os.Open("build/debian/var/cabby/schema.sql")
 	if err != nil {
 		fail.Fatal("Couldn't open schema file: ", err)
 	}

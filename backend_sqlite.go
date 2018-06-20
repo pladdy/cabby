@@ -161,8 +161,10 @@ func newTaxiiQuery(command, resource string) (taxiiQuery, error) {
 
 /* connector methods */
 
-func (s *sqliteDB) connect(connection string) (err error) {
-	s.db, err = sql.Open(s.driver, connection)
+func (s *sqliteDB) connect(path string) (err error) {
+	// set foreign key pragma to true in connection
+	// https://github.com/mattn/go-sqlite3#connection-string
+	s.db, err = sql.Open(s.driver, path+"?_fk=true")
 	if err != nil {
 		log.Error(err)
 	}
