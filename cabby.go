@@ -135,7 +135,6 @@ func main() {
 	}
 	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
 
-	// set up flag, but don't use; overwrite with defalut dev config path for now
 	var configPath = flag.String("config", cabbyConfigs[cabbyEnv], "path to cabby config file")
 	flag.Parse()
 
