@@ -16,7 +16,7 @@
     "ssl_key": "/etc/cabby/server.key",
     "data_store": {
       "name": "sqlite",
-      "path": "/etc/cabby/cabby.db"
+      "path": "/var/cabby/cabby.db"
     }
   }
 }
