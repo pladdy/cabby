@@ -136,7 +136,7 @@ func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
 	byteBody, _ := ioutil.ReadAll(res.Body)
 	status, body := res.Code, string(byteBody)
 
-	expected := `{"title":"Unauthorized","description":"No user specified","http_status":"401"}` + "\n"
+	expected := `{"title":"Unauthorized","description":"No user specified","http_status":"401"}`
 
 	if status != http.StatusUnauthorized {
 		t.Error("Got:", status, "Expected:", http.StatusUnauthorized)
@@ -170,7 +170,7 @@ func TestHandleTaxiiCollectionsGetBadID(t *testing.T) {
 	defer ts.disconnect()
 
 	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/fail", nil)
-	expected := `{"title":"Resource not found","description":"uuid: incorrect UUID length: fail","http_status":"404"}` + "\n"
+	expected := `{"title":"Resource not found","description":"uuid: incorrect UUID length: fail","http_status":"404"}`
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -257,7 +257,7 @@ func TestHandleTaxiiCollectionsGetUnknownID(t *testing.T) {
 	}
 
 	status, result := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL()+"/"+id.String(), nil)
-	expected := `{"title":"Resource not found","description":"Invalid collection","http_status":"404"}` + "\n"
+	expected := `{"title":"Resource not found","description":"Invalid collection","http_status":"404"}`
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

@@ -187,6 +187,8 @@ func TestMainPanic(t *testing.T) {
 }
 
 func TestMainAPIRoot(t *testing.T) {
+	setupSQLite()
+
 	req := requestWithBasicAuth(testAPIRootURL)
 	_, body := requestFromTestServer(req)
 
