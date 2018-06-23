@@ -33,7 +33,7 @@ Vagrant.configure("2") do |config|
       cd /opt/go/src/cabby
 
       make && make test && make build
-      cp build/cabby build/usr/bin
+      cp build/cabby build/debian/usr/bin
       fpm -f -s dir -t deb -n cabby -d jq -m "Matt Pladna" --description "A TAXII 2.0 server" --after-install build/postinst --deb-user cabby --deb-group cabby -C build/debian .
 
       if [ $? -eq 0 ]; then
