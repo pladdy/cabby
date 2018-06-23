@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"runtime/debug"
 
@@ -21,7 +22,8 @@ func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 	}).Error("Returning error in response")
 
 	w.Header().Set("Content-Type", taxiiContentType)
-	http.Error(w, resourceToJSON(te), status)
+	w.WriteHeader(status)
+	io.WriteString(w, resourceToJSON(te))
 }
 
 func badRequest(w http.ResponseWriter, err error) {
