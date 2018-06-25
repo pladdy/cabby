@@ -1,8 +1,6 @@
 [Unit]
 Description=Cabby TAXII 2 Server
 ConditionPathExists=/usr/bin/cabby
-After=network.target
-StartLimitInterval=10
 
 [Service]
 Type=simple
@@ -10,5 +8,7 @@ User=cabby
 Group=cabby
 Restart=on-failure
 RestartSec=5
-WorkingDirectory=/usr/bin
 ExecStart=/usr/bin/cabby
+
+[Install]
+WantedBy=multi-user.target
