@@ -51,6 +51,10 @@ func rangeNotSatisfiable(w http.ResponseWriter, err error) {
 	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
 }
 
+func serverError(w http.ResponseWriter, err error) {
+  errorStatus(w, "Internal server error", err, http.StatusInternalServerError)
+}
+
 func unauthorized(w http.ResponseWriter, err error) {
 	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
 	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)

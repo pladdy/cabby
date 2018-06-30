@@ -201,7 +201,7 @@ func TestMainAPIRoot(t *testing.T) {
 	expected := testAPIRoot
 
 	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title, result)
+		t.Error("Got:", result.Title, "Expected:", expected.Title, "Result:", result)
 	}
 }
 

@@ -66,8 +66,8 @@ func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
 	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
 	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
 
-	if status != http.StatusNotFound {
-		t.Error("Got:", status, "Expected:", http.StatusNotFound)
+	if status != http.StatusInternalServerError {
+		t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
 	}
 }
 

@@ -103,7 +103,7 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 
 	err = tc.create(ts, user, getAPIRoot(r.URL.Path))
 	if err != nil {
-		resourceNotFound(w, err)
+		serverError(w, err)
 		return
 	}
 
