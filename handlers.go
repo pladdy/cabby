@@ -10,18 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func splitAcceptHeader(h string) (string, string) {
-	parts := strings.Split(h, ";")
-	first := parts[0]
-
-	var second string
-	if len(parts) > 1 {
-		second = parts[1]
-	}
-
-	return first, second
-}
-
 func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
@@ -75,4 +63,17 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 			"user":       user,
 		}).Info("Request made to server")
 	}
+}
+
+/* helpers */
+func splitAcceptHeader(h string) (string, string) {
+	parts := strings.Split(h, ";")
+	first := parts[0]
+
+	var second string
+	if len(parts) > 1 {
+		second = parts[1]
+	}
+
+	return first, second
 }
