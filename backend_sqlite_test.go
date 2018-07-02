@@ -37,7 +37,7 @@ func TestSQLiteConnectFailDriver(t *testing.T) {
 /* sqlite reader functions */
 
 func TestSQLiteRead(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()
@@ -76,7 +76,7 @@ func TestSQLiteRead(t *testing.T) {
 }
 
 func TestSQLiteReadFail(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()
@@ -98,8 +98,6 @@ func TestSQLiteReadFail(t *testing.T) {
 }
 
 func TestSQLiteReadParseFail(t *testing.T) {
-	defer setupSQLite()
-
 	s := getSQLiteDB()
 	defer s.disconnect()
 
