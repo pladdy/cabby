@@ -78,3 +78,10 @@ func TestHandleTaxiiStatusReadFail(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 }
+
+func TestNewStatusFail(t *testing.T) {
+	_, err := newTaxiiStatus(0)
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}

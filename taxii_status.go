@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -41,6 +42,10 @@ type taxiiStatus struct {
 }
 
 func newTaxiiStatus(objects int) (taxiiStatus, error) {
+	if objects < 1 {
+		return taxiiStatus{}, errors.New("Can't post less than 1 object")
+	}
+
 	id, err := newTaxiiID()
 	if err != nil {
 		return taxiiStatus{}, err

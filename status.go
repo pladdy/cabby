@@ -30,6 +30,10 @@ func badRequest(w http.ResponseWriter, err error) {
 	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
 }
 
+func forbidden(w http.ResponseWriter, err error) {
+	errorStatus(w, "Forbidden", err, http.StatusForbidden)
+}
+
 func internalServerError(w http.ResponseWriter, err error) {
 	errorStatus(w, "Internal Server Error", err, http.StatusInternalServerError)
 }
@@ -49,10 +53,6 @@ func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
 
 func rangeNotSatisfiable(w http.ResponseWriter, err error) {
 	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
-}
-
-func serverError(w http.ResponseWriter, err error) {
-  errorStatus(w, "Internal server error", err, http.StatusInternalServerError)
 }
 
 func unauthorized(w http.ResponseWriter, err error) {

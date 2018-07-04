@@ -18,6 +18,7 @@ const (
 	userName           key = 0
 	userCollections    key = 1
 	requestRange       key = 2
+	canAdmin           key = 3
 	sixMonthsOfSeconds     = "63072000"
 	stixContentType20      = "application/vnd.oasis.stix+json; version=2.0"
 	stixContentType        = "application/vnd.oasis.stix+json"
@@ -97,8 +98,7 @@ func (t *taxiiRange) String() string {
 }
 
 func takeAddedAfter(r *http.Request) string {
-	q := r.URL.Query()
-	af := q["added_after"]
+	af := r.URL.Query()["added_after"]
 
 	if len(af) > 0 {
 		t, err := time.Parse(time.RFC3339Nano, af[0])
@@ -109,11 +109,17 @@ func takeAddedAfter(r *http.Request) string {
 	return ""
 }
 
-func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
-	ctx := r.Context()
+func takeCanAdmin(r *http.Request) bool {
+	ca, ok := r.Context().Value(canAdmin).(bool)
+	if !ok {
+		return false
+	}
+	return ca
+}
 
+func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 	// get collection access map from userCollections context
-	ca, ok := ctx.Value(userCollections).(map[taxiiID]taxiiCollectionAccess)
+	ca, ok := r.Context().Value(userCollections).(map[taxiiID]taxiiCollectionAccess)
 	if !ok {
 		return taxiiCollectionAccess{}
 	}
@@ -151,8 +157,7 @@ func takeStatusID(r *http.Request) string {
 }
 
 func takeStixID(r *http.Request) string {
-	q := r.URL.Query()
-	si := q["match[id]"]
+	si := r.URL.Query()["match[id]"]
 
 	if len(si) > 0 {
 		return si[0]
@@ -161,8 +166,7 @@ func takeStixID(r *http.Request) string {
 }
 
 func takeStixTypes(r *http.Request) []string {
-	q := r.URL.Query()
-	st := q["match[type]"]
+	st := r.URL.Query()["match[type]"]
 
 	if len(st) > 0 {
 		return strings.Split(st[0], ",")
@@ -170,30 +174,21 @@ func takeStixTypes(r *http.Request) []string {
 	return []string{}
 }
 
+func takeUser(r *http.Request) bool {
+	_, ok := r.Context().Value(userName).(string)
+	if !ok {
+		return false
+	}
+	return true
+}
+
 func takeVersion(r *http.Request) string {
-	q := r.URL.Query()
-	v := q["match[version]"]
+	v := r.URL.Query()["match[version]"]
 
 	if len(v) > 0 {
 		return v[0]
 	}
 	return ""
-}
-
-// decorate a handler with basic authentication
-func withBasicAuth(h http.Handler, ts taxiiStorer) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		u, p, ok := r.BasicAuth()
-		tu, validated := validateUser(ts, u, p)
-
-		if !ok || !validated {
-			unauthorized(w, errors.New("Invalid user/pass combination"))
-			return
-		}
-
-		r = withTaxiiUser(r, tu)
-		h.ServeHTTP(withHSTS(w), r)
-	})
 }
 
 func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
@@ -203,6 +198,7 @@ func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
 
 func withTaxiiUser(r *http.Request, tu taxiiUser) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tu.Email)
+	ctx = context.WithValue(ctx, canAdmin, tu.CanAdmin)
 	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
 	return r.WithContext(ctx)
 }
@@ -211,6 +207,11 @@ func validateUser(ts taxiiStorer, u, p string) (taxiiUser, bool) {
 	tu, err := newTaxiiUser(ts, u, p)
 	if err != nil {
 		log.Error(err)
+		return tu, false
+	}
+
+	if !tu.valid() {
+		log.WithFields(log.Fields{"user": u}).Error("Invalid user")
 		return tu, false
 	}
 

@@ -231,23 +231,3 @@ func TestNewCabbyFail(t *testing.T) {
 		t.Error("Expected an error")
 	}
 }
-
-func TestRegisterAPIRootInvalidPath(t *testing.T) {
-	defer setupSQLite()
-
-	// remove required table
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.db.Exec("drop table taxii_api_root")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	invalidPath := "foo"
-	handler := http.NewServeMux()
-	registerAPIRoot(ts, invalidPath, handler)
-}

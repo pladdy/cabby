@@ -43,7 +43,7 @@ func (t *taxiiResult) withPagination(tr taxiiRange) {
 }
 
 type taxiiUpdater interface {
-	update(resource string, rgs []interface{}) error
+	update(resource string, args []interface{}) error
 }
 
 type taxiiWriter interface {

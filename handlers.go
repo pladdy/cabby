@@ -34,6 +34,21 @@ func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func withBasicAuth(h http.Handler, ts taxiiStorer) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+		tu, _ := newTaxiiUser(ts, u, p)
+
+		if !ok || !tu.valid() {
+			unauthorized(w, errors.New("Invalid user/pass combination"))
+			return
+		}
+
+		r = withTaxiiUser(r, tu)
+		h.ServeHTTP(withHSTS(w), r)
+	})
+}
+
 func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, ok := r.Context().Value(userName).(string)

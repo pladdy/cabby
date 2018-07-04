@@ -42,20 +42,21 @@ func handleTaxiiAPIRoot(ts taxiiStorer) http.HandlerFunc {
 /* models */
 
 type taxiiAPIRoot struct {
+	Path             string   `json:"path,omitempty"`
 	Title            string   `json:"title"`
 	Description      string   `json:"description,omitempty"`
 	Versions         []string `json:"versions"`
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
-func (ta *taxiiAPIRoot) create(ts taxiiStorer, path string) error {
+func (ta *taxiiAPIRoot) create(ts taxiiStorer) error {
 	id, err := newTaxiiID()
 	if err != nil {
 		return err
 	}
 
 	err = createResource(ts, "taxiiAPIRoot",
-		[]interface{}{id, path, ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength})
+		[]interface{}{id, ta.Path, ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength})
 	return err
 }
 
@@ -69,6 +70,12 @@ func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
 	apiRoot = result.data.(taxiiAPIRoot)
 
 	*ta = apiRoot
+	return err
+}
+
+func (ta *taxiiAPIRoot) update(ts taxiiStorer) error {
+	err := ts.update("taxiiAPIRoot",
+		[]interface{}{ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength, ta.Path})
 	return err
 }
 

@@ -45,7 +45,7 @@ dependencies:
 	go get github.com/golang/lint
 
 dev-db:
-	build/debian/usr/bin/cabby_db -u test@cabby.com -p test
+	build/debian/usr/bin/cabby-cli -u test@cabby.com -p test -a
 
 fmt:
 	go fmt -x

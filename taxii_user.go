@@ -14,6 +14,7 @@ type taxiiCollectionAccess struct {
 
 type taxiiUser struct {
 	Email            string
+	CanAdmin         bool
 	CollectionAccess map[taxiiID]taxiiCollectionAccess
 }
 
@@ -23,15 +24,15 @@ func newTaxiiUser(ts taxiiStorer, u, p string) (taxiiUser, error) {
 	return tu, err
 }
 
-func (tu *taxiiUser) create(ts taxiiStorer, p string) error {
+func (tu *taxiiUser) create(ts taxiiStorer, pass string) error {
 	var err error
 
 	parts := []struct {
 		resource string
 		args     []interface{}
 	}{
-		{"taxiiUser", []interface{}{tu.Email}},
-		{"taxiiUserPass", []interface{}{tu.Email, p}},
+		{"taxiiUser", []interface{}{tu.Email, tu.CanAdmin}},
+		{"taxiiUserPass", []interface{}{tu.Email, pass}},
 	}
 
 	for _, p := range parts {
@@ -47,9 +48,14 @@ func (tu *taxiiUser) create(ts taxiiStorer, p string) error {
 func (tu *taxiiUser) read(ts taxiiStorer, pass string) error {
 	user := *tu
 
-	valid, err := verifyValidUser(ts, tu.Email, pass)
-	if !valid || err != nil {
+	result, err := ts.read("taxiiUser", []interface{}{tu.Email, pass})
+	if err != nil {
 		return err
+	}
+
+	user, ok := result.data.(taxiiUser)
+	if !ok {
+		return errors.New("Invalid user")
 	}
 
 	tcas, err := assignedCollections(ts, tu.Email)
@@ -58,6 +64,7 @@ func (tu *taxiiUser) read(ts taxiiStorer, pass string) error {
 	}
 
 	// add collections to user object
+	user.CollectionAccess = make(map[taxiiID]taxiiCollectionAccess)
 	for _, tca := range tcas {
 		user.CollectionAccess[tca.ID] = tca
 	}
@@ -66,30 +73,21 @@ func (tu *taxiiUser) read(ts taxiiStorer, pass string) error {
 	return err
 }
 
-func assignedCollections(ts taxiiStorer, e string) ([]taxiiCollectionAccess, error) {
+func (tu *taxiiUser) valid() bool {
+	if tu.Email == "" {
+		return false
+	}
+	return true
+}
+
+func assignedCollections(ts taxiiStorer, u string) ([]taxiiCollectionAccess, error) {
 	var tcas []taxiiCollectionAccess
 
-	result, err := ts.read("taxiiCollectionAccess", []interface{}{e})
+	result, err := ts.read("taxiiCollectionAccess", []interface{}{u})
 	if err != nil {
 		return tcas, err
 	}
 
 	tcas = result.data.([]taxiiCollectionAccess)
 	return tcas, err
-}
-
-func verifyValidUser(ts taxiiStorer, e, p string) (bool, error) {
-	var valid bool
-
-	result, err := ts.read("taxiiUser", []interface{}{e, p})
-	if err != nil {
-		return false, err
-	}
-
-	valid = result.data.(bool)
-
-	if valid != true {
-		err = errors.New("Invalid user")
-	}
-	return valid, err
 }

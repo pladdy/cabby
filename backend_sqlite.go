@@ -46,7 +46,7 @@ var statements = map[string]map[string]string{
 		                   values (?, ?, ?, ?)`,
 		"taxiiStatus": `insert into taxii_status (id, status, total_count, success_count, failure_count, pending_count)
 		                values (?, ?, ?, ?, ?, ?)`,
-		"taxiiUser": `insert into taxii_user (email) values (?)`,
+		"taxiiUser": `insert into taxii_user (email, can_admin) values (?, ?)`,
 		"taxiiUserCollection": `insert into taxii_user_collection (email, collection_id, can_read, can_write)
 		                        values (?, ?, ?, ?)`,
 		"taxiiUserPass": `insert into taxii_user_pass (email, pass) values (?, ?)`,
@@ -131,7 +131,7 @@ var statements = map[string]map[string]string{
 		"taxiiStatus": `select id, status, total_count, success_count, pending_count, failure_count
 		                from taxii_status
 										where id = ?`,
-		"taxiiUser": `select 1
+		"taxiiUser": `select tu.email, tu.can_admin
 									from
 									  taxii_user tu
 									  inner join taxii_user_pass tup
@@ -140,12 +140,11 @@ var statements = map[string]map[string]string{
 	},
 	"update": map[string]string{
 		"taxiiStatus": `update taxii_status
-		                set status = ?,
-										    total_count = ?,
-												success_count = ?,
-												failure_count = ?,
-												pending_count = ?
+		                set status = ?, total_count = ?, success_count = ?, failure_count = ?, pending_count = ?
 		                where id = ?`,
+		"taxiiAPIRoot": `update taxii_api_root
+		                 set title = ?, description = ?, versions = ?, max_content_length = ?
+										 where api_root_path = ?`,
 	},
 }
 
@@ -503,17 +502,17 @@ func (s *sqliteDB) readStixObjects(rows *sql.Rows) (taxiiResult, error) {
 }
 
 func (s *sqliteDB) readUser(rows *sql.Rows) (taxiiResult, error) {
-	var valid bool
+	tu := taxiiUser{}
 	var err error
 
 	for rows.Next() {
-		if err := rows.Scan(&valid); err != nil {
-			return taxiiResult{data: valid}, err
+		if err := rows.Scan(&tu.Email, &tu.CanAdmin); err != nil {
+			return taxiiResult{data: tu}, err
 		}
 	}
 
 	err = rows.Err()
-	return taxiiResult{data: valid}, err
+	return taxiiResult{data: tu}, err
 }
 
 /* create methods */
