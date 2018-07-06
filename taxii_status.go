@@ -9,7 +9,7 @@ import (
 
 func handleTaxiiStatus(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		statusID, err := newTaxiiID(takeStatusID(r))
+		statusID, err := taxiiIDFromString(takeStatusID(r))
 		if err != nil {
 			resourceNotFound(w, err)
 			return

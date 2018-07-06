@@ -43,10 +43,7 @@ func TestHandleTaxiiStatusInvalidID(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	// check the status
-	u := testStatusURL + "foo"
-
-	status, _ := handlerTest(handleTaxiiStatus(ts), "GET", u, nil)
+	status, _ := handlerTest(handleTaxiiStatus(ts), "GET", testStatusURL+"foo", nil)
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}

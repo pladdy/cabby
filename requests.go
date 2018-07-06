@@ -124,7 +124,7 @@ func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 		return taxiiCollectionAccess{}
 	}
 
-	tid, err := newTaxiiID(takeCollectionID(r))
+	tid, err := taxiiIDFromString(takeCollectionID(r))
 	if err != nil {
 		return taxiiCollectionAccess{}
 	}

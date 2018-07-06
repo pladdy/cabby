@@ -394,41 +394,6 @@ func TestNewCollection(t *testing.T) {
 	}
 }
 
-func TestNewTaxiiID(t *testing.T) {
-	// no string passed
-	id, err := newTaxiiID()
-	if err != nil {
-		t.Error(err)
-	}
-
-	// empty string passed
-	id, err = newTaxiiID("")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if len(id.String()) == 0 {
-		t.Error("Got:", id.String(), "Expected a taxiiID")
-	}
-
-	// uuid passed (valid taxiiID)
-	uid := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
-	id, err = newTaxiiID(uid)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if id.String() != uid {
-		t.Error("Got:", id.String(), "Expected:", uid)
-	}
-
-	// invalid uid passed
-	id, err = newTaxiiID("fail")
-	if err == nil {
-		t.Error("Expected error")
-	}
-}
-
 func TestTaxiiCollectionCreate(t *testing.T) {
 	setupSQLite()
 

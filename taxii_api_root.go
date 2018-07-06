@@ -50,7 +50,7 @@ type taxiiAPIRoot struct {
 }
 
 func (ta *taxiiAPIRoot) create(ts taxiiStorer) error {
-	id, err := newTaxiiID()
+	id, err := taxiiIDUsingString(ta.Path)
 	if err != nil {
 		return err
 	}

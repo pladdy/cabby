@@ -82,7 +82,7 @@ func createAPIRoot(testStorer taxiiStorer) {
 }
 
 func createCollection(testStorer taxiiStorer, cid string) {
-	id, err := newTaxiiID(cid)
+	id, err := taxiiIDFromString(cid)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -243,7 +243,7 @@ func tearDownSQLite() {
 }
 
 func testingContext() context.Context {
-	tid, err := newTaxiiID(testCollectionID)
+	tid, err := taxiiIDFromString(testCollectionID)
 	if err != nil {
 		log.Fatal(err)
 	}

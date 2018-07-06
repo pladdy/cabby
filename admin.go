@@ -30,7 +30,7 @@ func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.
 		return
 	}
 
-	tar, err := bodyToAPIRoot(w, r)
+	tar, err := bodyToAPIRoot(r)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -51,7 +51,7 @@ func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, r *http.R
 		return
 	}
 
-	tar, err := bodyToAPIRoot(w, r)
+	tar, err := bodyToAPIRoot(r)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -68,7 +68,7 @@ func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, r *http.R
 
 /* helpers */
 
-func bodyToAPIRoot(w http.ResponseWriter, r *http.Request) (taxiiAPIRoot, error) {
+func bodyToAPIRoot(r *http.Request) (taxiiAPIRoot, error) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		return taxiiAPIRoot{}, err
