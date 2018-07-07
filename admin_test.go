@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+var methodsToTest = []string{"DELETE", "POST", "PUT"}
+
 func TestHandleAdminTaxiiAPIRootInvalidMethod(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
@@ -31,6 +33,7 @@ func TestHandleAdminTaxiiAPIRoot(t *testing.T) {
 		payload string
 		title   string
 	}{
+		{method: "DELETE", payload: `{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`, title: ""},
 		{method: "POST", payload: `{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`, title: t.Name()},
 		{method: "PUT", payload: `{"path": "` + t.Name() + `", "title": "` + "updated" + `"}`, title: "updated"},
 	}
@@ -50,22 +53,22 @@ func TestHandleAdminTaxiiAPIRoot(t *testing.T) {
 			t.Error("Got:", status, "Expected:", http.StatusOK)
 		}
 
-		var title string
-		err := s.db.QueryRow("select title from taxii_api_root where api_root_path = '" + t.Name() + "'").Scan(&title)
-		if err != nil {
-			t.Fatal(err)
-		}
+		if test.title != "" {
+			var title string
+			err := s.db.QueryRow("select title from taxii_api_root where api_root_path = '" + t.Name() + "'").Scan(&title)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		if title != test.title {
-			t.Error("Got:", title, "Expected:", test.title)
+			if title != test.title {
+				t.Error("Got:", title, "Expected:", test.title)
+			}
 		}
 	}
 }
 
 func TestHandleAdminTaxiiAPIRootFailAuth(t *testing.T) {
 	setupSQLite()
-
-	methodsToTest := []string{"POST", "PUT"}
 
 	tests := []struct {
 		contexts map[key]string
@@ -104,8 +107,6 @@ func TestHandleAdminTaxiiAPIRootFailAuth(t *testing.T) {
 func TestHandleAdminTaxiiAPIRootFailData(t *testing.T) {
 	setupSQLite()
 
-	methodsToTest := []string{"POST", "PUT"}
-
 	for _, method := range methodsToTest {
 		ts := getStorer()
 		defer ts.disconnect()
@@ -122,8 +123,6 @@ func TestHandleAdminTaxiiAPIRootFailData(t *testing.T) {
 }
 
 func TestHandleAdminTaxiiAPIRootFailServer(t *testing.T) {
-	methodsToTest := []string{"POST", "PUT"}
-
 	for _, method := range methodsToTest {
 		setupSQLite()
 

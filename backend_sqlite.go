@@ -51,6 +51,9 @@ var statements = map[string]map[string]string{
 		                        values (?, ?, ?, ?)`,
 		"taxiiUserPass": `insert into taxii_user_pass (email, pass) values (?, ?)`,
 	},
+	"delete": map[string]string{
+		"taxiiAPIRoot": `delete from taxii_api_root where api_root_path = ?`,
+	},
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
 		"stixObject": `select object
@@ -572,6 +575,17 @@ func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt 
 	return
 }
 
+/* delete */
+
+func (s *sqliteDB) delete(resource string, args []interface{}) error {
+	tq, err := newTaxiiQuery("delete", resource)
+	if err != nil {
+		return err
+	}
+
+	return executeQuery(s, tq.statement, args)
+}
+
 /* update */
 
 func (s *sqliteDB) update(resource string, args []interface{}) error {
@@ -580,11 +594,16 @@ func (s *sqliteDB) update(resource string, args []interface{}) error {
 		return err
 	}
 
-	_, err = s.db.Exec(tq.statement, args...)
-	if err != nil {
-		log.WithFields(log.Fields{"statement": tq.statement, "args": args, "err": err}).Error("Failed to execute")
-		return fmt.Errorf("%v in statement: %v", err, tq.statement)
-	}
+	return executeQuery(s, tq.statement, args)
+}
 
+/* helpers */
+
+func executeQuery(s *sqliteDB, q string, args []interface{}) error {
+	_, err := s.db.Exec(q, args...)
+	if err != nil {
+		log.WithFields(log.Fields{"statement": q, "args": args, "err": err}).Error("Failed to execute")
+		return fmt.Errorf("%v in statement: %v", err, q)
+	}
 	return err
 }

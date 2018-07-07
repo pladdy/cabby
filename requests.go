@@ -19,6 +19,7 @@ const (
 	userCollections    key = 1
 	requestRange       key = 2
 	canAdmin           key = 3
+	jsonContentType        = "application/json"
 	sixMonthsOfSeconds     = "63072000"
 	stixContentType20      = "application/vnd.oasis.stix+json; version=2.0"
 	stixContentType        = "application/vnd.oasis.stix+json"

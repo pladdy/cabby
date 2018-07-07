@@ -1,4 +1,4 @@
-.PHONY: build clean config cover fmt reportcard run sqlite test test_failures test_install test_run
+.PHONY: all build clean config cover fmt reportcard run run-log sqlite test test_failures test_install test_run
 
 GO_FILES=$(shell find . -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
@@ -58,7 +58,7 @@ reportcard: fmt
 run:
 	go run $(BUILD_TAGS) $(GO_FILES)
 
-run_log:
+run-log:
 	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
 
 test: test_install

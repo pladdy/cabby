@@ -55,9 +55,12 @@ func (ta *taxiiAPIRoot) create(ts taxiiStorer) error {
 		return err
 	}
 
-	err = createResource(ts, "taxiiAPIRoot",
+	return createResource(ts, "taxiiAPIRoot",
 		[]interface{}{id, ta.Path, ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength})
-	return err
+}
+
+func (ta *taxiiAPIRoot) delete(ts taxiiStorer) error {
+	return ts.delete("taxiiAPIRoot", []interface{}{ta.Path})
 }
 
 func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
@@ -74,9 +77,8 @@ func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
 }
 
 func (ta *taxiiAPIRoot) update(ts taxiiStorer) error {
-	err := ts.update("taxiiAPIRoot",
+	return ts.update("taxiiAPIRoot",
 		[]interface{}{ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength, ta.Path})
-	return err
 }
 
 type taxiiAPIRoots struct {

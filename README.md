@@ -74,7 +74,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
 ```
 
-#### Create API Root
+#### Create API Root (Admin functionality)
 The user set up with `make dev-db` is an admin.
 
 ```sh
@@ -91,9 +91,24 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' | jq .
 ```
 
-#### Update API Root
+#### Update API Root (Admin functionality)
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/api_root/' -d '{
+  "path": "my_api_root", "title": "my api root", "max_content_length": 8388608
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' | jq .
+```
+
+#### Delete API Root (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/api_root/' -d '{
   "path": "my_api_root", "title": "my api root", "max_content_length": 8388608
 }' | jq .
 ```

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 /* handlers */
@@ -14,6 +16,8 @@ func handleAdminTaxiiAPIRoot(ts taxiiStorer, h *http.ServeMux) http.HandlerFunc 
 		defer recoverFromPanic(w)
 
 		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiAPIRootDelete(ts, w, r)
 		case http.MethodPost:
 			handleAdminTaxiiAPIRootPost(ts, h, w, r)
 		case http.MethodPut:
@@ -23,6 +27,26 @@ func handleAdminTaxiiAPIRoot(ts taxiiStorer, h *http.ServeMux) http.HandlerFunc 
 			return
 		}
 	})
+}
+
+func handleAdminTaxiiAPIRootDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tar, err := bodyToAPIRoot(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tar.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted": "`+tar.Path+`"}`)
 }
 
 func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.ResponseWriter, r *http.Request) {
@@ -42,7 +66,7 @@ func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.
 		return
 	}
 
-	registerAPIRoot(ts, tar.Path, handler)
+	attemptRegisterAPIRoot(ts, tar.Path, handler)
 	writeContent(w, taxiiContentType, resourceToJSON(tar))
 }
 
@@ -67,6 +91,16 @@ func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, r *http.R
 }
 
 /* helpers */
+
+func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.WithFields(log.Fields{"path": path}).Warn("failed to register api root handlers; could already be registered")
+		}
+	}()
+
+	registerAPIRoot(ts, path, s)
+}
 
 func bodyToAPIRoot(r *http.Request) (taxiiAPIRoot, error) {
 	body, err := ioutil.ReadAll(r.Body)
