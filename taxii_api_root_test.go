@@ -7,6 +7,8 @@ import (
 )
 
 func TestHandleTaxiiAPIRootGet(t *testing.T) {
+	setupSQLite()
+
 	ts := getStorer()
 	defer ts.disconnect()
 

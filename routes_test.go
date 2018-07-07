@@ -55,6 +55,6 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 	registerCollectionRoutes(ts, taxiiAPIRoot{}, "test", handler)
 
 	if len(buf.String()) == 0 {
-		t.Error("Expected logoutput")
+		t.Error("Expected log output")
 	}
 }

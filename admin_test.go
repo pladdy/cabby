@@ -5,7 +5,12 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"regexp"
+	"strings"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var methodsToTest = []string{"DELETE", "POST", "PUT"}
@@ -64,6 +69,48 @@ func TestHandleAdminTaxiiAPIRoot(t *testing.T) {
 				t.Error("Got:", title, "Expected:", test.title)
 			}
 		}
+	}
+}
+
+func TestAttemptRegisterAPIRoot(t *testing.T) {
+	// post, delete, post and expect logging due to shared handler getting routes it already has
+	setupSQLite()
+	handler := http.NewServeMux()
+
+	var buf bytes.Buffer
+
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+
+	tests := []struct {
+		method  string
+		payload string
+	}{
+		{method: "POST", payload: `{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`},
+		{method: "DELETE", payload: `{"path": "` + t.Name() + `", "title": "` + "updated" + `"}`},
+		{method: "POST", payload: `{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`},
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	for _, test := range tests {
+		b := bytes.NewBuffer([]byte(test.payload))
+		status, _ := handlerTest(handleAdminTaxiiAPIRoot(ts, handler), test.method, testAdminAPIRootURL, b)
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+	}
+
+	// check for warning in logs
+	logs := regexp.MustCompile("\n").Split(strings.TrimSpace(buf.String()), -1)
+	lastLog := logs[len(logs)-1]
+
+	if match, _ := regexp.Match("failed to register api root handlers", []byte(lastLog)); !match {
+		t.Error("Expected log output")
 	}
 }
 
