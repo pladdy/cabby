@@ -1,10 +1,28 @@
 package main
 
 import (
-	"crypto/sha256"
-	"fmt"
 	"testing"
 )
+
+func TestAssignedCollectionsFail(t *testing.T) {
+	setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec(`drop table taxii_user_collection`)
+	if err != nil {
+		t.Fatal("DB Err:", err)
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	_, err = assignedCollections(ts, testUser)
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
 
 func TestNewTaxiiUser(t *testing.T) {
 	setupSQLite()
@@ -53,39 +71,21 @@ func TestNewTaxiiUser(t *testing.T) {
 	}
 }
 
-func TestNewTaxiiUserNoAccess(t *testing.T) {
+func TestNewTaxiiUserFail(t *testing.T) {
 	setupSQLite()
-
-	ts := getStorer()
-	defer ts.disconnect()
 
 	s := getSQLiteDB()
 	defer s.disconnect()
 
-	// create a collection record
-	id, err := newTaxiiID()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = s.db.Exec(`insert into taxii_collection (id, api_root_path, title, description, media_types)
-	                    values ('` + id.String() + `', "api_root", "a title", "a description", "")`)
+	_, err := s.db.Exec(`drop table taxii_user`)
 	if err != nil {
 		t.Fatal("DB Err:", err)
 	}
 
-	pass := fmt.Sprintf("%x", sha256.Sum256([]byte(testPass)))
-	_, err = newTaxiiUser(ts, testUser, pass)
-	if err == nil {
-		t.Error("Expected error with no access")
-	}
-}
-
-func TestNewTaxiiUserFail(t *testing.T) {
 	ts := getStorer()
 	defer ts.disconnect()
 
-	_, err := newTaxiiUser(ts, "test@test.fail", "nopass")
+	_, err = newTaxiiUser(ts, testUser, testPass)
 	if err == nil {
 		t.Error("Expected an error")
 	}
@@ -111,31 +111,6 @@ func TestTaxiiUserAssignedCollectionsReturnFail(t *testing.T) {
 	}
 }
 
-func TestVerifyValidUserFail(t *testing.T) {
-	defer setupSQLite()
-
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.db.Exec("drop table taxii_user")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	b, err := verifyValidUser(ts, "fail", "test")
-
-	if b != false {
-		t.Error("Got:", b, "Expected: false")
-	}
-
-	if err == nil {
-		t.Error("Expected error")
-	}
-}
-
 func TestTaxiiUserCreateFail(t *testing.T) {
 	defer setupSQLite()
 
@@ -152,6 +127,27 @@ func TestTaxiiUserCreateFail(t *testing.T) {
 
 	tu := taxiiUser{}
 	err = tu.create(ts, "fail")
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
+func TestTaxiiUserReadFail(t *testing.T) {
+	defer setupSQLite()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec("drop table taxii_user_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	tu := taxiiUser{}
+	err = tu.read(ts, "fail")
 	if err == nil {
 		t.Error("Expected error")
 	}

@@ -79,7 +79,7 @@ func getStixObjects(ts taxiiStorer, r *http.Request) (taxiiResult, error) {
 
 func handlePostTaxiiObjects(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
 	if !takeCollectionAccess(r).CanWrite {
-		unauthorized(w, fmt.Errorf("Unauthorized to write to collection"))
+		forbidden(w, fmt.Errorf("Unauthorized to write to collection"))
 		return
 	}
 

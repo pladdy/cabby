@@ -118,7 +118,7 @@ func TestHandleTaxiiObjectGetFilter(t *testing.T) {
 }
 
 func TestHandleTaxiiObjectsGetFailNoObjects(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	// drop the table so it can't be read
 	s := getSQLiteDB()
@@ -435,6 +435,22 @@ func TestHandleTaxiiObjectsPostInvalidBundle(t *testing.T) {
 	}
 }
 
+func TestHandleTaxiiObjectsPostEmptyBundle(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	bundle := []byte(`{"type": "bundle", "objects": [], "spec_version": "2.0", "id": "bundle--5d0092c5-5f74-4287-9642-33f4c354e56d"}`)
+	maxContent := int64(2048)
+	b := bytes.NewBuffer(bundle)
+	status, _ := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", objectsURL(), b)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+}
+
 func TestHandleTaxiiObjectsPostServerError(t *testing.T) {
 	defer setupSQLite()
 
@@ -486,7 +502,7 @@ func TestHandleTaxiiObjectPostCollectionUnauthorized(t *testing.T) {
 	h := handleTaxiiObjects(ts, maxContent)
 	h(res, req)
 
-	if res.Code != http.StatusUnauthorized {
-		t.Error("Got:", res.Code, "Expected:", http.StatusUnauthorized)
+	if res.Code != http.StatusForbidden {
+		t.Error("Got:", res.Code, "Expected:", http.StatusForbidden)
 	}
 }

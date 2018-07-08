@@ -17,6 +17,10 @@ type taxiiConnector interface {
 	disconnect()
 }
 
+type taxiiDeleter interface {
+	delete(resource string, args []interface{}) error
+}
+
 type taxiiQuery struct {
 	resource  string
 	statement string
@@ -43,7 +47,7 @@ func (t *taxiiResult) withPagination(tr taxiiRange) {
 }
 
 type taxiiUpdater interface {
-	update(resource string, rgs []interface{}) error
+	update(resource string, args []interface{}) error
 }
 
 type taxiiWriter interface {
@@ -52,6 +56,7 @@ type taxiiWriter interface {
 
 type taxiiStorer interface {
 	taxiiConnector
+	taxiiDeleter
 	taxiiReader
 	taxiiWriter
 	taxiiUpdater

@@ -21,10 +21,12 @@ import (
 type handlerTestFunction func(http.HandlerFunc, string, string, *bytes.Buffer) (int, string)
 
 const (
+	testAdminPath    = "admin"
 	testAPIRootPath  = "cabby_test_root"
 	testConfigPath   = "testdata/config/testing_config.json"
 	testDB           = "testdata/test.db"
 	testCollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
+	testHost         = "https://localhost:1234/"
 	testPass         = "test"
 	testPort         = 1234
 	testUser         = "test@cabby.com"
@@ -39,18 +41,21 @@ var (
 	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 
 	// test globals
-	testAPIRootURL = "https://localhost:1234/" + testAPIRootPath + "/"
-	testAPIRoot    = taxiiAPIRoot{Title: "test api root",
+	testAdminURL        = testHost + testAdminPath + "/"
+	testAdminAPIRootURL = testHost + testAdminPath + "/" + "api_root"
+	testAPIRootURL      = testHost + testAPIRootPath + "/"
+	testAPIRoot         = taxiiAPIRoot{Path: testAPIRootPath,
+		Title:            "test api root",
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
 		MaxContentLength: eightMB}
-	testCollectionURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testCollectionID + "/"
+	testCollectionURL = testHost + testAPIRootPath + "/collections/" + testCollectionID + "/"
 	testDiscovery     = taxiiDiscovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
-	testObjectsURL = "https://localhost:1234/" + testAPIRootPath + "/collections/" + testCollectionID + "/objects/"
-	testStatusURL  = "https://localhost:1234/" + testAPIRootPath + "/status/"
+	testObjectsURL = testHost + testAPIRootPath + "/collections/" + testCollectionID + "/objects/"
+	testStatusURL  = testHost + testAPIRootPath + "/status/"
 )
 
 // attemptHandlerTest attempts a handler test by trying it up to maxTries times
@@ -70,14 +75,14 @@ func attemptHandlerTest(hf http.HandlerFunc, method, u string, b *bytes.Buffer) 
 }
 
 func createAPIRoot(testStorer taxiiStorer) {
-	err := testAPIRoot.create(testStorer, testAPIRootPath)
+	err := testAPIRoot.create(testStorer)
 	if err != nil {
 		fail.Fatal(err)
 	}
 }
 
 func createCollection(testStorer taxiiStorer, cid string) {
-	id, err := newTaxiiID(cid)
+	id, err := taxiiIDFromString(cid)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -98,7 +103,7 @@ func createDiscovery(testStorer taxiiStorer) {
 }
 
 func createUser(testStorer taxiiStorer) {
-	tu := taxiiUser{Email: testUser}
+	tu := taxiiUser{Email: testUser, CanAdmin: true}
 	err := tu.create(testStorer, fmt.Sprintf("%x", sha256.Sum256([]byte(testPass))))
 	if err != nil {
 		fail.Fatal(err)
@@ -127,7 +132,7 @@ func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, 
 	var req *http.Request
 
 	if b != nil {
-		req = withAuthContext(httptest.NewRequest("POST", url, b))
+		req = withAuthContext(httptest.NewRequest(method, url, b))
 	} else {
 		req = withAuthContext(httptest.NewRequest(method, url, nil))
 	}
@@ -237,18 +242,21 @@ func tearDownSQLite() {
 	os.Remove(testDB)
 }
 
-// create a context for the testUser and give it read/write access to the test collection
-func withAuthContext(r *http.Request) *http.Request {
-	tid, err := newTaxiiID(testCollectionID)
+func testingContext() context.Context {
+	tid, err := taxiiIDFromString(testCollectionID)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ctx := context.WithValue(context.Background(), userName, testUser)
-	ctx = context.WithValue(ctx,
+	return context.WithValue(context.Background(),
 		userCollections,
 		map[taxiiID]taxiiCollectionAccess{tid: taxiiCollectionAccess{ID: tid, CanRead: true, CanWrite: true}})
+}
 
+// create a context for the testUser and give it read/write access to the test collection
+func withAuthContext(r *http.Request) *http.Request {
+	ctx := context.WithValue(testingContext(), userName, testUser)
+	ctx = context.WithValue(ctx, canAdmin, true)
 	return r.WithContext(ctx)
 }
 

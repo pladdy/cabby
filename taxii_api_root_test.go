@@ -6,7 +6,9 @@ import (
 	"testing"
 )
 
-func TestHandleTaxiiAPIRoot(t *testing.T) {
+func TestHandleTaxiiAPIRootGet(t *testing.T) {
+	setupSQLite()
+
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -28,7 +30,7 @@ func TestHandleTaxiiAPIRoot(t *testing.T) {
 }
 
 func TestHandleTaxiiAPIRootReadFail(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()
@@ -49,7 +51,7 @@ func TestHandleTaxiiAPIRootReadFail(t *testing.T) {
 }
 
 func TestHandleTaxiiAPIRootNotFound(t *testing.T) {
-	defer setupSQLite()
+	setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()

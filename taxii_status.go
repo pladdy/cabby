@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 )
 
@@ -8,7 +9,7 @@ import (
 
 func handleTaxiiStatus(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		statusID, err := newTaxiiID(takeStatusID(r))
+		statusID, err := taxiiIDFromString(takeStatusID(r))
 		if err != nil {
 			resourceNotFound(w, err)
 			return
@@ -41,6 +42,10 @@ type taxiiStatus struct {
 }
 
 func newTaxiiStatus(objects int) (taxiiStatus, error) {
+	if objects < 1 {
+		return taxiiStatus{}, errors.New("Can't post less than 1 object")
+	}
+
 	id, err := newTaxiiID()
 	if err != nil {
 		return taxiiStatus{}, err

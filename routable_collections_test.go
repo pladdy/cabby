@@ -6,6 +6,7 @@ import (
 
 func TestRoutableCollectionsRead(t *testing.T) {
 	setupSQLite()
+
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -23,7 +24,6 @@ func TestRoutableCollectionsRead(t *testing.T) {
 
 func TestRoutableCollectionsReadFail(t *testing.T) {
 	setupSQLite()
-	defer setupSQLite()
 
 	s := getSQLiteDB()
 	defer s.disconnect()

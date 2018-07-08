@@ -103,7 +103,7 @@ func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Re
 
 	err = tc.create(ts, user, getAPIRoot(r.URL.Path))
 	if err != nil {
-		serverError(w, err)
+		internalServerError(w, err)
 		return
 	}
 
@@ -163,7 +163,7 @@ func newTaxiiCollection(id ...string) (taxiiCollection, error) {
 
 	// try to set id to a taxii id unless it's 'collections'
 	if id[0] != "collections" {
-		tc.ID, err = newTaxiiID(id[0])
+		tc.ID, err = taxiiIDFromString(id[0])
 	}
 
 	tc.MediaTypes = []string{taxiiContentType}

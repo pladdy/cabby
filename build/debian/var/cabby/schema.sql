@@ -186,6 +186,7 @@ drop table if exists taxii_user;
 
 create table taxii_user (
   email      text not null primary key,
+  can_admin  integer check(can_admin in (1, 0)) default 0 not null,
   created_at text,
   updated_at text
 );

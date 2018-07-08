@@ -7,9 +7,11 @@ function usage() {
   exit 1
 }
 
+SCRIPT_DIR=$(cd $(dirname $0) && pwd)
 CABBY_ENV="${CABBY_ENVIRONMENT:-development}"
+USER_ADMIN=0
 
-CABBY_SCHEMA="build/debian/var/cabby/schema.sql"
+CABBY_SCHEMA="$SCRIPT_DIR/../../var/cabby/schema.sql"
 if [ "$CABBY_ENV" == "production" ]; then
   CABBY_SCHEMA="/var/cabby/schema.sql"
 fi
@@ -18,8 +20,11 @@ CONFIG_PATH="config/cabby.json" # default dev config
 CABBY_USER=""
 PASS=""
 
-while getopts ":c:hp:u:" opt; do
+while getopts ":c:hp:u:a" opt; do
   case $opt in
+    a)
+      USER_ADMIN=1
+      ;;
     c)
       CONFIG_PATH="$OPTARG"
       ;;
@@ -67,6 +72,11 @@ sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
 # set up user
 echo "Creating a user"
 sqlite3 $DB_PATH "insert into taxii_user (email) values('${CABBY_USER}')"
+if [ $USER_ADMIN -eq 1 ]; then
+  echo "  Making user admin"
+  sqlite3 $DB_PATH "update taxii_user set can_admin = 1 where email = '${CABBY_USER}'"
+fi
+
 sqlite3 $DB_PATH "insert into taxii_user_pass (email, pass) values('${CABBY_USER}', '${PASS}')"
 
 # set up discovery

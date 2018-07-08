@@ -42,21 +42,25 @@ func handleTaxiiAPIRoot(ts taxiiStorer) http.HandlerFunc {
 /* models */
 
 type taxiiAPIRoot struct {
+	Path             string   `json:"path,omitempty"`
 	Title            string   `json:"title"`
 	Description      string   `json:"description,omitempty"`
 	Versions         []string `json:"versions"`
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
-func (ta *taxiiAPIRoot) create(ts taxiiStorer, path string) error {
-	id, err := newTaxiiID()
+func (ta *taxiiAPIRoot) create(ts taxiiStorer) error {
+	id, err := taxiiIDUsingString(ta.Path)
 	if err != nil {
 		return err
 	}
 
-	err = createResource(ts, "taxiiAPIRoot",
-		[]interface{}{id, path, ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength})
-	return err
+	return createResource(ts, "taxiiAPIRoot",
+		[]interface{}{id, ta.Path, ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength})
+}
+
+func (ta *taxiiAPIRoot) delete(ts taxiiStorer) error {
+	return ts.delete("taxiiAPIRoot", []interface{}{ta.Path})
 }
 
 func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
@@ -70,6 +74,11 @@ func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
 
 	*ta = apiRoot
 	return err
+}
+
+func (ta *taxiiAPIRoot) update(ts taxiiStorer) error {
+	return ts.update("taxiiAPIRoot",
+		[]interface{}{ta.Title, ta.Description, strings.Join(ta.Versions, ","), ta.MaxContentLength, ta.Path})
 }
 
 type taxiiAPIRoots struct {
