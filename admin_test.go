@@ -17,6 +17,14 @@ import (
 
 var methodsToTest = []string{"DELETE", "POST", "PUT"}
 
+var contextTests = []struct {
+	contexts map[key]string
+	status   int
+}{
+	{map[key]string{userName: testUser}, http.StatusForbidden},
+	{map[key]string{}, http.StatusUnauthorized},
+}
+
 /* api root tests */
 
 func TestHandleAdminTaxiiAPIRootInvalidMethod(t *testing.T) {
@@ -121,14 +129,6 @@ func TestAttemptRegisterAPIRoot(t *testing.T) {
 func TestHandleAdminTaxiiAPIRootFailAuth(t *testing.T) {
 	setupSQLite()
 
-	tests := []struct {
-		contexts map[key]string
-		status   int
-	}{
-		{map[key]string{userName: testUser}, http.StatusForbidden},
-		{map[key]string{}, http.StatusUnauthorized},
-	}
-
 	ts := getStorer()
 	defer ts.disconnect()
 
@@ -136,7 +136,7 @@ func TestHandleAdminTaxiiAPIRootFailAuth(t *testing.T) {
 	b := bytes.NewBuffer([]byte(`{"this won't get processed": true}`))
 
 	for _, method := range methodsToTest {
-		for _, test := range tests {
+		for _, test := range contextTests {
 			ctx := testingContext()
 
 			for k, v := range test.contexts {
@@ -259,21 +259,13 @@ func TestHandleAdminTaxiiCollections(t *testing.T) {
 func TestHandleAdminTaxiiCollectionsFailAuth(t *testing.T) {
 	setupSQLite()
 
-	tests := []struct {
-		contexts map[key]string
-		status   int
-	}{
-		{map[key]string{userName: testUser}, http.StatusForbidden},
-		{map[key]string{}, http.StatusUnauthorized},
-	}
-
 	ts := getStorer()
 	defer ts.disconnect()
 
 	b := bytes.NewBuffer([]byte(`{"this won't get processed": true}`))
 
 	for _, method := range methodsToTest {
-		for _, test := range tests {
+		for _, test := range contextTests {
 			ctx := testingContext()
 
 			for k, v := range test.contexts {
