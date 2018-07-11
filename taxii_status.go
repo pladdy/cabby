@@ -5,6 +5,8 @@ import (
 	"net/http"
 )
 
+const statusComplete = "complete"
+
 /* handler */
 
 func handleTaxiiStatus(ts taxiiStorer) http.HandlerFunc {
@@ -62,6 +64,13 @@ func (s *taxiiStatus) create(ts taxiiStorer) error {
 		[]interface{}{s.ID, s.Status, s.TotalCount, s.SuccessCount, s.FailureCount, s.PendingCount})
 
 	return err
+}
+
+func (s *taxiiStatus) completed() bool {
+	if s.Status == statusComplete {
+		return true
+	}
+	return false
 }
 
 func (s *taxiiStatus) read(ts taxiiStorer) error {

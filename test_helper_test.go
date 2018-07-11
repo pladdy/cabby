@@ -268,7 +268,7 @@ func waitForCompletion(status taxiiStatus) (err error) {
 
 	for i := 1; i <= attempts; i++ {
 		status.read(ts)
-		if status.Status != "complete" {
+		if !status.completed() {
 			info.Println("Waiting for status to be complete")
 			time.Sleep(time.Duration(i*pause) * time.Millisecond)
 		}

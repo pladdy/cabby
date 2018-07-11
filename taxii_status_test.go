@@ -76,9 +76,25 @@ func TestHandleTaxiiStatusReadFail(t *testing.T) {
 	}
 }
 
-func TestNewStatusFail(t *testing.T) {
+func TestNewTaxiiStatusFail(t *testing.T) {
 	_, err := newTaxiiStatus(0)
 	if err == nil {
 		t.Error("Expected an error")
+	}
+}
+
+func TestTaxiiStatusCompleted(t *testing.T) {
+	tests := []struct {
+		status   taxiiStatus
+		expected bool
+	}{
+		{taxiiStatus{Status: "complete"}, true},
+		{taxiiStatus{Status: "pending"}, false},
+	}
+
+	for _, test := range tests {
+		if test.status.completed() != test.expected {
+			t.Error("Got:", test.status.completed(), "Expected:", test.expected)
+		}
 	}
 }
