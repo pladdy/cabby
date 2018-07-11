@@ -44,7 +44,7 @@ func TestHandleTaxiiManifestAddedAfter(t *testing.T) {
 	defer ts.disconnect()
 
 	u := "https://localhost/api_root/collections/" + testCollectionID + "/manifest/"
-	tm := slowlyPosLasttBundle()
+	tm := slowlyPostLastBundle()
 	u = u + "?added_after=" + tm.Format(time.RFC3339Nano)
 
 	status, body := handlerTest(handleTaxiiManifest(ts), "GET", u, nil)

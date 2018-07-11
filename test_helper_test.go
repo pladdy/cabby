@@ -223,7 +223,7 @@ func setupSQLite() {
 }
 
 // slowly post some bundles, but post the last one after a pause; useful for testing added_after parameter
-func slowlyPosLasttBundle() (tm time.Time) {
+func slowlyPostLastBundle() (tm time.Time) {
 	pause := 250 * time.Millisecond
 
 	for i := range []int{0, 1, 2} {
