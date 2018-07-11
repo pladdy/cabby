@@ -1,3 +1,5 @@
+// a lot of these tests are duplicative, but i'm doing that in the hope that it's more clear
+// what's being tested.  that might be a dumb idea and instead there should be DRY'er tests below
 package main
 
 import (
@@ -14,6 +16,8 @@ import (
 )
 
 var methodsToTest = []string{"DELETE", "POST", "PUT"}
+
+/* api root tests */
 
 func TestHandleAdminTaxiiAPIRootInvalidMethod(t *testing.T) {
 	ts := getStorer()
@@ -66,7 +70,7 @@ func TestHandleAdminTaxiiAPIRoot(t *testing.T) {
 			}
 
 			if title != test.title {
-				t.Error("Got:", title, "Expected:", test.title)
+				t.Error("Got:", title, "Expected:", test.title, "Method:", test.method)
 			}
 		}
 	}
@@ -188,6 +192,139 @@ func TestHandleAdminTaxiiAPIRootFailServer(t *testing.T) {
 
 		b := bytes.NewBuffer([]byte(`{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`))
 		status, _ := handlerTest(handleAdminTaxiiAPIRoot(ts, handler), method, testAdminAPIRootURL, b)
+
+		if status != http.StatusInternalServerError {
+			t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
+		}
+	}
+}
+
+/* collections */
+
+func TestHandleAdminTaxiiCollectionsInvalidMethod(t *testing.T) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	req := httptest.NewRequest("CUSTOM", testAdminCollectionsURL, nil)
+	res := httptest.NewRecorder()
+	handleAdminTaxiiCollections(ts)(res, req)
+
+	if res.Code != http.StatusMethodNotAllowed {
+		t.Error("Got:", res.Code, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
+func TestHandleAdminTaxiiCollections(t *testing.T) {
+	setupSQLite()
+	basePayload := `{"id": "cd9552e7-fb5d-4628-a724-0772ed51200c", "api_root_path": "`
+
+	tests := []struct {
+		method  string
+		payload string
+		title   string
+	}{
+		{method: "DELETE", payload: basePayload + t.Name() + `", "title": "` + t.Name() + `"}`, title: ""},
+		{method: "POST", payload: basePayload + t.Name() + `", "title": "` + t.Name() + `"}`, title: t.Name()},
+		{method: "PUT", payload: basePayload + t.Name() + `", "title": "` + "updated" + `"}`, title: "updated"},
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	for _, test := range tests {
+		b := bytes.NewBuffer([]byte(test.payload))
+		status, _ := handlerTest(handleAdminTaxiiCollections(ts), test.method, testAdminCollectionsURL, b)
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+
+		if test.title != "" {
+			var title string
+			err := s.db.QueryRow("select title from taxii_collection where api_root_path = '" + t.Name() + "'").Scan(&title)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if title != test.title {
+				t.Error("Got:", title, "Expected:", test.title, "Method:", test.method)
+			}
+		}
+	}
+}
+
+func TestHandleAdminTaxiiCollectionsFailAuth(t *testing.T) {
+	setupSQLite()
+
+	tests := []struct {
+		contexts map[key]string
+		status   int
+	}{
+		{map[key]string{userName: testUser}, http.StatusForbidden},
+		{map[key]string{}, http.StatusUnauthorized},
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	b := bytes.NewBuffer([]byte(`{"this won't get processed": true}`))
+
+	for _, method := range methodsToTest {
+		for _, test := range tests {
+			ctx := testingContext()
+
+			for k, v := range test.contexts {
+				ctx = context.WithValue(ctx, k, v)
+			}
+
+			req := httptest.NewRequest(method, testAdminCollectionsURL, b)
+			req = req.WithContext(ctx)
+			res := httptest.NewRecorder()
+			handleAdminTaxiiCollections(ts)(res, req)
+
+			if res.Code != test.status {
+				t.Error("Got:", res.Code, "Expected:", test.status)
+			}
+		}
+	}
+}
+
+func TestHandleAdminTaxiiCollectionsFailData(t *testing.T) {
+	setupSQLite()
+
+	for _, method := range methodsToTest {
+		ts := getStorer()
+		defer ts.disconnect()
+
+		b := bytes.NewBuffer([]byte(`{"pa"` + t.Name() + `", "title": "` + t.Name() + `"}`))
+		status, _ := handlerTest(handleAdminTaxiiCollections(ts), method, testAdminCollectionsURL, b)
+
+		if status != http.StatusBadRequest {
+			t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+		}
+	}
+}
+
+func TestHandleAdminTaxiiCollectionsFailServer(t *testing.T) {
+	for _, method := range methodsToTest {
+		setupSQLite()
+
+		s := getSQLiteDB()
+		defer s.disconnect()
+
+		_, err := s.db.Exec("drop table taxii_collection")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ts := getStorer()
+		defer ts.disconnect()
+
+		b := bytes.NewBuffer([]byte(`{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`))
+		status, _ := handlerTest(handleAdminTaxiiCollections(ts), method, testAdminCollectionsURL, b)
 
 		if status != http.StatusInternalServerError {
 			t.Error("Got:", status, "Expected:", http.StatusInternalServerError)

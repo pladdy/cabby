@@ -52,7 +52,8 @@ var statements = map[string]map[string]string{
 		"taxiiUserPass": `insert into taxii_user_pass (email, pass) values (?, ?)`,
 	},
 	"delete": map[string]string{
-		"taxiiAPIRoot": `delete from taxii_api_root where api_root_path = ?`,
+		"taxiiAPIRoot":    `delete from taxii_api_root where api_root_path = ?`,
+		"taxiiCollection": `delete from taxii_collection where id = ?`,
 	},
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
@@ -142,6 +143,9 @@ var statements = map[string]map[string]string{
 									where tu.email = ? and tup.pass = ?`,
 	},
 	"update": map[string]string{
+		"taxiiCollection": `update taxii_collection
+		                    set id = ?, api_root_path = ?, title = ?, description = ?
+		                    where id = ?`,
 		"taxiiStatus": `update taxii_status
 		                set status = ?, total_count = ?, success_count = ?, failure_count = ?, pending_count = ?
 		                where id = ?`,

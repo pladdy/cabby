@@ -98,6 +98,15 @@ func (t *taxiiRange) String() string {
 	return s
 }
 
+/* request helpers */
+
+func requestMethodIsGet(r *http.Request) bool {
+	if r.Method == http.MethodGet {
+		return true
+	}
+	return false
+}
+
 func takeAddedAfter(r *http.Request) string {
 	af := r.URL.Query()["added_after"]
 
@@ -175,12 +184,12 @@ func takeStixTypes(r *http.Request) []string {
 	return []string{}
 }
 
-func takeUser(r *http.Request) bool {
-	_, ok := r.Context().Value(userName).(string)
+func takeUser(r *http.Request) string {
+	user, ok := r.Context().Value(userName).(string)
 	if !ok {
-		return false
+		return ""
 	}
-	return true
+	return user
 }
 
 func takeVersion(r *http.Request) string {
@@ -190,6 +199,14 @@ func takeVersion(r *http.Request) string {
 		return v[0]
 	}
 	return ""
+}
+
+func userExists(r *http.Request) bool {
+	_, ok := r.Context().Value(userName).(string)
+	if !ok {
+		return false
+	}
+	return true
 }
 
 func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {

@@ -1,10 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -15,45 +12,37 @@ func handleTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
-		switch r.Method {
-		case http.MethodGet:
-			handleGetTaxiiCollections(ts, w, r)
-		case http.MethodPost:
-			handlePostTaxiiCollection(ts, w, r)
-		default:
+		if !requestMethodIsGet(r) {
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 			return
 		}
+
+		if !userExists(r) {
+			unauthorized(w, errors.New("No user specified"))
+			return
+		}
+
+		tr, err := newTaxiiRange(r.Header.Get("Range"))
+		if err != nil {
+			rangeNotSatisfiable(w, err)
+			return
+		}
+		r = withTaxiiRange(r, tr)
+
+		result, err := getTaxiiCollections(ts, r, takeUser(r))
+		if err != nil {
+			resourceNotFound(w, err)
+			return
+		}
+
+		if tr.Valid() {
+			tr.total = result.items
+			w.Header().Set("Content-Range", tr.String())
+			writePartialContent(w, taxiiContentType, resourceToJSON(result.data))
+		} else {
+			writeContent(w, taxiiContentType, resourceToJSON(result.data))
+		}
 	})
-}
-
-func handleGetTaxiiCollections(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value(userName).(string)
-	if !ok {
-		unauthorized(w, errors.New("Invalid user specified"))
-		return
-	}
-
-	tr, err := newTaxiiRange(r.Header.Get("Range"))
-	if err != nil {
-		rangeNotSatisfiable(w, err)
-		return
-	}
-	r = withTaxiiRange(r, tr)
-
-	result, err := getTaxiiCollections(ts, r, user)
-	if err != nil {
-		resourceNotFound(w, err)
-		return
-	}
-
-	if tr.Valid() {
-		tr.total = result.items
-		w.Header().Set("Content-Range", tr.String())
-		writePartialContent(w, taxiiContentType, resourceToJSON(result.data))
-	} else {
-		writeContent(w, taxiiContentType, resourceToJSON(result.data))
-	}
 }
 
 func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
@@ -61,53 +50,6 @@ func getTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiRes
 		return readTaxiiCollections(ts, r, user)
 	}
 	return readTaxiiCollection(ts, r, user)
-}
-
-func taxiiCollectionFromBytes(b []byte) (taxiiCollection, error) {
-	var tc taxiiCollection
-
-	err := json.Unmarshal(b, &tc)
-	if err != nil {
-		return tc, fmt.Errorf("Invalid data to POST, error: %v", err)
-	}
-
-	err = tc.ensureID()
-	if err != nil {
-		return tc, err
-	}
-	tc.CanRead = true
-	tc.CanWrite = true
-
-	return tc, err
-}
-
-func handlePostTaxiiCollection(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		badRequest(w, err)
-		return
-	}
-	defer r.Body.Close()
-
-	tc, err := taxiiCollectionFromBytes(body)
-	if err != nil {
-		badRequest(w, err)
-		return
-	}
-
-	user, ok := r.Context().Value(userName).(string)
-	if !ok {
-		unauthorized(w, errors.New("No user specified"))
-		return
-	}
-
-	err = tc.create(ts, user, getAPIRoot(r.URL.Path))
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-
-	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
 func readTaxiiCollection(ts taxiiStorer, r *http.Request, user string) (taxiiResult, error) {
@@ -149,6 +91,7 @@ func readTaxiiCollections(ts taxiiStorer, r *http.Request, user string) (taxiiRe
 /* models */
 
 type taxiiCollection struct {
+	APIRootPath string   `json:"api_root_path,omitempty"`
 	ID          taxiiID  `json:"id"`
 	CanRead     bool     `json:"can_read"`
 	CanWrite    bool     `json:"can_write"`
@@ -192,6 +135,10 @@ func (tc *taxiiCollection) create(ts taxiiStorer, user, apiRoot string) error {
 	return err
 }
 
+func (tc *taxiiCollection) delete(ts taxiiStorer) error {
+	return ts.delete("taxiiCollection", []interface{}{tc.ID.String()})
+}
+
 func (tc *taxiiCollection) ensureID() error {
 	var err error
 	if tc.ID.isEmpty() {
@@ -213,6 +160,11 @@ func (tc *taxiiCollection) read(ts taxiiStorer, u string) (taxiiResult, error) {
 	*tc = collection
 
 	return result, err
+}
+
+func (tc *taxiiCollection) update(ts taxiiStorer) error {
+	return ts.update("taxiiCollection",
+		[]interface{}{tc.ID.String(), tc.APIRootPath, tc.Title, tc.Description, tc.ID.String()})
 }
 
 func firstTaxiiCollection(tcs taxiiCollections) taxiiCollection {
