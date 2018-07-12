@@ -277,7 +277,7 @@ func TestHandleTaxiiObjectsGetAddedAfter(t *testing.T) {
 	defer ts.disconnect()
 
 	maxContent := int64(2048)
-	tm := slowlyPostBundle()
+	tm := slowlyPostLastBundle()
 	u := objectsURL() + "?added_after=" + tm.Format(time.RFC3339Nano)
 
 	status, body := attemptHandlerTest(handleTaxiiObjects(ts, maxContent), "GET", u, nil)

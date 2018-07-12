@@ -41,10 +41,11 @@ var (
 	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 
 	// test globals
-	testAdminURL        = testHost + testAdminPath + "/"
-	testAdminAPIRootURL = testHost + testAdminPath + "/" + "api_root"
-	testAPIRootURL      = testHost + testAPIRootPath + "/"
-	testAPIRoot         = taxiiAPIRoot{Path: testAPIRootPath,
+	testAdminURL            = testHost + testAdminPath + "/"
+	testAdminAPIRootURL     = testHost + testAdminPath + "/" + "api_root"
+	testAdminCollectionsURL = testHost + testAdminPath + "/" + "collections"
+	testAPIRootURL          = testHost + testAPIRootPath + "/"
+	testAPIRoot             = taxiiAPIRoot{Path: testAPIRootPath,
 		Title:            "test api root",
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
@@ -61,9 +62,9 @@ var (
 // attemptHandlerTest attempts a handler test by trying it up to maxTries times
 func attemptHandlerTest(hf http.HandlerFunc, method, u string, b *bytes.Buffer) (int, string) {
 	status, body := handlerTest(hf, method, u, b)
-	maxTries := 3
+	attempts := 3
 
-	for i := 1; i <= maxTries; i++ {
+	for i := 1; i <= attempts; i++ {
 		if status == http.StatusOK {
 			break
 		}
@@ -160,8 +161,8 @@ func postBundle(u, bundlePath string) (string, error) {
 	b := bytes.NewBuffer(bundleContent)
 	status, body := handlerTest(handleTaxiiObjects(ts, maxContent), "POST", u, b)
 
-	if status != http.StatusOK {
-		fail.Println("Failed to post bundle")
+	if !statusOkay(status) {
+		fail.Println("Failed to post bundle", "Status:", status, "Body:", string(body))
 	}
 
 	var returnedStatus taxiiStatus
@@ -170,8 +171,7 @@ func postBundle(u, bundlePath string) (string, error) {
 		return "", err
 	}
 
-	// give time for bundle to be persisted; handler returns a status object, bundle gets processed
-	time.Sleep(250 * time.Millisecond)
+	waitForCompletion(returnedStatus)
 	return returnedStatus.ID.String(), err
 }
 
@@ -222,20 +222,26 @@ func setupSQLite() {
 	createCollection(ts, testCollectionID)
 }
 
-// slowly post the malware bundle test files; used for pull back objects that are added after
-// the returned time (which is just before the last bundle is posted to the server
-func slowlyPostBundle() (tm time.Time) {
+// slowly post some bundles, but post the last one after a pause; useful for testing added_after parameter
+func slowlyPostLastBundle() (tm time.Time) {
+	pause := 250 * time.Millisecond
+
 	for i := range []int{0, 1, 2} {
 		info.Printf("posting bundle...%v\n", i)
-
-		tm = time.Now().In(time.UTC)
-
-		// pause for effect
-		time.Sleep(100 * time.Millisecond)
-
+		if i == 2 {
+			tm = time.Now().In(time.UTC)
+			time.Sleep(pause)
+		}
 		postBundle(objectsURL(), fmt.Sprintf("testdata/added_after_%v.json", i))
 	}
 	return
+}
+
+func statusOkay(status int) bool {
+	if status == http.StatusOK || status == http.StatusAccepted {
+		return true
+	}
+	return false
 }
 
 func tearDownSQLite() {
@@ -251,6 +257,23 @@ func testingContext() context.Context {
 	return context.WithValue(context.Background(),
 		userCollections,
 		map[taxiiID]taxiiCollectionAccess{tid: taxiiCollectionAccess{ID: tid, CanRead: true, CanWrite: true}})
+}
+
+func waitForCompletion(status taxiiStatus) (err error) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	attempts := 3
+	pause := 100
+
+	for i := 1; i <= attempts; i++ {
+		status.read(ts)
+		if !status.completed() {
+			info.Println("Waiting for status to be complete")
+			time.Sleep(time.Duration(i*pause) * time.Millisecond)
+		}
+	}
+	return
 }
 
 // create a context for the testUser and give it read/write access to the test collection

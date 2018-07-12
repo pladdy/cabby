@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -22,82 +20,11 @@ func collectionsURL() string {
 	return u.String()
 }
 
-func TestHandleTaxiiCollectionsPost(t *testing.T) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
-
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected:", http.StatusOK)
-	}
-
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	var title string
-	err := s.db.QueryRow("select title from taxii_collection where title = '" + t.Name() + "'").Scan(&title)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if title != t.Name() {
-		t.Error("Got:", title, "Expected:", t.Name())
-	}
-}
-
-func TestHandleTaxiiCollectionsPostCreateFail(t *testing.T) {
-	defer setupSQLite()
-
-	// remove required table
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.db.Exec("drop table taxii_collection")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	ts := getStorer()
-	defer ts.disconnect()
-
-	// test a post which should fail
-	b := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), b)
-
-	if status != http.StatusInternalServerError {
-		t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
-	}
-}
-
-func TestHandleTaxiiCollectionsPostBadID(t *testing.T) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	status, _ := handlerTest(handleTaxiiCollections(ts), "POST", collectionsURL(), nil)
-
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
-	}
-
-	// verify no record exists
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	var title string
-	err := s.db.QueryRow("select id from taxii_collection where id = 'fail'").Scan(&title)
-	if err == nil {
-		t.Fatal("Should be no record created")
-	}
-}
-
 func TestHandleTaxiiCollectionsMethods(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected int
 	}{
-		{"POST", http.StatusBadRequest},
 		{"CUSTOM", http.StatusMethodNotAllowed},
 	}
 
@@ -113,36 +40,6 @@ func TestHandleTaxiiCollectionsMethods(t *testing.T) {
 		if res.Code != test.expected {
 			t.Error("Got:", res.Code, "Expected:", test.expected, "for method:", test.method)
 		}
-	}
-}
-
-func TestHandleTaxiiCollectionsPostNoUser(t *testing.T) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	// set up a request with some data
-	data := bytes.NewBuffer([]byte(`{"title":"` + t.Name() + `"}`))
-	req := httptest.NewRequest("POST", collectionsURL(), data)
-
-	// update context to a fake user
-	ctx := context.WithValue(context.Background(), userName, nil)
-	req = req.WithContext(ctx)
-
-	// record response
-	res := httptest.NewRecorder()
-	h := handleTaxiiCollections(ts)
-	h(res, req)
-
-	byteBody, _ := ioutil.ReadAll(res.Body)
-	status, body := res.Code, string(byteBody)
-
-	expected := `{"title":"Unauthorized","description":"No user specified","http_status":"401"}`
-
-	if status != http.StatusUnauthorized {
-		t.Error("Got:", status, "Expected:", http.StatusUnauthorized)
-	}
-	if body != expected {
-		t.Error("Got:", body, "Expected:", expected)
 	}
 }
 
@@ -336,16 +233,6 @@ func TestHandleTaxiiCollectionsGetNoResults(t *testing.T) {
 	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", collectionsURL(), nil)
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
-	}
-}
-
-func TestReadTaxiiCollection(t *testing.T) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	status, _ := handlerTest(handleTaxiiCollections(ts), "GET", testCollectionURL, nil)
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 }
 

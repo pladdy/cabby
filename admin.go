@@ -9,7 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-/* handlers */
+/* api root handlers */
 
 func handleAdminTaxiiAPIRoot(ts taxiiStorer, h *http.ServeMux) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,6 +90,86 @@ func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, r *http.R
 	writeContent(w, taxiiContentType, resourceToJSON(tar))
 }
 
+/* collection handlers */
+
+func handleAdminTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiCollectionsDelete(ts, w, r)
+		case http.MethodPost:
+			handleAdminTaxiiCollectionsPost(ts, w, r)
+		case http.MethodPut:
+			handleAdminTaxiiCollectionsPut(ts, w, r)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiCollectionsDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tc, err := bodyToCollection(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tc.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted": "`+tc.ID.String()+`"}`)
+}
+
+func handleAdminTaxiiCollectionsPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tc, err := bodyToCollection(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tc.create(ts, takeUser(r), tc.APIRootPath)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tc))
+}
+
+func handleAdminTaxiiCollectionsPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tc, err := bodyToCollection(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tc.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tc))
+}
+
 /* helpers */
 
 func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
@@ -103,20 +183,40 @@ func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
 }
 
 func bodyToAPIRoot(r *http.Request) (taxiiAPIRoot, error) {
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := takeBody(r)
+	var resource taxiiAPIRoot
+	err = json.Unmarshal(body, &resource)
+	return resource, err
+}
+
+func bodyToCollection(r *http.Request) (taxiiCollection, error) {
+	body, err := takeBody(r)
+
+	var resource taxiiCollection
+
+	err = json.Unmarshal(body, &resource)
 	if err != nil {
-		return taxiiAPIRoot{}, err
+		return resource, err
 	}
+
+	err = resource.ensureID()
+	if err != nil {
+		return resource, err
+	}
+	resource.CanRead = true
+	resource.CanWrite = true
+
+	return resource, err
+}
+
+func takeBody(r *http.Request) ([]byte, error) {
+	body, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
-
-	var tar taxiiAPIRoot
-
-	err = json.Unmarshal(body, &tar)
-	return tar, err
+	return body, err
 }
 
 func userIsAuthorized(w http.ResponseWriter, r *http.Request) bool {
-	if !takeUser(r) {
+	if !userExists(r) {
 		unauthorized(w, errors.New("No user specified"))
 		return false
 	}

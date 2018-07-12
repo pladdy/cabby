@@ -135,10 +135,11 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 1-1' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-#### Create a collection in API Root
+#### Create a collection in API Root (Admin functionality)
 Let the server assign an ID:
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/collections/' -d '{
+  "api_root_path": "cabby_test_root",
   "title": "a collection"
 }' | jq .
 ```
@@ -151,9 +152,10 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-#### Create a collection with an ID in API Root
+#### Create a collection with an ID (Admin functionality)
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/collections/' -d '{
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/collections/' -d '{
+  "api_root_path": "cabby_test_root",
   "title": "another collection",
   "id": "411abc04-a474-4e22-9f4d-944ca508e68c"
 }' | jq .
@@ -162,9 +164,41 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 Check it:
 ```sh
 # with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' && echo
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' && echo
 # parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
+```
+
+#### Update Collection (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/collections/' -d '{
+  "api_root_path": "cabby_test_root",
+  "title": "a better titled collection",
+  "id": "411abc04-a474-4e22-9f4d-944ca508e68c"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
+```
+
+#### Delete Collection (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/collections/' -d '{
+  "id": "411abc04-a474-4e22-9f4d-944ca508e68c"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
 ```
 
 #### Add Objects
@@ -178,7 +212,7 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+js
 #### Check status
 From the above POST, you get a status object.  You can query it from the server
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/cabby_test_root/status/191cd890-2a12-4672-9a87-7c846d837119/' | jq .
+ID=<id here> curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST "https://localhost:1234/cabby_test_root/status/${ID}/" | jq .
 ```
 
 #### View Objects
