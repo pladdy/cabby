@@ -52,11 +52,12 @@ brew install jq
 
 Set up the DB for dev/test:
 `make dev-db`
+The user set up with `make dev-db` is an admin (so it can do admin things like create/update/delete certain resources).
 
 In another terminal, run a server:
 `make run`
 
-#### View TAXII Root
+#### View TAXII Discovery
 ```sh
 # with headers
 curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
@@ -64,6 +65,55 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 # without a trailing slash
 curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
+```
+
+#### Delete TAXII Discovery (Admin Functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/discovery/' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+#### Create TAXII Discovery (Admin Functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/discovery/' -d '{
+  "title": "a local taxii 2 server",
+  "description": "this is a test taxii2 server written in golang",
+  "contact": "github.com/pladdy",
+  "default": "https://localhost:1234/taxii/"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+#### Update TAXII Discovery (Admin Functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/discovery/' -d '{
+  "title": "a local taxii 2 server, updated",
+  "description": "this is a test taxii2 server written in golang, updated",
+  "contact": "github.com/pladdy",
+  "default": "https://localhost:1234/taxii/"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 ```
 
 #### View API Root
@@ -75,8 +125,6 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 ```
 
 #### Create API Root (Admin functionality)
-The user set up with `make dev-db` is an admin.
-
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/api_root/' -d '{
   "path": "my_api_root", "title": "my api root"

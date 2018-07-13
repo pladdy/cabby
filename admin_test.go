@@ -410,8 +410,9 @@ func TestHandleAdminTaxiiDiscoveryFailAuth(t *testing.T) {
 
 func TestHandleAdminTaxiiDiscoveryFailData(t *testing.T) {
 	setupSQLite()
+	methods := []string{"PUT", "POST"}
 
-	for _, method := range methodsToTest {
+	for _, method := range methods {
 		ts := getStorer()
 		defer ts.disconnect()
 
@@ -421,6 +422,27 @@ func TestHandleAdminTaxiiDiscoveryFailData(t *testing.T) {
 		if status != http.StatusBadRequest {
 			t.Error("Got:", status, "Expected:", http.StatusBadRequest)
 		}
+	}
+}
+
+func TestHandleAdminTaxiiDiscoveryDeleteFail(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec(`drop table taxii_discovery`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	status, _ := handlerTest(handleAdminTaxiiDiscovery(ts), "DELETE", testAdminDiscoveryURL, nil)
+
+	if status != http.StatusInternalServerError {
+		t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
 	}
 }
 

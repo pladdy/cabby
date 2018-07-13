@@ -195,19 +195,14 @@ func handleAdminTaxiiDiscoveryDelete(ts taxiiStorer, w http.ResponseWriter, r *h
 		return
 	}
 
-	td, err := bodyToDiscovery(r)
-	if err != nil {
-		badRequest(w, err)
-		return
-	}
-
-	err = td.delete(ts)
+	td := taxiiDiscovery{}
+	err := td.delete(ts)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
-	writeContent(w, jsonContentType, `{"deleted": "`+td.Title+`"}`)
+	writeContent(w, jsonContentType, `{"deleted": "discovery"}`)
 }
 
 func handleAdminTaxiiDiscoveryPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {

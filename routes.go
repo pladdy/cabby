@@ -67,6 +67,7 @@ func setupRouteHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 
 	registerRoute(handler, "admin/api_root", withAcceptTaxii(handleAdminTaxiiAPIRoot(ts, handler)))
 	registerRoute(handler, "admin/collections", withAcceptTaxii(handleAdminTaxiiCollections(ts)))
+	registerRoute(handler, "admin/discovery", withAcceptTaxii(handleAdminTaxiiDiscovery(ts)))
 	registerRoute(handler, "taxii", withAcceptTaxii(handleTaxiiDiscovery(ts, port)))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err
