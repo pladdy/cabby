@@ -44,6 +44,7 @@ var (
 	testAdminURL            = testHost + testAdminPath + "/"
 	testAdminAPIRootURL     = testHost + testAdminPath + "/" + "api_root"
 	testAdminCollectionsURL = testHost + testAdminPath + "/" + "collections"
+	testAdminDiscoveryURL   = testHost + testAdminPath + "/" + "discovery"
 	testAPIRootURL          = testHost + testAPIRootPath + "/"
 	testAPIRoot             = taxiiAPIRoot{Path: testAPIRootPath,
 		Title:            "test api root",

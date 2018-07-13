@@ -65,8 +65,11 @@ type taxiiDiscovery struct {
 }
 
 func (td *taxiiDiscovery) create(ts taxiiStorer) error {
-	err := createResource(ts, "taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
-	return err
+	return createResource(ts, "taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
+}
+
+func (td *taxiiDiscovery) delete(ts taxiiStorer) error {
+	return ts.delete("taxiiDiscovery", []interface{}{})
 }
 
 func (td *taxiiDiscovery) read(ts taxiiStorer) error {
@@ -80,4 +83,8 @@ func (td *taxiiDiscovery) read(ts taxiiStorer) error {
 
 	*td = discovery
 	return err
+}
+
+func (td *taxiiDiscovery) update(ts taxiiStorer) error {
+	return ts.update("taxiiDiscovery", []interface{}{td.Title, td.Description, td.Contact, td.Default})
 }

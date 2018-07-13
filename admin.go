@@ -170,6 +170,81 @@ func handleAdminTaxiiCollectionsPut(ts taxiiStorer, w http.ResponseWriter, r *ht
 	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
+/* discovery handlers */
+
+func handleAdminTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiDiscoveryDelete(ts, w, r)
+		case http.MethodPost:
+			handleAdminTaxiiDiscoveryPost(ts, w, r)
+		case http.MethodPut:
+			handleAdminTaxiiDiscoveryPut(ts, w, r)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiDiscoveryDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	td := taxiiDiscovery{}
+	err := td.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted": "discovery"}`)
+}
+
+func handleAdminTaxiiDiscoveryPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	td, err := bodyToDiscovery(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = td.create(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(td))
+}
+
+func handleAdminTaxiiDiscoveryPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	td, err := bodyToDiscovery(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = td.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(td))
+}
+
 /* helpers */
 
 func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
@@ -193,7 +268,6 @@ func bodyToCollection(r *http.Request) (taxiiCollection, error) {
 	body, err := takeBody(r)
 
 	var resource taxiiCollection
-
 	err = json.Unmarshal(body, &resource)
 	if err != nil {
 		return resource, err
@@ -206,6 +280,13 @@ func bodyToCollection(r *http.Request) (taxiiCollection, error) {
 	resource.CanRead = true
 	resource.CanWrite = true
 
+	return resource, err
+}
+
+func bodyToDiscovery(r *http.Request) (taxiiDiscovery, error) {
+	body, err := takeBody(r)
+	var resource taxiiDiscovery
+	err = json.Unmarshal(body, &resource)
 	return resource, err
 }
 
