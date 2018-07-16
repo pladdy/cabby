@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -45,6 +44,7 @@ var (
 	testAdminAPIRootURL     = testHost + testAdminPath + "/" + "api_root"
 	testAdminCollectionsURL = testHost + testAdminPath + "/" + "collections"
 	testAdminDiscoveryURL   = testHost + testAdminPath + "/" + "discovery"
+	testAdminUserURL        = testHost + testAdminPath + "/" + "user"
 	testAPIRootURL          = testHost + testAPIRootPath + "/"
 	testAPIRoot             = taxiiAPIRoot{Path: testAPIRootPath,
 		Title:            "test api root",
@@ -106,7 +106,10 @@ func createDiscovery(testStorer taxiiStorer) {
 
 func createUser(testStorer taxiiStorer) {
 	tu := taxiiUser{Email: testUser, CanAdmin: true}
-	err := tu.create(testStorer, fmt.Sprintf("%x", sha256.Sum256([]byte(testPass))))
+	err := tu.create(testStorer)
+
+	tup := taxiiUserPass{Email: testUser, Pass: testPass}
+	err = tup.create(testStorer)
 	if err != nil {
 		fail.Fatal(err)
 	}
@@ -256,7 +259,7 @@ func testingContext() context.Context {
 	}
 
 	return context.WithValue(context.Background(),
-		userCollections,
+		userCollectionList,
 		map[taxiiID]taxiiCollectionAccess{tid: taxiiCollectionAccess{ID: tid, CanRead: true, CanWrite: true}})
 }
 

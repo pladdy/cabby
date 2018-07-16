@@ -469,3 +469,155 @@ func TestHandleAdminTaxiiDiscoveryFailServer(t *testing.T) {
 		}
 	}
 }
+
+/* user */
+
+func TestHandleAdminTaxiiUserInvalidMethod(t *testing.T) {
+	ts := getStorer()
+	defer ts.disconnect()
+
+	req := httptest.NewRequest("CUSTOM", testAdminUserURL, nil)
+	res := httptest.NewRecorder()
+	handleAdminTaxiiUser(ts)(res, req)
+
+	if res.Code != http.StatusMethodNotAllowed {
+		t.Error("Got:", res.Code, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
+func TestHandleAdminTaxiiUser(t *testing.T) {
+	setupSQLite()
+
+	tests := []struct {
+		method   string
+		payload  string
+		email    string
+		canAdmin bool
+	}{
+		{method: "DELETE", payload: `{"email": "` + testUser + `"}`, email: "", canAdmin: false},
+		{method: "POST", payload: `{"email": "` + testUser + `"}`, email: testUser, canAdmin: false},
+		{method: "PUT", payload: `{"email": "` + testUser + `", "can_admin": true}`, email: testUser, canAdmin: true},
+	}
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	for _, test := range tests {
+		b := bytes.NewBuffer([]byte(test.payload))
+		status, _ := handlerTest(handleAdminTaxiiUser(ts), test.method, testAdminUserURL, b)
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK, "Method:", test.method)
+		}
+
+		if test.email != "" {
+			var email string
+			var canAdmin bool
+
+			err := s.db.QueryRow("select email, can_admin from taxii_user").Scan(&email, &canAdmin)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if email != test.email {
+				t.Error("Got:", email, "Expected:", test.email, "Method:", test.method)
+			}
+			if canAdmin != test.canAdmin {
+				t.Error("Got:", canAdmin, "Expected:", test.canAdmin, "Method:", test.method)
+			}
+		}
+	}
+}
+
+func TestHandleAdminTaxiiUserFailAuth(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	b := bytes.NewBuffer([]byte(`{"this won't get processed": true}`))
+
+	for _, method := range methodsToTest {
+		for _, test := range contextTests {
+			ctx := testingContext()
+
+			for k, v := range test.contexts {
+				ctx = context.WithValue(ctx, k, v)
+			}
+
+			req := httptest.NewRequest(method, testAdminUserURL, b)
+			req = req.WithContext(ctx)
+			res := httptest.NewRecorder()
+			handleAdminTaxiiUser(ts)(res, req)
+
+			if res.Code != test.status {
+				t.Error("Got:", res.Code, "Expected:", test.status)
+			}
+		}
+	}
+}
+
+func TestHandleAdminTaxiiUserFailData(t *testing.T) {
+	setupSQLite()
+
+	for _, method := range methodsToTest {
+		ts := getStorer()
+		defer ts.disconnect()
+
+		b := bytes.NewBuffer([]byte(`{"pa"` + t.Name()))
+		status, _ := handlerTest(handleAdminTaxiiUser(ts), method, testAdminUserURL, b)
+
+		if status != http.StatusBadRequest {
+			t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+		}
+	}
+}
+
+func TestHandleAdminTaxiiUserDeleteFail(t *testing.T) {
+	setupSQLite()
+
+	ts := getStorer()
+	defer ts.disconnect()
+
+	s := getSQLiteDB()
+	defer s.disconnect()
+
+	_, err := s.db.Exec(`drop table taxii_user`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b := bytes.NewBuffer([]byte(`{"email": "` + testUser + `"}`))
+	status, _ := handlerTest(handleAdminTaxiiUser(ts), "DELETE", testAdminUserURL, b)
+
+	if status != http.StatusInternalServerError {
+		t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
+	}
+}
+
+func TestHandleAdminTaxiiUserFailServer(t *testing.T) {
+	for _, method := range methodsToTest {
+		setupSQLite()
+
+		s := getSQLiteDB()
+		defer s.disconnect()
+
+		_, err := s.db.Exec("drop table taxii_user")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		ts := getStorer()
+		defer ts.disconnect()
+
+		b := bytes.NewBuffer([]byte(`{"path": "` + t.Name() + `", "title": "` + t.Name() + `"}`))
+		status, _ := handlerTest(handleAdminTaxiiUser(ts), method, testAdminUserURL, b)
+
+		if status != http.StatusInternalServerError {
+			t.Error("Got:", status, "Expected:", http.StatusInternalServerError)
+		}
+	}
+}

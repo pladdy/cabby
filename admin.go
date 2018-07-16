@@ -245,6 +245,88 @@ func handleAdminTaxiiDiscoveryPut(ts taxiiStorer, w http.ResponseWriter, r *http
 	writeContent(w, taxiiContentType, resourceToJSON(td))
 }
 
+/* user */
+
+func handleAdminTaxiiUser(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiUserDelete(ts, w, r)
+		case http.MethodPost:
+			handleAdminTaxiiUserPost(ts, w, r)
+		case http.MethodPut:
+			handleAdminTaxiiUserPut(ts, w, r)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiUserDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tu, err := bodyToUser(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted":`+tu.Email+`}`)
+}
+
+func handleAdminTaxiiUserPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tu, err := bodyToUser(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.create(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tu))
+}
+
+func handleAdminTaxiiUserPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
+	if !userIsAuthorized(w, r) {
+		return
+	}
+
+	tu, err := bodyToUser(r)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tu))
+}
+
+/* user collection */
+
 /* helpers */
 
 func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
@@ -286,6 +368,13 @@ func bodyToCollection(r *http.Request) (taxiiCollection, error) {
 func bodyToDiscovery(r *http.Request) (taxiiDiscovery, error) {
 	body, err := takeBody(r)
 	var resource taxiiDiscovery
+	err = json.Unmarshal(body, &resource)
+	return resource, err
+}
+
+func bodyToUser(r *http.Request) (taxiiUser, error) {
+	body, err := takeBody(r)
+	var resource taxiiUser
 	err = json.Unmarshal(body, &resource)
 	return resource, err
 }

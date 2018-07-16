@@ -61,7 +61,7 @@ func TestNewTaxiiUser(t *testing.T) {
 		t.Error("Got:", user.Email, "Expected:", testUser)
 	}
 
-	for _, v := range user.CollectionAccess {
+	for _, v := range user.CollectionAccessList {
 		if v.CanRead != true {
 			t.Error("Got:", v.CanRead, "Expected:", true)
 		}
@@ -126,7 +126,7 @@ func TestTaxiiUserCreateFail(t *testing.T) {
 	defer ts.disconnect()
 
 	tu := taxiiUser{}
-	err = tu.create(ts, "fail")
+	err = tu.create(ts)
 	if err == nil {
 		t.Error("Expected error")
 	}
