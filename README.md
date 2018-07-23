@@ -290,6 +290,61 @@ Filters on 'match' requires square brackers that need to be escaped:
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[type\]=indicator' | jq .
 ```
 
+#### Create user (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com",
+  "password": "new_test"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+#### Update user (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com",
+  "can_admin": true
+}' | jq .
+```
+
+Check it (by creating a collection with the new admin):
+```sh
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/collections/' -d '{
+  "api_root_path": "new_test_cabby_collection",
+  "title": "a collection, from a new admin"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+```
+
+#### Delete user (Admin functionality)
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com",
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
 ## Resources
 - OASIS Doc: https://oasis-open.github.io/cti-documentation/resources
 - TAXII 2.0 Spec: https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI

@@ -44,7 +44,7 @@ func setupServer(ts taxiiStorer, h http.Handler, c config) *http.Server {
 
 	return &http.Server{
 		Addr:         ":" + p,
-		Handler:      withBasicAuth(h, ts),
+		Handler:      withRequestLogging(withBasicAuth(h, ts)),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}

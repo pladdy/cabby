@@ -40,13 +40,15 @@ var (
 	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 
 	// test globals
-	testAdminURL            = testHost + testAdminPath + "/"
-	testAdminAPIRootURL     = testHost + testAdminPath + "/" + "api_root"
-	testAdminCollectionsURL = testHost + testAdminPath + "/" + "collections"
-	testAdminDiscoveryURL   = testHost + testAdminPath + "/" + "discovery"
-	testAdminUserURL        = testHost + testAdminPath + "/" + "user"
-	testAPIRootURL          = testHost + testAPIRootPath + "/"
-	testAPIRoot             = taxiiAPIRoot{Path: testAPIRootPath,
+	testAdminURL               = testHost + testAdminPath + "/"
+	testAdminAPIRootURL        = testHost + testAdminPath + "/" + "api_root"
+	testAdminCollectionsURL    = testHost + testAdminPath + "/" + "collections"
+	testAdminDiscoveryURL      = testHost + testAdminPath + "/" + "discovery"
+	testAdminUserURL           = testHost + testAdminPath + "/" + "user"
+	testAdminUserCollectionURL = testHost + testAdminPath + "/user/collection"
+	testAdminUserPasswordURL   = testHost + testAdminPath + "/user/password"
+	testAPIRootURL             = testHost + testAPIRootPath + "/"
+	testAPIRoot                = taxiiAPIRoot{Path: testAPIRootPath,
 		Title:            "test api root",
 		Description:      "test api root description",
 		Versions:         []string{"taxii-2.0"},
@@ -108,7 +110,7 @@ func createUser(testStorer taxiiStorer) {
 	tu := taxiiUser{Email: testUser, CanAdmin: true}
 	err := tu.create(testStorer)
 
-	tup := taxiiUserPass{Email: testUser, Pass: testPass}
+	tup := taxiiUserPassword{Email: testUser, Password: testPass}
 	err = tup.create(testStorer)
 	if err != nil {
 		fail.Fatal(err)

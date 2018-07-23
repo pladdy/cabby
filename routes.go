@@ -7,8 +7,8 @@ import (
 )
 
 func registerAPIRoot(ts taxiiStorer, rootPath string, sm *http.ServeMux) {
-	ar := taxiiAPIRoot{}
-	err := ar.read(ts, rootPath)
+	ar := taxiiAPIRoot{Path: rootPath}
+	err := ar.read(ts)
 	if err != nil {
 		log.WithFields(log.Fields{"api_root": rootPath}).Error("Unable to read API roots")
 		return
@@ -48,7 +48,7 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 		route = "/" + path + "/"
 	}
 
-	sm.HandleFunc(route, withRequestLogging(h))
+	sm.HandleFunc(route, h)
 }
 
 func setupRouteHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
@@ -65,9 +65,14 @@ func setupRouteHandler(ts taxiiStorer, port int) (*http.ServeMux, error) {
 		registerAPIRoot(ts, rootPath, handler)
 	}
 
+	// admin routes
 	registerRoute(handler, "admin/api_root", withAcceptTaxii(handleAdminTaxiiAPIRoot(ts, handler)))
 	registerRoute(handler, "admin/collections", withAcceptTaxii(handleAdminTaxiiCollections(ts)))
 	registerRoute(handler, "admin/discovery", withAcceptTaxii(handleAdminTaxiiDiscovery(ts)))
+	registerRoute(handler, "admin/user", withAcceptTaxii(handleAdminTaxiiUser(ts)))
+	registerRoute(handler, "admin/user/collection", withAcceptTaxii(handleAdminTaxiiUserCollection(ts)))
+	registerRoute(handler, "admin/user/password", withAcceptTaxii(handleAdminTaxiiUserPassword(ts)))
+
 	registerRoute(handler, "taxii", withAcceptTaxii(handleTaxiiDiscovery(ts, port)))
 	registerRoute(handler, "/", handleUndefinedRequest)
 	return handler, err

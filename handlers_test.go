@@ -96,17 +96,3 @@ func TestRequireAcceptTaxii(t *testing.T) {
 		}
 	}
 }
-
-func TestWithRequestLoggingUnauthorized(t *testing.T) {
-	ts := getStorer()
-	defer ts.disconnect()
-
-	req := httptest.NewRequest("GET", discoveryURL, nil)
-	// omit adding a user to the context
-	res := httptest.NewRecorder()
-	withRequestLogging(handleTaxiiDiscovery(ts, testConfig().Port))(res, req)
-
-	if res.Code != http.StatusUnauthorized {
-		t.Error("Got:", res.Code, "Expected: unauthorized")
-	}
-}

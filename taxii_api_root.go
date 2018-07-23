@@ -24,8 +24,8 @@ func handleTaxiiAPIRoot(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
-		ta := taxiiAPIRoot{}
-		err := ta.read(ts, trimSlashes(r.URL.Path))
+		ta := taxiiAPIRoot{Path: trimSlashes(r.URL.Path)}
+		err := ta.read(ts)
 		if err != nil {
 			resourceNotFound(w, err)
 			return
@@ -63,10 +63,10 @@ func (ta *taxiiAPIRoot) delete(ts taxiiStorer) error {
 	return ts.delete("taxiiAPIRoot", []interface{}{ta.Path})
 }
 
-func (ta *taxiiAPIRoot) read(ts taxiiStorer, path string) error {
+func (ta *taxiiAPIRoot) read(ts taxiiStorer) error {
 	apiRoot := *ta
 
-	result, err := ts.read("taxiiAPIRoot", []interface{}{path})
+	result, err := ts.read("taxiiAPIRoot", []interface{}{apiRoot.Path})
 	if err != nil {
 		return err
 	}

@@ -44,18 +44,13 @@ func withBasicAuth(h http.Handler, ts taxiiStorer) http.Handler {
 			return
 		}
 
-		r = withTaxiiUser(r, tu)
-		h.ServeHTTP(withHSTS(w), r)
+		log.WithFields(log.Fields{"user": u}).Info("User authenticated")
+		h.ServeHTTP(withHSTS(w), withTaxiiUser(r, tu))
 	})
 }
 
-func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, ok := r.Context().Value(userName).(string)
-		if !ok {
-			unauthorized(w, errors.New("Invalid user"))
-		}
-
+func withRequestLogging(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		milliSecondOfNanoSeconds := int64(1000000)
 
 		start := time.Now().In(time.UTC)
@@ -63,21 +58,20 @@ func withRequestLogging(h http.HandlerFunc) http.HandlerFunc {
 			"method":   r.Method,
 			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
 			"url":      r.URL,
-			"user":     user,
-		}).Info("Request made to server")
+		}).Info("Serving request made to server")
 
-		h(w, r)
+		h.ServeHTTP(w, r)
 
 		end := time.Now().In(time.UTC)
 		elapsed := time.Since(start)
+
 		log.WithFields(log.Fields{
 			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"method":     r.Method,
 			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
 			"url":        r.URL,
-			"user":       user,
-		}).Info("Request made to server")
-	}
+		}).Info("Served request made to server")
+	})
 }
 
 /* helpers */

@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/sha256"
-	"errors"
 	"fmt"
 )
 
@@ -34,7 +33,7 @@ func (tu *taxiiUser) delete(ts taxiiStorer) error {
 		return err
 	}
 
-	return ts.delete("taxiiUserPass", []interface{}{tu.Email})
+	return ts.delete("taxiiUserPassword", []interface{}{tu.Email})
 }
 
 func (tu *taxiiUser) read(ts taxiiStorer, hashedPass string) error {
@@ -45,10 +44,7 @@ func (tu *taxiiUser) read(ts taxiiStorer, hashedPass string) error {
 		return err
 	}
 
-	user, ok := result.data.(taxiiUser)
-	if !ok {
-		return errors.New("Invalid user")
-	}
+	user = result.data.(taxiiUser)
 
 	err = addCollectionsToUser(ts, tu)
 	if err != nil {
@@ -86,22 +82,36 @@ func (tuc *taxiiUserCollection) delete(ts taxiiStorer) error {
 	return ts.delete("taxiiUserCollection", []interface{}{tuc.Email, tuc.taxiiCollectionAccess.ID.String()})
 }
 
+func (tuc *taxiiUserCollection) read(ts taxiiStorer) error {
+	userCollection := *tuc
+
+	result, err := ts.read("taxiiUserCollection", []interface{}{tuc.Email, tuc.taxiiCollectionAccess.ID.String()})
+	if err != nil {
+		return err
+	}
+
+	userCollection = result.data.(taxiiUserCollection)
+
+	*tuc = userCollection
+	return err
+}
+
 func (tuc *taxiiUserCollection) update(ts taxiiStorer) error {
 	tca := tuc.taxiiCollectionAccess
-	return ts.update("taxiiUserCollection", []interface{}{tuc.Email, tca.ID.String(), tca.CanRead, tca.CanWrite})
+	return ts.update("taxiiUserCollection", []interface{}{tca.ID.String(), tca.CanRead, tca.CanWrite, tuc.Email})
 }
 
-type taxiiUserPass struct {
-	Email string `json:"email"`
-	Pass  string `json:"password"`
+type taxiiUserPassword struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
-func (tup *taxiiUserPass) create(ts taxiiStorer) error {
-	return createResource(ts, "taxiiUserPass", []interface{}{tup.Email, hash(tup.Pass)})
+func (tup *taxiiUserPassword) create(ts taxiiStorer) error {
+	return createResource(ts, "taxiiUserPassword", []interface{}{tup.Email, hash(tup.Password)})
 }
 
-func (tup *taxiiUserPass) update(ts taxiiStorer) error {
-	return ts.update("taxiiUserPass", []interface{}{tup.Email, hash(tup.Pass)})
+func (tup *taxiiUserPassword) update(ts taxiiStorer) error {
+	return ts.update("taxiiUserPassword", []interface{}{hash(tup.Password), tup.Email})
 }
 
 /* helpers */
