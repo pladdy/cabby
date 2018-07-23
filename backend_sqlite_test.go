@@ -127,6 +127,7 @@ func TestSQLiteReadScanError(t *testing.T) {
 		{s.readStixObject},
 		{s.readStixObjects},
 		{s.readUser},
+		{s.readUserCollection},
 	}
 
 	for _, test := range tests {

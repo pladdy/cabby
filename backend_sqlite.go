@@ -49,7 +49,7 @@ var statements = map[string]map[string]string{
 		"taxiiUser": `insert into taxii_user (email, can_admin) values (?, ?)`,
 		"taxiiUserCollection": `insert into taxii_user_collection (email, collection_id, can_read, can_write)
 		                        values (?, ?, ?, ?)`,
-		"taxiiUserPass": `insert into taxii_user_pass (email, pass) values (?, ?)`,
+		"taxiiUserPassword": `insert into taxii_user_pass (email, pass) values (?, ?)`,
 	},
 	"delete": map[string]string{
 		"taxiiAPIRoot":        `delete from taxii_api_root where api_root_path = ?`,
@@ -57,7 +57,7 @@ var statements = map[string]map[string]string{
 		"taxiiDiscovery":      `delete from taxii_discovery`,
 		"taxiiUser":           `delete from taxii_user where email = ?`,
 		"taxiiUserCollection": `delete from taxii_user_collection where email = ? and collection_id = ?`,
-		"taxiiUserPass":       `delete from taxii_user_pass where email = ?`,
+		"taxiiUserPassword":   `delete from taxii_user_pass where email = ?`,
 	},
 	"read": map[string]string{
 		"routableCollections": `select id from taxii_collection where api_root_path = ?`,
@@ -80,7 +80,7 @@ var statements = map[string]map[string]string{
 										select object, (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
 										from data
 										$paginate`,
-		"taxiiAPIRoot": `select title, description, versions, max_content_length
+		"taxiiAPIRoot": `select api_root_path, title, description, versions, max_content_length
 		                 from taxii_api_root
 		                 where api_root_path = ?`,
 		"taxiiAPIRoots": `select api_root_path from taxii_api_root`,
@@ -145,6 +145,9 @@ var statements = map[string]map[string]string{
 									  inner join taxii_user_pass tup
 									    on tu.email = tup.email
 									where tu.email = ? and tup.pass = ?`,
+		"taxiiUserCollection": `select email, collection_id, can_read, can_write
+		                        from taxii_user_collection
+														where email = ? and collection_id = ?`,
 	},
 	"update": map[string]string{
 		"taxiiAPIRoot": `update taxii_api_root
@@ -162,7 +165,7 @@ var statements = map[string]map[string]string{
 		"taxiiUserCollection": `update taxii_user_collection
 		                        set collection_id = ?, can_read = ?, can_write = ?
 														where email = ?`,
-		"taxiiUserPass": `update taxii_user_pass set pass = ? where email = ?`,
+		"taxiiUserPassword": `update taxii_user_pass set pass = ? where email = ?`,
 	},
 }
 
@@ -190,6 +193,84 @@ func (s *sqliteDB) connect(path string) (err error) {
 
 func (s *sqliteDB) disconnect() {
 	s.db.Close()
+}
+
+/* create methods */
+
+func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan error) {
+	createFunction := withCreatorLogging(s.createResource)
+	createFunction(resource, toWrite, errs)
+}
+
+func (s *sqliteDB) createResource(resource string, toWrite chan interface{}, errs chan error) {
+	defer close(errs)
+
+	tq, err := newTaxiiQuery("create", resource)
+	if err != nil {
+		errs <- err
+		return
+	}
+
+	tx, stmt, err := batchWriteTx(s, tq.statement, errs)
+	if err != nil {
+		return
+	}
+	defer stmt.Close()
+
+	i := 0
+	for item := range toWrite {
+		args := item.([]interface{})
+
+		_, err := stmt.Exec(args...)
+		if err != nil {
+			errs <- err
+			log.WithFields(log.Fields{"args": args, "err": err}).Error("Failed to write")
+			continue
+		}
+
+		i++
+		if i >= maxWrites {
+			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
+			tx, stmt, err = batchWriteTx(s, tq.statement, errs)
+			if err != nil {
+				return
+			}
+		}
+	}
+	tx.Commit()
+}
+
+func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt *sql.Stmt, err error) {
+	tx, err = s.db.Begin()
+	if err != nil {
+		errs <- err
+		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
+		return
+	}
+
+	stmt, err = tx.Prepare(query)
+	if err != nil {
+		errs <- err
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare query")
+	}
+
+	return
+}
+
+/* delete */
+
+func (s *sqliteDB) delete(resource string, args []interface{}) error {
+	deleteFunction := withDeleterLogging(s.deleteResource)
+	return deleteFunction(resource, args)
+}
+
+func (s *sqliteDB) deleteResource(resource string, args []interface{}) error {
+	tq, err := newTaxiiQuery("delete", resource)
+	if err != nil {
+		return err
+	}
+
+	return executeQuery(s, tq.statement, args)
 }
 
 /* query methods */
@@ -267,6 +348,11 @@ func withPagination(query string, tr taxiiRange) string {
 /* read methods */
 
 func (s *sqliteDB) read(resource string, args []interface{}, tf ...taxiiFilter) (result taxiiResult, err error) {
+	readFunction := withReaderLogging(s.readResource)
+	return readFunction(resource, args, tf...)
+}
+
+func (s *sqliteDB) readResource(resource string, args []interface{}, tf ...taxiiFilter) (result taxiiResult, err error) {
 	tq, err := newTaxiiQuery("read", resource)
 	if err != nil {
 		return result, err
@@ -279,7 +365,7 @@ func (s *sqliteDB) read(resource string, args []interface{}, tf ...taxiiFilter) 
 
 	rows, err := s.db.Query(tq.statement, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"statement": tq.statement, "args": args, "err": err}).Error("Failed to query")
+		log.WithFields(log.Fields{"statement": tq.statement, "err": err}).Error("Failed to query")
 		return result, fmt.Errorf("%v in statement: %v", err, tq.statement)
 	}
 
@@ -299,7 +385,7 @@ func (s *sqliteDB) readAPIRoot(rows *sql.Rows) (taxiiResult, error) {
 
 	for rows.Next() {
 		var versions string
-		if err := rows.Scan(&apiRoot.Title, &apiRoot.Description, &versions, &apiRoot.MaxContentLength); err != nil {
+		if err := rows.Scan(&apiRoot.Path, &apiRoot.Title, &apiRoot.Description, &versions, &apiRoot.MaxContentLength); err != nil {
 			return taxiiResult{data: apiRoot}, err
 		}
 		apiRoot.Versions = strings.Split(versions, ",")
@@ -461,13 +547,14 @@ func (s *sqliteDB) readRows(tq taxiiQuery, rows *sql.Rows) (result taxiiResult, 
 		"taxiiManifest":         s.readManifest,
 		"taxiiStatus":           s.readStatus,
 		"taxiiUser":             s.readUser,
+		"taxiiUserCollection":   s.readUserCollection,
 	}
 
 	if resourceReader[tq.resource] != nil {
 		result, err = resourceReader[tq.resource](rows)
 		return
 	}
-	err = errors.New("Unknown resource name '" + tq.resource)
+	err = errors.New("Unknown resource name: " + tq.resource)
 	return
 }
 
@@ -533,77 +620,30 @@ func (s *sqliteDB) readUser(rows *sql.Rows) (taxiiResult, error) {
 	return taxiiResult{data: tu}, err
 }
 
-/* create methods */
+func (s *sqliteDB) readUserCollection(rows *sql.Rows) (taxiiResult, error) {
+	tuc := taxiiUserCollection{}
+	tca := tuc.taxiiCollectionAccess
+	var err error
 
-func (s *sqliteDB) create(resource string, toWrite chan interface{}, errs chan error) {
-	defer close(errs)
-
-	tq, err := newTaxiiQuery("create", resource)
-	if err != nil {
-		errs <- err
-		return
-	}
-
-	tx, stmt, err := batchWriteTx(s, tq.statement, errs)
-	if err != nil {
-		return
-	}
-	defer stmt.Close()
-
-	i := 0
-	for item := range toWrite {
-		args := item.([]interface{})
-
-		_, err := stmt.Exec(args...)
-		if err != nil {
-			errs <- err
-			log.WithFields(log.Fields{"args": args, "err": err}).Error("Failed to write")
-			continue
-		}
-
-		i++
-		if i >= maxWrites {
-			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
-			tx, stmt, err = batchWriteTx(s, tq.statement, errs)
-			if err != nil {
-				return
-			}
+	for rows.Next() {
+		if err := rows.Scan(&tuc.Email, &tca.ID, &tca.CanRead, &tca.CanWrite); err != nil {
+			return taxiiResult{data: tuc}, err
 		}
 	}
-	tx.Commit()
-}
+	tuc.taxiiCollectionAccess = tca
 
-func batchWriteTx(s *sqliteDB, query string, errs chan error) (tx *sql.Tx, stmt *sql.Stmt, err error) {
-	tx, err = s.db.Begin()
-	if err != nil {
-		errs <- err
-		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
-		return
-	}
-
-	stmt, err = tx.Prepare(query)
-	if err != nil {
-		errs <- err
-		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare query")
-	}
-
-	return
-}
-
-/* delete */
-
-func (s *sqliteDB) delete(resource string, args []interface{}) error {
-	tq, err := newTaxiiQuery("delete", resource)
-	if err != nil {
-		return err
-	}
-
-	return executeQuery(s, tq.statement, args)
+	err = rows.Err()
+	return taxiiResult{data: tuc}, err
 }
 
 /* update */
 
 func (s *sqliteDB) update(resource string, args []interface{}) error {
+	updateFunction := withUpdaterLogging(s.updateResource)
+	return updateFunction(resource, args)
+}
+
+func (s *sqliteDB) updateResource(resource string, args []interface{}) error {
 	tq, err := newTaxiiQuery("update", resource)
 	if err != nil {
 		return err
