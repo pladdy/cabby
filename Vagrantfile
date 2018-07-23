@@ -34,7 +34,7 @@ Vagrant.configure("2") do |config|
 
       make && make test && make build
       cp build/cabby build/debian/usr/bin
-      fpm -f -s dir -t deb -n cabby -d jq -m "Matt Pladna" --description "A TAXII 2.0 server" --after-install build/postinst --deb-user cabby --deb-group cabby -C build/debian .
+      fpm -f -s dir -t deb -n cabby -d jq -m "Matt Pladna" --description "A TAXII 2.0 server" --after-install scripts/postinst --deb-user cabby --deb-group cabby -C build/debian .
 
       if [ $? -eq 0 ]; then
         cp *.deb /vagrant

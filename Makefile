@@ -9,8 +9,10 @@ all: config cert dependencies
 build:
 	go build $(BUILD_TAGS) -o $(BUILD_PATH) $(GO_FILES)
 
-build-debian: config
-	mkdir -p build/debian/etc/cabby/
+build/debian/etc/cabby/:
+	mkdir -p $@
+
+build-debian: config build/debian/etc/cabby/
 	cp config/cabby.json build/debian/etc/cabby/
 	vagrant up
 	@echo Magic has happend to make a debian...
