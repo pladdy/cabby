@@ -238,7 +238,10 @@ create table taxii_user_pass (
   id         integer primary key not null,
   email      text not null,
   -- check password is not empty string or sha256 of empty string
-  pass       text not null check (pass not in ("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")),
+  pass       text not null check (
+               pass not in ("", "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+               and length(pass) == 64
+             ),
   created_at text,
   updated_at text,
 

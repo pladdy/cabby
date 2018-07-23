@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -15,13 +16,23 @@ func handleAdminTaxiiAPIRoot(ts taxiiStorer, h *http.ServeMux) http.HandlerFunc 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
 		switch r.Method {
 		case http.MethodDelete:
-			handleAdminTaxiiAPIRootDelete(ts, w, r)
+			handleAdminTaxiiAPIRootDelete(ts, w, body)
 		case http.MethodPost:
-			handleAdminTaxiiAPIRootPost(ts, h, w, r)
+			handleAdminTaxiiAPIRootPost(ts, h, w, body)
 		case http.MethodPut:
-			handleAdminTaxiiAPIRootPut(ts, w, r)
+			handleAdminTaxiiAPIRootPut(ts, w, body)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 			return
@@ -29,12 +40,8 @@ func handleAdminTaxiiAPIRoot(ts taxiiStorer, h *http.ServeMux) http.HandlerFunc 
 	})
 }
 
-func handleAdminTaxiiAPIRootDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tar, err := bodyToAPIRoot(r)
+func handleAdminTaxiiAPIRootDelete(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tar, err := bodyToAPIRoot(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -49,12 +56,8 @@ func handleAdminTaxiiAPIRootDelete(ts taxiiStorer, w http.ResponseWriter, r *htt
 	writeContent(w, jsonContentType, `{"deleted": "`+tar.Path+`"}`)
 }
 
-func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tar, err := bodyToAPIRoot(r)
+func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.ResponseWriter, body []byte) {
+	tar, err := bodyToAPIRoot(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -70,12 +73,8 @@ func handleAdminTaxiiAPIRootPost(ts taxiiStorer, handler *http.ServeMux, w http.
 	writeContent(w, taxiiContentType, resourceToJSON(tar))
 }
 
-func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tar, err := bodyToAPIRoot(r)
+func handleAdminTaxiiAPIRootPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tar, err := bodyToAPIRoot(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -96,13 +95,23 @@ func handleAdminTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
 		switch r.Method {
 		case http.MethodDelete:
-			handleAdminTaxiiCollectionsDelete(ts, w, r)
+			handleAdminTaxiiCollectionsDelete(ts, w, body)
 		case http.MethodPost:
-			handleAdminTaxiiCollectionsPost(ts, w, r)
+			handleAdminTaxiiCollectionsPost(ts, w, body, takeUser(r))
 		case http.MethodPut:
-			handleAdminTaxiiCollectionsPut(ts, w, r)
+			handleAdminTaxiiCollectionsPut(ts, w, body)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 			return
@@ -110,12 +119,8 @@ func handleAdminTaxiiCollections(ts taxiiStorer) http.HandlerFunc {
 	})
 }
 
-func handleAdminTaxiiCollectionsDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tc, err := bodyToCollection(r)
+func handleAdminTaxiiCollectionsDelete(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tc, err := bodyToCollection(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -130,18 +135,14 @@ func handleAdminTaxiiCollectionsDelete(ts taxiiStorer, w http.ResponseWriter, r 
 	writeContent(w, jsonContentType, `{"deleted": "`+tc.ID.String()+`"}`)
 }
 
-func handleAdminTaxiiCollectionsPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tc, err := bodyToCollection(r)
+func handleAdminTaxiiCollectionsPost(ts taxiiStorer, w http.ResponseWriter, body []byte, user string) {
+	tc, err := bodyToCollection(body)
 	if err != nil {
 		badRequest(w, err)
 		return
 	}
 
-	err = tc.create(ts, takeUser(r), tc.APIRootPath)
+	err = tc.create(ts, user, tc.APIRootPath)
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -150,12 +151,8 @@ func handleAdminTaxiiCollectionsPost(ts taxiiStorer, w http.ResponseWriter, r *h
 	writeContent(w, taxiiContentType, resourceToJSON(tc))
 }
 
-func handleAdminTaxiiCollectionsPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	tc, err := bodyToCollection(r)
+func handleAdminTaxiiCollectionsPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tc, err := bodyToCollection(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -176,13 +173,23 @@ func handleAdminTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
 		switch r.Method {
 		case http.MethodDelete:
-			handleAdminTaxiiDiscoveryDelete(ts, w, r)
+			handleAdminTaxiiDiscoveryDelete(ts, w)
 		case http.MethodPost:
-			handleAdminTaxiiDiscoveryPost(ts, w, r)
+			handleAdminTaxiiDiscoveryPost(ts, w, body)
 		case http.MethodPut:
-			handleAdminTaxiiDiscoveryPut(ts, w, r)
+			handleAdminTaxiiDiscoveryPut(ts, w, body)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
 			return
@@ -190,11 +197,7 @@ func handleAdminTaxiiDiscovery(ts taxiiStorer) http.HandlerFunc {
 	})
 }
 
-func handleAdminTaxiiDiscoveryDelete(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
+func handleAdminTaxiiDiscoveryDelete(ts taxiiStorer, w http.ResponseWriter) {
 	td := taxiiDiscovery{}
 	err := td.delete(ts)
 	if err != nil {
@@ -205,12 +208,8 @@ func handleAdminTaxiiDiscoveryDelete(ts taxiiStorer, w http.ResponseWriter, r *h
 	writeContent(w, jsonContentType, `{"deleted": "discovery"}`)
 }
 
-func handleAdminTaxiiDiscoveryPost(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	td, err := bodyToDiscovery(r)
+func handleAdminTaxiiDiscoveryPost(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	td, err := bodyToDiscovery(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -225,12 +224,8 @@ func handleAdminTaxiiDiscoveryPost(ts taxiiStorer, w http.ResponseWriter, r *htt
 	writeContent(w, taxiiContentType, resourceToJSON(td))
 }
 
-func handleAdminTaxiiDiscoveryPut(ts taxiiStorer, w http.ResponseWriter, r *http.Request) {
-	if !userIsAuthorized(w, r) {
-		return
-	}
-
-	td, err := bodyToDiscovery(r)
+func handleAdminTaxiiDiscoveryPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	td, err := bodyToDiscovery(body)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -245,6 +240,219 @@ func handleAdminTaxiiDiscoveryPut(ts taxiiStorer, w http.ResponseWriter, r *http
 	writeContent(w, taxiiContentType, resourceToJSON(td))
 }
 
+/* user */
+
+func handleAdminTaxiiUser(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
+		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiUserDelete(ts, w, body)
+		case http.MethodPost:
+			handleAdminTaxiiUserPost(ts, w, body)
+		case http.MethodPut:
+			handleAdminTaxiiUserPut(ts, w, body)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiUserDelete(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tu, err := bodyToUser(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted": "`+tu.Email+`"}`)
+}
+
+func handleAdminTaxiiUserPost(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	// create the user
+	tu, err := bodyToUser(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.create(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	// create the password for the user
+	tup, err := bodyToUserPassword(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tup.create(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tu))
+}
+
+func handleAdminTaxiiUserPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tu, err := bodyToUser(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tu.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tu))
+}
+
+/* user collection */
+
+func handleAdminTaxiiUserCollection(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
+		switch r.Method {
+		case http.MethodDelete:
+			handleAdminTaxiiUserCollectionDelete(ts, w, body)
+		case http.MethodPost:
+			handleAdminTaxiiUserCollectionPost(ts, w, body)
+		case http.MethodPut:
+			handleAdminTaxiiUserCollectionPut(ts, w, body)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiUserCollectionDelete(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tuc, err := bodyToUserCollection(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tuc.delete(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, jsonContentType, `{"deleted": "`+tuc.taxiiCollectionAccess.ID.String()+`"}`)
+}
+
+func handleAdminTaxiiUserCollectionPost(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tuc, err := bodyToUserCollection(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tuc.create(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tuc))
+}
+
+func handleAdminTaxiiUserCollectionPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tuc, err := bodyToUserCollection(body)
+	fmt.Println(tuc)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tuc.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, resourceToJSON(tuc))
+}
+
+/* user password */
+
+func handleAdminTaxiiUserPassword(ts taxiiStorer) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		if !userIsAuthorized(w, r) {
+			return
+		}
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			badRequest(w, err)
+			return
+		}
+
+		switch r.Method {
+		case http.MethodPut:
+			handleAdminTaxiiUserPasswordPut(ts, w, body)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" Unrecognized"))
+			return
+		}
+	})
+}
+
+func handleAdminTaxiiUserPasswordPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
+	tup, err := bodyToUserPassword(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	err = tup.update(ts)
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+
+	writeContent(w, taxiiContentType, `{"updated": "`+tup.Email+`"}`)
+}
+
 /* helpers */
 
 func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
@@ -257,18 +465,15 @@ func attemptRegisterAPIRoot(ts taxiiStorer, path string, s *http.ServeMux) {
 	registerAPIRoot(ts, path, s)
 }
 
-func bodyToAPIRoot(r *http.Request) (taxiiAPIRoot, error) {
-	body, err := takeBody(r)
+func bodyToAPIRoot(b []byte) (taxiiAPIRoot, error) {
 	var resource taxiiAPIRoot
-	err = json.Unmarshal(body, &resource)
+	err := json.Unmarshal(b, &resource)
 	return resource, err
 }
 
-func bodyToCollection(r *http.Request) (taxiiCollection, error) {
-	body, err := takeBody(r)
-
+func bodyToCollection(b []byte) (taxiiCollection, error) {
 	var resource taxiiCollection
-	err = json.Unmarshal(body, &resource)
+	err := json.Unmarshal(b, &resource)
 	if err != nil {
 		return resource, err
 	}
@@ -283,17 +488,28 @@ func bodyToCollection(r *http.Request) (taxiiCollection, error) {
 	return resource, err
 }
 
-func bodyToDiscovery(r *http.Request) (taxiiDiscovery, error) {
-	body, err := takeBody(r)
+func bodyToDiscovery(b []byte) (taxiiDiscovery, error) {
 	var resource taxiiDiscovery
-	err = json.Unmarshal(body, &resource)
+	err := json.Unmarshal(b, &resource)
 	return resource, err
 }
 
-func takeBody(r *http.Request) ([]byte, error) {
-	body, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	return body, err
+func bodyToUser(b []byte) (taxiiUser, error) {
+	var resource taxiiUser
+	err := json.Unmarshal(b, &resource)
+	return resource, err
+}
+
+func bodyToUserCollection(b []byte) (taxiiUserCollection, error) {
+	var resource taxiiUserCollection
+	err := json.Unmarshal(b, &resource)
+	return resource, err
+}
+
+func bodyToUserPassword(b []byte) (taxiiUserPassword, error) {
+	var resource taxiiUserPassword
+	err := json.Unmarshal(b, &resource)
+	return resource, err
 }
 
 func userIsAuthorized(w http.ResponseWriter, r *http.Request) bool {

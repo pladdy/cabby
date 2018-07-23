@@ -67,7 +67,80 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 curl -sk --location-trusted -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
 ```
 
-#### Delete TAXII Discovery (Admin Functionality)
+Check it:
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+#### View API Root
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
+```
+
+#### View Collections
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+# view 1 of N with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# view 1 0f N parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+# view 2nd of N parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 1-1' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+```
+
+#### Add Objects
+In the above example, new collections were added.  Kill the server (CTRL+C) and `make run` again.  The logs will show new routes are added.
+
+Now post a bundle of STIX 2.0 data:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
+```
+
+#### Check status
+From the above POST, you get a status object.  You can query it from the server
+```sh
+ID=<id here> curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST "https://localhost:1234/cabby_test_root/status/${ID}/" | jq .
+```
+
+#### View Objects
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+
+# view 1 of N with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+# view 1 0f N parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+```
+
+#### View Manifest
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' | jq .
+```
+
+#### Filter objects
+Filters on 'match' requires square brackers that need to be escaped:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[type\]=indicator' | jq .
+```
+
+### Admin: Discovery
+
+#### Delete TAXII Discovery
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/discovery/' | jq .
 ```
@@ -80,7 +153,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 ```
 
-#### Create TAXII Discovery (Admin Functionality)
+#### Create TAXII Discovery
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/discovery/' -d '{
   "title": "a local taxii 2 server",
@@ -98,7 +171,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 ```
 
-#### Update TAXII Discovery (Admin Functionality)
+#### Update TAXII Discovery
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/discovery/' -d '{
   "title": "a local taxii 2 server, updated",
@@ -108,23 +181,9 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 }' | jq .
 ```
 
-Check it:
-```sh
-# with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
-# parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
-```
+### Admin: API Roots
 
-#### View API Root
-```sh
-# with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' && echo
-# parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/' | jq .
-```
-
-#### Create API Root (Admin functionality)
+#### Create API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/api_root/' -d '{
   "path": "my_api_root", "title": "my api root"
@@ -139,7 +198,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' | jq .
 ```
 
-#### Update API Root (Admin functionality)
+#### Update API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/api_root/' -d '{
   "path": "my_api_root", "title": "my api root", "max_content_length": 8388608
@@ -154,7 +213,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' | jq .
 ```
 
-#### Delete API Root (Admin functionality)
+#### Delete API Root
 ```sh
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/api_root/' -d '{
   "path": "my_api_root", "title": "my api root", "max_content_length": 8388608
@@ -169,19 +228,7 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/my_api_root/' | jq .
 ```
 
-#### View Collections
-```sh
-# with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
-# parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
-# view 1 of N with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' && echo
-# view 1 0f N parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/' | jq .
-# view 2nd of N parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 1-1' 'https://localhost:1234/cabby_test_root/collections/' | jq .
-```
+### Admin: Collections
 
 #### Create a collection in API Root (Admin functionality)
 Let the server assign an ID:
@@ -249,45 +296,153 @@ curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/411abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
 ```
 
-#### Add Objects
-In the above example, new collections were added.  Kill the server (CTRL+C) and `make run` again.  The logs will show new routes are added.
+### Admin: Users
 
-Now post a bundle of STIX 2.0 data:
+#### Create user
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @testdata/malware_bundle.json | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com",
+  "password": "new_test"
+}' | jq .
 ```
 
-#### Check status
-From the above POST, you get a status object.  You can query it from the server
-```sh
-ID=<id here> curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST "https://localhost:1234/cabby_test_root/status/${ID}/" | jq .
-```
-
-#### View Objects
+Check it:
 ```sh
 # with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
 # parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
-
-# view 1 of N with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' && echo
-# view 1 0f N parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' -H 'Range: items 0-0' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
 ```
 
-#### View Manifest
+#### Update user
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com",
+  "can_admin": true
+}' | jq .
+```
+
+Check it (by creating a collection with the new admin):
+```sh
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/collections/' -d '{
+  "api_root_path": "new_test_cabby_collection",
+  "title": "a collection, from a new admin"
+}' | jq .
+```
+
+Check it:
 ```sh
 # with headers
-curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' && echo
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
 # parsed json
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/manifest/' | jq .
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
-#### Filter objects
-Filters on 'match' requires square brackers that need to be escaped:
+#### Delete user
 ```sh
-curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[type\]=indicator' | jq .
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/user/' -d '{
+  "email": "new_test@cabby.com"
+}' | jq .
+```
+
+Check it:
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+#### Update user password
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/user/password/' -d '{
+  "email": "test@cabby.com",
+  "password": "new_test"
+}' | jq .
+```
+
+Check it by accessing the root with old password (should fail)
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+Check it by accessing the root with new password (should respond)
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+```
+
+Change it back:
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/user/password/' -d '{
+  "email": "test@cabby.com",
+  "password": "test"
+}' | jq .
+```
+
+#### Add collection to user
+User a new user (see create user above)
+
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X POST 'https://localhost:1234/admin/user/collection/' -d '{
+  "email": "new_test@cabby.com",
+  "collection_access": {
+    "id": "411abc04-a474-4e22-9f4d-944ca508e68c",
+    "can_read": true,
+    "can_write": false
+  }
+}' | jq .
+```
+
+Check it
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+```
+
+#### Update collection for user
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X PUT 'https://localhost:1234/admin/user/collection/' -d '{
+  "email": "new_test@cabby.com",
+  "collection_access": {
+    "id": "411abc04-a474-4e22-9f4d-944ca508e68c",
+    "can_read": true,
+    "can_write": true
+  }
+}' | jq .
+```
+
+Check it
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
+```
+
+#### Delete collection from user
+```sh
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/admin/user/collection/' -d '{
+  "email": "new_test@cabby.com",
+  "collection_access": {
+    "id": "411abc04-a474-4e22-9f4d-944ca508e68c"
+  }
+}' | jq .
+```
+
+Check it
+```sh
+# with headers
+curl -isk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' && echo
+# parsed json
+curl -sk -basic -u new_test@cabby.com:new_test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
 ## Resources

@@ -16,7 +16,7 @@ type key int
 
 const (
 	userName           key = 0
-	userCollections    key = 1
+	userCollectionList key = 1
 	requestRange       key = 2
 	canAdmin           key = 3
 	jsonContentType        = "application/json"
@@ -128,8 +128,8 @@ func takeCanAdmin(r *http.Request) bool {
 }
 
 func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
-	// get collection access map from userCollections context
-	ca, ok := r.Context().Value(userCollections).(map[taxiiID]taxiiCollectionAccess)
+	// get collection access map from context
+	ca, ok := r.Context().Value(userCollectionList).(map[taxiiID]taxiiCollectionAccess)
 	if !ok {
 		return taxiiCollectionAccess{}
 	}
@@ -217,7 +217,7 @@ func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
 func withTaxiiUser(r *http.Request, tu taxiiUser) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tu.Email)
 	ctx = context.WithValue(ctx, canAdmin, tu.CanAdmin)
-	ctx = context.WithValue(ctx, userCollections, tu.CollectionAccess)
+	ctx = context.WithValue(ctx, userCollectionList, tu.CollectionAccessList)
 	return r.WithContext(ctx)
 }
 
