@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -282,7 +283,7 @@ func handleAdminTaxiiUserDelete(ts taxiiStorer, w http.ResponseWriter, body []by
 		return
 	}
 
-	writeContent(w, jsonContentType, `{"deleted":`+tu.Email+`}`)
+	writeContent(w, jsonContentType, `{"deleted": "`+tu.Email+`"}`)
 }
 
 func handleAdminTaxiiUserPost(ts taxiiStorer, w http.ResponseWriter, body []byte) {
@@ -374,7 +375,7 @@ func handleAdminTaxiiUserCollectionDelete(ts taxiiStorer, w http.ResponseWriter,
 		return
 	}
 
-	writeContent(w, jsonContentType, `{"deleted":`+tuc.taxiiCollectionAccess.ID.String()+`}`)
+	writeContent(w, jsonContentType, `{"deleted": "`+tuc.taxiiCollectionAccess.ID.String()+`"}`)
 }
 
 func handleAdminTaxiiUserCollectionPost(ts taxiiStorer, w http.ResponseWriter, body []byte) {
@@ -395,6 +396,7 @@ func handleAdminTaxiiUserCollectionPost(ts taxiiStorer, w http.ResponseWriter, b
 
 func handleAdminTaxiiUserCollectionPut(ts taxiiStorer, w http.ResponseWriter, body []byte) {
 	tuc, err := bodyToUserCollection(body)
+	fmt.Println(tuc)
 	if err != nil {
 		badRequest(w, err)
 		return
@@ -448,7 +450,7 @@ func handleAdminTaxiiUserPasswordPut(ts taxiiStorer, w http.ResponseWriter, body
 		return
 	}
 
-	writeContent(w, taxiiContentType, `{"updated":`+tup.Email+`}`)
+	writeContent(w, taxiiContentType, `{"updated": "`+tup.Email+`"}`)
 }
 
 /* helpers */

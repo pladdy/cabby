@@ -98,7 +98,7 @@ func (tuc *taxiiUserCollection) read(ts taxiiStorer) error {
 
 func (tuc *taxiiUserCollection) update(ts taxiiStorer) error {
 	tca := tuc.taxiiCollectionAccess
-	return ts.update("taxiiUserCollection", []interface{}{tca.ID.String(), tca.CanRead, tca.CanWrite, tuc.Email})
+	return ts.update("taxiiUserCollection", []interface{}{tca.CanRead, tca.CanWrite, tuc.Email, tca.ID.String()})
 }
 
 type taxiiUserPassword struct {

@@ -163,8 +163,8 @@ var statements = map[string]map[string]string{
 		                where id = ?`,
 		"taxiiUser": `update taxii_user set can_admin = ? where email = ?`,
 		"taxiiUserCollection": `update taxii_user_collection
-		                        set collection_id = ?, can_read = ?, can_write = ?
-														where email = ?`,
+		                        set can_read = ?, can_write = ?
+														where email = ? and collection_id = ?`,
 		"taxiiUserPassword": `update taxii_user_pass set pass = ? where email = ?`,
 	},
 }
