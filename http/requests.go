@@ -1,10 +1,6 @@
 package http
 
-import (
-	"net/http"
-	"strings"
-	"time"
-)
+import "net/http"
 
 // per context docuentation, use a key type for context keys
 type key int
@@ -31,25 +27,26 @@ func requestMethodIsGet(r *http.Request) bool {
 	return false
 }
 
-func takeAddedAfter(r *http.Request) string {
-	af := r.URL.Query()["added_after"]
+//
+// func takeAddedAfter(r *http.Request) string {
+// 	af := r.URL.Query()["added_after"]
+//
+// 	if len(af) > 0 {
+// 		t, err := time.Parse(time.RFC3339Nano, af[0])
+// 		if err == nil {
+// 			return t.Format(time.RFC3339Nano)
+// 		}
+// 	}
+// 	return ""
+// }
 
-	if len(af) > 0 {
-		t, err := time.Parse(time.RFC3339Nano, af[0])
-		if err == nil {
-			return t.Format(time.RFC3339Nano)
-		}
-	}
-	return ""
-}
-
-func takeCanAdmin(r *http.Request) bool {
-	ca, ok := r.Context().Value(canAdmin).(bool)
-	if !ok {
-		return false
-	}
-	return ca
-}
+// func takeCanAdmin(r *http.Request) bool {
+// 	ca, ok := r.Context().Value(canAdmin).(bool)
+// 	if !ok {
+// 		return false
+// 	}
+// 	return ca
+// }
 
 // func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
 // 	// get collection access map from context
@@ -65,15 +62,15 @@ func takeCanAdmin(r *http.Request) bool {
 // 	return ca[tid]
 // }
 
-func takeCollectionID(r *http.Request) string {
-	var collectionIndex = 3
-	return getToken(r.URL.Path, collectionIndex)
-}
-
-func takeObjectID(r *http.Request) string {
-	var objectIDIndex = 5
-	return getToken(r.URL.Path, objectIDIndex)
-}
+// func takeCollectionID(r *http.Request) string {
+// 	var collectionIndex = 3
+// 	return getToken(r.URL.Path, collectionIndex)
+// }
+//
+// func takeObjectID(r *http.Request) string {
+// 	var objectIDIndex = 5
+// 	return getToken(r.URL.Path, objectIDIndex)
+// }
 
 // func takeRequestRange(r *http.Request) taxiiRange {
 // 	ctx := r.Context()
@@ -85,53 +82,53 @@ func takeObjectID(r *http.Request) string {
 // 	return tr
 // }
 
-func takeStatusID(r *http.Request) string {
-	var statusIndex = 3
-	return getToken(r.URL.Path, statusIndex)
-}
-
-func takeStixID(r *http.Request) string {
-	si := r.URL.Query()["match[id]"]
-
-	if len(si) > 0 {
-		return si[0]
-	}
-	return ""
-}
-
-func takeStixTypes(r *http.Request) []string {
-	st := r.URL.Query()["match[type]"]
-
-	if len(st) > 0 {
-		return strings.Split(st[0], ",")
-	}
-	return []string{}
-}
-
-func takeUser(r *http.Request) string {
-	user, ok := r.Context().Value(userName).(string)
-	if !ok {
-		return ""
-	}
-	return user
-}
-
-func takeVersion(r *http.Request) string {
-	v := r.URL.Query()["match[version]"]
-
-	if len(v) > 0 {
-		return v[0]
-	}
-	return ""
-}
-
-func userExists(r *http.Request) bool {
-	_, ok := r.Context().Value(userName).(string)
-	if !ok {
-		return false
-	}
-	return true
-}
+// func takeStatusID(r *http.Request) string {
+// 	var statusIndex = 3
+// 	return getToken(r.URL.Path, statusIndex)
+// }
+//
+// func takeStixID(r *http.Request) string {
+// 	si := r.URL.Query()["match[id]"]
+//
+// 	if len(si) > 0 {
+// 		return si[0]
+// 	}
+// 	return ""
+// }
+//
+// func takeStixTypes(r *http.Request) []string {
+// 	st := r.URL.Query()["match[type]"]
+//
+// 	if len(st) > 0 {
+// 		return strings.Split(st[0], ",")
+// 	}
+// 	return []string{}
+// }
+//
+// func takeUser(r *http.Request) string {
+// 	user, ok := r.Context().Value(userName).(string)
+// 	if !ok {
+// 		return ""
+// 	}
+// 	return user
+// }
+//
+// func takeVersion(r *http.Request) string {
+// 	v := r.URL.Query()["match[version]"]
+//
+// 	if len(v) > 0 {
+// 		return v[0]
+// 	}
+// 	return ""
+// }
+//
+// func userExists(r *http.Request) bool {
+// 	_, ok := r.Context().Value(userName).(string)
+// 	if !ok {
+// 		return false
+// 	}
+// 	return true
+// }
 
 // func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
 // 	ctx := context.WithValue(r.Context(), requestRange, tr)

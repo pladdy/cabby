@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,20 +16,25 @@ type DiscoveryHandler struct {
 	DiscoveryService cabby.DiscoveryService
 }
 
-// ServeHTTP serves a discovery resource
-func (h *DiscoveryHandler) ServeHTTP(port int) http.HandlerFunc {
+// Get serves a discovery resource
+func (h *DiscoveryHandler) Get(port int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
+		if !requestMethodIsGet(r) {
+			methodNotAllowed(w, fmt.Errorf("Invalid method: %s", r.Method))
+			return
+		}
+
 		result, err := h.DiscoveryService.Read()
 		if err != nil {
-			resourceNotFound(w, err)
+			internalServerError(w, err)
 			return
 		}
 
 		discovery, ok := result.Data.(cabby.Discovery)
 		if !ok {
-			internalServerError(w, err)
+			internalServerError(w, errors.New("Invalid result"))
 			return
 		}
 

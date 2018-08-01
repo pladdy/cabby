@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func withAcceptStix(h http.HandlerFunc) http.HandlerFunc {
@@ -47,31 +44,31 @@ func withAcceptTaxii(h http.HandlerFunc) http.HandlerFunc {
 // 		h.ServeHTTP(withHSTS(w), withTaxiiUser(r, tu))
 // 	})
 // }
-
-func withRequestLogging(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		milliSecondOfNanoSeconds := int64(1000000)
-
-		start := time.Now().In(time.UTC)
-		log.WithFields(log.Fields{
-			"method":   r.Method,
-			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
-			"url":      r.URL,
-		}).Info("Serving request made to server")
-
-		h.ServeHTTP(w, r)
-
-		end := time.Now().In(time.UTC)
-		elapsed := time.Since(start)
-
-		log.WithFields(log.Fields{
-			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
-			"method":     r.Method,
-			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
-			"url":        r.URL,
-		}).Info("Served request made to server")
-	})
-}
+//
+// func withRequestLogging(h http.Handler) http.Handler {
+// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+// 		milliSecondOfNanoSeconds := int64(1000000)
+//
+// 		start := time.Now().In(time.UTC)
+// 		log.WithFields(log.Fields{
+// 			"method":   r.Method,
+// 			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
+// 			"url":      r.URL,
+// 		}).Info("Serving request made to server")
+//
+// 		h.ServeHTTP(w, r)
+//
+// 		end := time.Now().In(time.UTC)
+// 		elapsed := time.Since(start)
+//
+// 		log.WithFields(log.Fields{
+// 			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
+// 			"method":     r.Method,
+// 			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
+// 			"url":        r.URL,
+// 		}).Info("Served request made to server")
+// 	})
+// }
 
 /* helpers */
 

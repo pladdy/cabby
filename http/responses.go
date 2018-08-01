@@ -9,10 +9,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func withHSTS(w http.ResponseWriter) http.ResponseWriter {
-	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
-	return w
-}
+// func withHSTS(w http.ResponseWriter) http.ResponseWriter {
+// 	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
+// 	return w
+// }
 
 func getToken(s string, i int) string {
 	tokens := strings.Split(s, "/")
@@ -50,8 +50,8 @@ func writeContent(w http.ResponseWriter, contentType, content string) {
 	io.WriteString(w, content)
 }
 
-func writePartialContent(w http.ResponseWriter, contentType, content string) {
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(http.StatusPartialContent)
-	io.WriteString(w, content)
-}
+// func writePartialContent(w http.ResponseWriter, contentType, content string) {
+// 	w.Header().Set("Content-Type", contentType)
+// 	w.WriteHeader(http.StatusPartialContent)
+// 	io.WriteString(w, content)
+// }

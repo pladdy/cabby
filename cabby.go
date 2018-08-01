@@ -33,11 +33,11 @@ type Error struct {
 
 // Resource defines the interface for resources (discovery, api root, etc.)
 type Resource interface {
-	Create() error
-	Delete() error
-	GoCreate(toWrite chan interface{}) chan error
+	// Create() error
+	// Delete() error
+	// GoCreate(toWrite chan interface{}) chan error
 	Read() (Result, error)
-	Update() error
+	// Update() error
 }
 
 // Result struct for data returned from backend
