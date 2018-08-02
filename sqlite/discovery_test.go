@@ -36,3 +36,30 @@ func TestDiscoveryServiceRead(t *testing.T) {
 		t.Error("Got:", discovery.Default, "Expected:", expected.Default)
 	}
 }
+
+func TestDiscoveryServiceReadQueryErr(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := DiscoveryService{DB: ds.DB}
+
+	_, err := s.DB.Exec("drop table taxii_discovery")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.Read()
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestDiscoveryServiceReadNoAPIRoot(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := DiscoveryService{DB: ds.DB}
+
+	_, err := s.Read()
+	if err != nil {
+		t.Error("Got:", err, "Expected no error")
+	}
+}

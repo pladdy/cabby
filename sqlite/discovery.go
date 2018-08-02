@@ -31,7 +31,6 @@ func (s *DiscoveryService) read() (cabby.Result, error) {
 
 	d := cabby.Discovery{}
 	var apiRoots []string
-	var err error
 
 	rows, err := s.DB.Query(sql)
 	if err != nil {

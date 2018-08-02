@@ -1,4 +1,5 @@
-.PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite test test-failures test-install test-run
+.PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
+.PHONY: test test-failures test-install test test-run
 
 GO_FILES=$(shell find pkg/ -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
@@ -44,19 +45,32 @@ config:
 	@echo Configs available in config/
 
 cover: test-install
+ifdef pkg
+	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)/...
+	go tool cover -func=$(pkg).out
+	rm $(pkg).out
+else
 	@for package in sqlite http; do \
-	  go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}/...; \
-	  go tool cover -func=$${package}.out; \
+		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}/...; \
+		go tool cover -func=$${package}.out; \
 		rm $${package}.out; \
 	done
+endif
 
 cover-html: test-install
+ifdef pkg
+	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)/...
+	go tool cover -func=$(pkg).out
+	go tool cover -html=$(pkg).out
+	rm $(pkg).out
+else
 	@for package in sqlite http; do \
 		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}/...; \
 		go tool cover -func=$${package}.out; \
 		go tool cover -html=$${package}.out; \
 		rm $${package}.out; \
 	done
+endif
 
 dependencies:
 	go get -t -v  ./...
@@ -81,7 +95,11 @@ run-log:
 	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
 
 test: test-install
+ifdef pkg
+	go test $(BUILD_TAGS) -v ./$(pkg)/...
+else
 	go test $(BUILD_TAGS) -v -cover ./...
+endif
 
 test-failures: test-install
 	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
@@ -93,5 +111,5 @@ test-run: test-install
 ifdef test
 	go test $(BUILD_TAGS) -v ./... -run $(test)
 else
-	@echo Syntax is 'make test_run test=<test name>'
+	@echo Syntax is 'make $@ test=<test name>'
 endif

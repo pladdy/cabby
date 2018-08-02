@@ -5,13 +5,16 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	cabby "github.com/pladdy/cabby2"
 )
 
 const (
-	testDB = "testdata/test.db"
-	schema = "schema.sql"
+	eightMB         = 8388608
+	testAPIRootPath = "cabby_test_root"
+	testDB          = "testdata/test.db"
+	schema          = "schema.sql"
 )
 
 var (
@@ -19,11 +22,39 @@ var (
 	warn = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
 
+	testAPIRoot = cabby.APIRoot{Path: testAPIRootPath,
+		Title:            "test api root title",
+		Description:      "test api root description",
+		Versions:         []string{"taxii-2.0"},
+		MaxContentLength: eightMB}
 	testDiscovery = cabby.Discovery{Title: "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
 )
+
+/* helpers */
+
+func createAPIRoot(ds *DataStore) {
+	tx, err := ds.DB.Begin()
+	if err != nil {
+		fail.Fatal(err)
+	}
+
+	stmt, err := tx.Prepare(`insert into taxii_api_root
+		(id, api_root_path, title, description, versions, max_content_length) values (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec("testID",
+		testAPIRootPath, testAPIRoot.Title, testAPIRoot.Description, strings.Join(testAPIRoot.Versions, ","), testAPIRoot.MaxContentLength)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	tx.Commit()
+}
 
 func createDiscovery(ds *DataStore) {
 	tx, err := ds.DB.Begin()
@@ -80,6 +111,7 @@ func setupSQLite() {
 
 	ds := testDataStore()
 	createDiscovery(ds)
+	createAPIRoot(ds)
 }
 
 func tearDownSQLite() {

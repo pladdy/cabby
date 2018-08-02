@@ -1,5 +1,14 @@
 package cabby
 
+// APIRoot resource
+type APIRoot struct {
+	Path             string   `json:"path,omitempty"`
+	Title            string   `json:"title"`
+	Description      string   `json:"description,omitempty"`
+	Versions         []string `json:"versions"`
+	MaxContentLength int64    `json:"max_content_length"`
+}
+
 // DataStore interface for backend implementations
 type DataStore interface {
 	Open(path string) error
