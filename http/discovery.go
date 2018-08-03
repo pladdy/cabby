@@ -16,8 +16,8 @@ type DiscoveryHandler struct {
 	DiscoveryService cabby.DiscoveryService
 }
 
-// Get serves a discovery resource
-func (h *DiscoveryHandler) Get(port int) http.HandlerFunc {
+// HandleDiscovery serves a discovery resource
+func (h *DiscoveryHandler) HandleDiscovery(port int) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer recoverFromPanic(w)
 
@@ -47,7 +47,7 @@ func (h *DiscoveryHandler) Get(port int) http.HandlerFunc {
 		if discovery.Title == "" {
 			resourceNotFound(w, errors.New("Discovery not defined"))
 		} else {
-			writeContent(w, taxiiContentType, resourceToJSON(discovery))
+			writeContent(w, TaxiiContentType, resourceToJSON(discovery))
 		}
 	})
 }

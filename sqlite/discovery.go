@@ -15,7 +15,7 @@ type DiscoveryService struct {
 }
 
 // Read will read from the data store and populate the discovery resource
-func (s *DiscoveryService) Read() (cabby.Result, error) {
+func (s DiscoveryService) Read() (cabby.Result, error) {
 	return cabby.WithReadLogging("discovery", s.read)()
 }
 

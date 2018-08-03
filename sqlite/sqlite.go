@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
+	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 
 	// import sqlite dependency
@@ -25,6 +26,11 @@ func NewDataStore(path string) (*DataStore, error) {
 
 	err := s.Open()
 	return &s, err
+}
+
+// DiscoveryService returns a discovery service
+func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
+	return DiscoveryService{DB: s.DB}
 }
 
 // Open connection to datastore

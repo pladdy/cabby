@@ -1,5 +1,12 @@
 package cabby
 
+import (
+	"encoding/json"
+	"io/ioutil"
+
+	log "github.com/sirupsen/logrus"
+)
+
 // APIRoot resource
 type APIRoot struct {
 	Path             string   `json:"path,omitempty"`
@@ -9,10 +16,37 @@ type APIRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+// Configs holds Configs by key (environment)
+type Configs map[string]Config
+
+// Parse takes a path to a config file and converts to Configs
+func (c Configs) Parse(file string) (cs Configs) {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		log.WithFields(log.Fields{"file": file, "error": err}).Panic("Can't parse config file")
+	}
+
+	if err = json.Unmarshal(b, &cs); err != nil {
+		log.WithFields(log.Fields{"file": file, "error": err}).Panic("Can't unmarshal JSON")
+	}
+
+	return
+}
+
+// Config for a server
+type Config struct {
+	Host      string
+	Port      int
+	SSLCert   string            `json:"ssl_cert"`
+	SSLKey    string            `json:"ssl_key"`
+	DataStore map[string]string `json:"data_store"`
+}
+
 // DataStore interface for backend implementations
 type DataStore interface {
-	Open(path string) error
-	Close() error
+	Close()
+	DiscoveryService() DiscoveryService
+	Open() error
 }
 
 // Discovery resource

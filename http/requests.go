@@ -12,10 +12,14 @@ const (
 	canAdmin           key = 3
 	jsonContentType        = "application/json"
 	sixMonthsOfSeconds     = "63072000"
-	stixContentType20      = "application/vnd.oasis.stix+json; version=2.0"
-	stixContentType        = "application/vnd.oasis.stix+json"
-	taxiiContentType20     = "application/vnd.oasis.taxii+json; version=2.0"
-	taxiiContentType       = "application/vnd.oasis.taxii+json"
+	// StixContentType20 represents a stix 2.0 content type
+	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
+	// StixContentType represents a stix 2 content type
+	StixContentType = "application/vnd.oasis.stix+json"
+	// TaxiiContentType20 represents a taxii 2.0 content type
+	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
+	// TaxiiContentType represents a taxii 2 content type
+	TaxiiContentType = "application/vnd.oasis.taxii+json"
 )
 
 /* request helpers */

@@ -9,7 +9,7 @@ import (
 	cabby "github.com/pladdy/cabby2"
 )
 
-func TestDiscoveryHandlerGet(t *testing.T) {
+func TestDiscoveryHandlerHandleDiscovery(t *testing.T) {
 	ds := DiscoveryService{}
 	ds.ReadFn = func() (cabby.Result, error) {
 		return cabby.Result{Data: testDiscovery()}, nil
@@ -17,7 +17,7 @@ func TestDiscoveryHandlerGet(t *testing.T) {
 
 	// call handler
 	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.Get(testPort), "GET", testDiscoveryURL, nil)
+	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -46,7 +46,7 @@ func TestDiscoveryHandlerGet(t *testing.T) {
 	}
 }
 
-func TestDiscoveryHandlerGetFailures(t *testing.T) {
+func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 	tests := []struct {
 		method         string
 		hasReadErr     bool
@@ -86,7 +86,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 		}
 
 		h := DiscoveryHandler{DiscoveryService: &ds}
-		status, result := handlerTest(h.Get(testPort), test.method, testDiscoveryURL, nil)
+		status, result := handlerTest(h.HandleDiscovery(testPort), test.method, testDiscoveryURL, nil)
 
 		if status != test.expectedStatus {
 			t.Error("Got:", status, "Expected:", test.expectedStatus)
@@ -117,7 +117,7 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.Get(testPort), "GET", testDiscoveryURL, nil)
+	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -149,7 +149,7 @@ func TestDiscoveryHandlerAPIRoots(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.Get(testPort), "GET", testDiscoveryURL, nil)
+	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)

@@ -22,7 +22,7 @@ func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 		"http status": status,
 	}).Error("Returning error in response")
 
-	w.Header().Set("Content-Type", taxiiContentType)
+	w.Header().Set("Content-Type", TaxiiContentType)
 	w.WriteHeader(status)
 	io.WriteString(w, resourceToJSON(te))
 }

@@ -32,7 +32,7 @@ func logResourceEnd(resource, action string, start time.Time) {
 	}).Info("Finished with resource")
 }
 
-// ReadFunc defines signature for a discovery reader
+// ReadFunc defines signature for a service reader
 type ReadFunc func() (Result, error)
 
 // WithReadLogging takes a resource name and a read function and adds logging to it
