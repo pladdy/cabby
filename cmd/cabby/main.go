@@ -27,6 +27,7 @@ func main() {
 	if len(cabbyEnv) == 0 {
 		cabbyEnv = defaultCabbyEnvironment
 	}
+
 	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
 
 	var configPath = flag.String("config", cabbyConfigs[cabbyEnv], "path to cabby config file")

@@ -1,14 +1,13 @@
 .PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
 .PHONY: test test-failures test-install test test-run
 
-GO_FILES=$(shell find pkg/ -name '*go' | grep -v test)
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
 
 all: config cert dependencies
 
-build:
-	go build $(BUILD_TAGS) -o $(BUILD_PATH) $(GO_FILES)
+build: build/debian/usr/bin/
+	go build $(BUILD_TAGS) -o build/debian/usr/bin/cabby cmd/cabby/main.go
 
 build/debian/etc/cabby/:
 	mkdir -p $@
@@ -89,10 +88,10 @@ reportcard: fmt
 	go vet
 
 run:
-	go run $(BUILD_TAGS) $(GO_FILES)
+	go run $(BUILD_TAGS) cmd/cabby/main.go
 
 run-log:
-	go run $(BUILD_TAGS) $(GO_FILES) 2>&1 | tee cabby.log
+	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log
 
 test: test-install
 ifdef pkg
