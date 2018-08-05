@@ -1,6 +1,11 @@
 package http
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+
+	cabby "github.com/pladdy/cabby2"
+)
 
 // per context docuentation, use a key type for context keys
 type key int
@@ -138,13 +143,13 @@ func requestMethodIsGet(r *http.Request) bool {
 // 	ctx := context.WithValue(r.Context(), requestRange, tr)
 // 	return r.WithContext(ctx)
 // }
-//
-// func withTaxiiUser(r *http.Request, tu taxiiUser) *http.Request {
-// 	ctx := context.WithValue(context.Background(), userName, tu.Email)
-// 	ctx = context.WithValue(ctx, canAdmin, tu.CanAdmin)
-// 	ctx = context.WithValue(ctx, userCollectionList, tu.CollectionAccessList)
-// 	return r.WithContext(ctx)
-// }
+
+func withUser(r *http.Request, u cabby.User) *http.Request {
+	ctx := context.WithValue(context.Background(), userName, u.Email)
+	ctx = context.WithValue(ctx, canAdmin, u.CanAdmin)
+	//ctx = context.WithValue(ctx, userCollectionList, tu.CollectionAccessList)
+	return r.WithContext(ctx)
+}
 
 // func validateUser(ts taxiiStorer, u, p string) (taxiiUser, bool) {
 // 	tu, err := newTaxiiUser(ts, u, p)

@@ -11,8 +11,8 @@ import (
 
 func TestDiscoveryHandlerHandleDiscovery(t *testing.T) {
 	ds := DiscoveryService{}
-	ds.ReadFn = func() (cabby.Result, error) {
-		return cabby.Result{Data: testDiscovery()}, nil
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return testDiscovery(), nil
 	}
 
 	// call handler
@@ -48,27 +48,22 @@ func TestDiscoveryHandlerHandleDiscovery(t *testing.T) {
 
 func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 	tests := []struct {
-		method         string
-		hasReadErr     bool
-		errorDesc      string
-		expectedError  cabby.Error
-		expectedStatus int
+		method          string
+		hasDiscoveryErr bool
+		errorDesc       string
+		expectedError   cabby.Error
+		expectedStatus  int
 	}{
 		{method: "INVALID",
-			hasReadErr:     true,
-			errorDesc:      "Invalid method: INVALID",
-			expectedError:  cabby.Error{Title: "Method Not Allowed"},
-			expectedStatus: http.StatusMethodNotAllowed},
+			hasDiscoveryErr: true,
+			errorDesc:       "Invalid method: INVALID",
+			expectedError:   cabby.Error{Title: "Method Not Allowed"},
+			expectedStatus:  http.StatusMethodNotAllowed},
 		{method: "GET",
-			hasReadErr:     true,
-			errorDesc:      "Read failure",
-			expectedError:  cabby.Error{Title: "Internal Server Error"},
-			expectedStatus: http.StatusInternalServerError},
-		{method: "GET",
-			hasReadErr:     false,
-			errorDesc:      "Invalid result",
-			expectedError:  cabby.Error{Title: "Internal Server Error"},
-			expectedStatus: http.StatusInternalServerError},
+			hasDiscoveryErr: true,
+			errorDesc:       "Discovery failure",
+			expectedError:   cabby.Error{Title: "Internal Server Error"},
+			expectedStatus:  http.StatusInternalServerError},
 	}
 
 	for _, test := range tests {
@@ -77,12 +72,12 @@ func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 		test.expectedError.HTTPStatus = test.expectedStatus
 
 		ds := DiscoveryService{}
-		ds.ReadFn = func() (cabby.Result, error) {
+		ds.DiscoveryFn = func() (cabby.Discovery, error) {
 			var err error
-			if test.hasReadErr {
+			if test.hasDiscoveryErr {
 				err = errors.New(test.errorDesc)
 			}
-			return cabby.Result{}, err
+			return cabby.Discovery{}, err
 		}
 
 		h := DiscoveryHandler{DiscoveryService: &ds}
@@ -112,8 +107,8 @@ func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 
 func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	ds := DiscoveryService{}
-	ds.ReadFn = func() (cabby.Result, error) {
-		return cabby.Result{Data: cabby.Discovery{Title: ""}}, nil
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return cabby.Discovery{Title: ""}, nil
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds}
@@ -144,8 +139,8 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 
 func TestDiscoveryHandlerAPIRoots(t *testing.T) {
 	ds := DiscoveryService{}
-	ds.ReadFn = func() (cabby.Result, error) {
-		return cabby.Result{Data: testDiscovery()}, nil
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return testDiscovery(), nil
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds}

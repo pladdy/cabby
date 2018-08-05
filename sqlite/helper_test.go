@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	eightMB         = 8388608
-	testAPIRootPath = "cabby_test_root"
-	testDB          = "testdata/test.db"
-	schema          = "schema.sql"
+	eightMB          = 8388608
+	testAPIRootPath  = "cabby_test_root"
+	testDB           = "testdata/test.db"
+	testUserEmail    = "test@cabby.com"
+	testUserPassword = "test"
+	schema           = "schema.sql"
 )
 
 var (
@@ -31,6 +33,8 @@ var (
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     "https://localhost/taxii/"}
+	testUser = cabby.User{Email: testUserEmail,
+		CanAdmin: true}
 )
 
 /* helpers */
@@ -75,12 +79,37 @@ func createDiscovery(ds *DataStore) {
 	tx.Commit()
 }
 
-func testDataStore() *DataStore {
-	ds, err := NewDataStore(testDB)
+func createUser(ds *DataStore) {
+	tx, err := ds.DB.Begin()
 	if err != nil {
 		fail.Fatal(err)
 	}
-	return ds
+
+	// user
+	stmt, err := tx.Prepare("insert into taxii_user (email, can_admin) values (?, ?)")
+	if err != nil {
+		fail.Fatal(err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(testUser.Email, testUser.CanAdmin)
+	if err != nil {
+		fail.Fatal(err)
+	}
+
+	// password
+	stmt, err = tx.Prepare("insert into taxii_user_pass (email, pass) values (?, ?)")
+	if err != nil {
+		fail.Fatal(err)
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(testUser.Email, hash(testUserPassword))
+	if err != nil {
+		fail.Fatal(err)
+	}
+
+	tx.Commit()
 }
 
 func setupSQLite() {
@@ -112,8 +141,17 @@ func setupSQLite() {
 	ds := testDataStore()
 	createDiscovery(ds)
 	createAPIRoot(ds)
+	createUser(ds)
 }
 
 func tearDownSQLite() {
 	os.Remove(testDB)
+}
+
+func testDataStore() *DataStore {
+	ds, err := NewDataStore(testDB)
+	if err != nil {
+		fail.Fatal(err)
+	}
+	return ds
 }

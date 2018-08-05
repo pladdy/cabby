@@ -9,11 +9,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// func withHSTS(w http.ResponseWriter) http.ResponseWriter {
-// 	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
-// 	return w
-// }
-
 func getToken(s string, i int) string {
 	tokens := strings.Split(s, "/")
 
@@ -43,6 +38,11 @@ func resourceToJSON(v interface{}) string {
 		}).Panic("Can't convert to JSON")
 	}
 	return string(b)
+}
+
+func withHSTS(w http.ResponseWriter) http.ResponseWriter {
+	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
+	return w
 }
 
 func writeContent(w http.ResponseWriter, contentType, content string) {

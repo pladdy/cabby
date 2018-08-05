@@ -2,8 +2,6 @@ package sqlite
 
 import (
 	"testing"
-
-	cabby "github.com/pladdy/cabby2"
 )
 
 func TestDiscoveryServiceRead(t *testing.T) {
@@ -13,27 +11,22 @@ func TestDiscoveryServiceRead(t *testing.T) {
 
 	expected := testDiscovery
 
-	result, err := s.Read()
+	result, err := s.Discovery()
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
 
-	discovery, ok := result.Data.(cabby.Discovery)
-	if !ok {
-		t.Fatal("Got:", result, "Expected Discovery")
+	if result.Title != expected.Title {
+		t.Error("Got:", result.Title, "Expected:", expected.Title)
 	}
-
-	if discovery.Title != expected.Title {
-		t.Error("Got:", discovery.Title, "Expected:", expected.Title)
+	if result.Description != expected.Description {
+		t.Error("Got:", result.Description, "Expected:", expected.Description)
 	}
-	if discovery.Description != expected.Description {
-		t.Error("Got:", discovery.Description, "Expected:", expected.Description)
+	if result.Contact != expected.Contact {
+		t.Error("Got:", result.Contact, "Expected:", expected.Contact)
 	}
-	if discovery.Contact != expected.Contact {
-		t.Error("Got:", discovery.Contact, "Expected:", expected.Contact)
-	}
-	if discovery.Default != expected.Default {
-		t.Error("Got:", discovery.Default, "Expected:", expected.Default)
+	if result.Default != expected.Default {
+		t.Error("Got:", result.Default, "Expected:", expected.Default)
 	}
 }
 
@@ -47,7 +40,7 @@ func TestDiscoveryServiceReadQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Read()
+	_, err = s.Discovery()
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -58,7 +51,7 @@ func TestDiscoveryServiceReadNoAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
 
-	_, err := s.Read()
+	_, err := s.Discovery()
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}

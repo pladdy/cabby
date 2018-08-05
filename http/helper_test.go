@@ -13,17 +13,31 @@ import (
 const (
 	testPort         = 1234
 	testDiscoveryURL = "https://localhost:1234/taxii/"
-	testUser         = "test@cabby.com"
+	testUserEmail    = "test@cabby.com"
+	testUserPassword = "test"
 )
 
-/* mock service */
+/* mock services */
 
 type DiscoveryService struct {
-	ReadFn func() (cabby.Result, error)
+	DiscoveryFn func() (cabby.Discovery, error)
 }
 
-func (s *DiscoveryService) Read() (cabby.Result, error) {
-	return s.ReadFn()
+func (s *DiscoveryService) Discovery() (cabby.Discovery, error) {
+	return s.DiscoveryFn()
+}
+
+type UserService struct {
+	UserFn  func(user, password string) (cabby.User, error)
+	ValidFn func(cabby.User) bool
+}
+
+func (s *UserService) User(user, password string) (cabby.User, error) {
+	return s.UserFn(user, password)
+}
+
+func (s *UserService) Valid(u cabby.User) bool {
+	return s.ValidFn(u)
 }
 
 /* helper functions */
@@ -34,9 +48,9 @@ func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, 
 	var req *http.Request
 
 	if b != nil {
-		req = withAuthContext(httptest.NewRequest(method, url, b))
+		req = withAuthentication(httptest.NewRequest(method, url, b))
 	} else {
-		req = withAuthContext(httptest.NewRequest(method, url, nil))
+		req = withAuthentication(httptest.NewRequest(method, url, nil))
 	}
 
 	res := httptest.NewRecorder()
@@ -55,8 +69,8 @@ func testDiscovery() cabby.Discovery {
 }
 
 // create a context for the testUser and give it read/write access to the test collection
-func withAuthContext(r *http.Request) *http.Request {
-	ctx := context.WithValue(context.Background(), userName, testUser)
+func withAuthentication(r *http.Request) *http.Request {
+	ctx := context.WithValue(context.Background(), userName, testUserEmail)
 	ctx = context.WithValue(ctx, canAdmin, true)
 	return r.WithContext(ctx)
 }

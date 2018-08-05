@@ -28,6 +28,11 @@ func NewDataStore(path string) (*DataStore, error) {
 	return &s, err
 }
 
+// Close connection to datastore
+func (s *DataStore) Close() {
+	s.DB.Close()
+}
+
 // DiscoveryService returns a discovery service
 func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 	return DiscoveryService{DB: s.DB}
@@ -43,7 +48,7 @@ func (s *DataStore) Open() (err error) {
 	return
 }
 
-// Close connection to datastore
-func (s *DataStore) Close() {
-	s.DB.Close()
+// UserService returns a user service
+func (s *DataStore) UserService() cabby.UserService {
+	return UserService{DB: s.DB}
 }

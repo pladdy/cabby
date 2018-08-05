@@ -47,6 +47,7 @@ type DataStore interface {
 	Close()
 	DiscoveryService() DiscoveryService
 	Open() error
+	UserService() UserService
 }
 
 // Discovery resource
@@ -60,7 +61,7 @@ type Discovery struct {
 
 // DiscoveryService interface for interacting with Discovery resources
 type DiscoveryService interface {
-	Resource
+	Discovery() (Discovery, error)
 }
 
 // Error struct for TAXII 2 errors
@@ -74,20 +75,23 @@ type Error struct {
 	Details         map[string]string `json:"details,omitempty"`
 }
 
-// Resource defines the interface for resources (discovery, api root, etc.)
-type Resource interface {
-	// Create() error
-	// Delete() error
-	// GoCreate(toWrite chan interface{}) chan error
-	Read() (Result, error)
-	// Update() error
-}
-
 // Result struct for data returned from backend
 type Result struct {
-	Data          interface{}
-	ItemStart     int64
-	ItemEnd       int64
-	Items         int64
-	ResultRunTime int64
+	Data      interface{}
+	ItemStart int64
+	ItemEnd   int64
+	Items     int64
+}
+
+// User represents a cabby user
+type User struct {
+	Email    string `json:"email"`
+	CanAdmin bool   `json:"can_admin"`
+	// CollectionAccessList map[taxiiID]taxiiCollectionAccess `json:"collection_access_list"`
+}
+
+// UserService provides Users behavior
+type UserService interface {
+	User(user, password string) (User, error)
+	Valid(User) bool
 }

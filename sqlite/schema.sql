@@ -210,6 +210,7 @@ create table taxii_user (
 drop table if exists taxii_user_collection;
 
 create table taxii_user_collection (
+  id            integer primary key not null,
   email         text    not null,
   collection_id text    not null,
   can_read      integer check(can_read in (1, 0)) not null,
@@ -217,7 +218,7 @@ create table taxii_user_collection (
   created_at    text,
   updated_at    text,
 
-  primary key (email, collection_id),
+  unique (email, collection_id) on conflict ignore,
   foreign key (email) references taxii_user(email) on delete cascade
 );
 

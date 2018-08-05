@@ -26,15 +26,9 @@ func (h *DiscoveryHandler) HandleDiscovery(port int) http.HandlerFunc {
 			return
 		}
 
-		result, err := h.DiscoveryService.Read()
+		discovery, err := h.DiscoveryService.Discovery()
 		if err != nil {
 			internalServerError(w, err)
-			return
-		}
-
-		discovery, ok := result.Data.(cabby.Discovery)
-		if !ok {
-			internalServerError(w, errors.New("Invalid result"))
 			return
 		}
 

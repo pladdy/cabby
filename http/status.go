@@ -65,12 +65,6 @@ func unsupportedMediaType(w http.ResponseWriter, err error) {
 	errorStatus(w, "Unsupported Media Type", err, http.StatusUnsupportedMediaType)
 }
 
-/* catch undefined route */
-
-func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
-	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
-}
-
 func recoverFromPanic(w http.ResponseWriter) {
 	if r := recover(); r != nil {
 		log.Error("Panic!  Printing out Stack...")

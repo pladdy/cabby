@@ -6,9 +6,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func logResourceStart(resource, action string) time.Time {
-	milliSecondOfNanoSeconds := int64(1000000)
+const milliSecondOfNanoSeconds = int64(1000000)
 
+// LogServiceStart takes a resource and action being performed and logs it
+func LogServiceStart(resource, action string) time.Time {
 	start := time.Now().In(time.UTC)
 	log.WithFields(log.Fields{
 		"action":   action,
@@ -18,9 +19,8 @@ func logResourceStart(resource, action string) time.Time {
 	return start
 }
 
-func logResourceEnd(resource, action string, start time.Time) {
-	milliSecondOfNanoSeconds := int64(1000000)
-
+// LogServiceEnd takes a resource and action being performed and a start time, and logs it and how long it took
+func LogServiceEnd(resource, action string, start time.Time) {
 	end := time.Now().In(time.UTC)
 	elapsed := time.Since(start)
 
@@ -30,18 +30,4 @@ func logResourceEnd(resource, action string, start time.Time) {
 		"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
 		"resource":   resource,
 	}).Info("Finished with resource")
-}
-
-// ReadFunc defines signature for a service reader
-type ReadFunc func() (Result, error)
-
-// WithReadLogging takes a resource name and a read function and adds logging to it
-func WithReadLogging(resource string, f ReadFunc) ReadFunc {
-	return func() (Result, error) {
-		action := "read"
-		start := logResourceStart(resource, action)
-		result, err := f()
-		logResourceEnd(resource, action, start)
-		return result, err
-	}
 }

@@ -1,13 +1,19 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
+	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
+
+func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
+	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
+}
 
 // WithAcceptType decorates a handle with content type check
 func WithAcceptType(h http.HandlerFunc, typeToCheck string) http.HandlerFunc {
@@ -22,20 +28,25 @@ func WithAcceptType(h http.HandlerFunc, typeToCheck string) http.HandlerFunc {
 	}
 }
 
-// func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
-// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 		u, p, ok := r.BasicAuth()
-// 		tu, _ := us.Read(u, p)
-//
-// 		if !ok || !tu.valid() {
-// 			unauthorized(w, errors.New("Invalid user/pass combination"))
-// 			return
-// 		}
-//
-// 		log.WithFields(log.Fields{"user": u}).Info("User authenticated")
-// 		h.ServeHTTP(withHSTS(w), withTaxiiUser(r, tu))
-// 	})
-// }
+func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		u, p, ok := r.BasicAuth()
+
+		user, err := us.User(u, p)
+		if err != nil {
+			internalServerError(w, err)
+			return
+		}
+
+		if !ok || !us.Valid(user) {
+			unauthorized(w, errors.New("Invalid user/pass combination"))
+			return
+		}
+
+		log.WithFields(log.Fields{"user": u}).Info("User authenticated")
+		h.ServeHTTP(withHSTS(w), withUser(r, user))
+	})
+}
 
 func withRequestLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +56,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 		log.WithFields(log.Fields{
 			"method":   r.Method,
 			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
-			"url":      r.URL,
+			"url":      r.URL.String(),
 		}).Info("Serving request made to server")
 
 		h.ServeHTTP(w, r)
@@ -57,7 +68,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"method":     r.Method,
 			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
-			"url":        r.URL,
+			"url":        r.URL.String(),
 		}).Info("Served request made to server")
 	})
 }
