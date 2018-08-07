@@ -5,6 +5,10 @@
 # cabby
 TAXII 2.0 server in Golang.
 
+# re-org
+I'm reorganizing the code base based on this article: https://medium.com/@benbjohnson/standard-package-layout-7cdbc8391fc1
+So far i find it helpful and it's made me think about isolating dependencies, dependency injection, etc.
+
 ## Dependencies
 - Golang 1.9.x
 - SQLite

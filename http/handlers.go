@@ -11,8 +11,28 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func handleUndefinedRequest(w http.ResponseWriter, r *http.Request) {
-	resourceNotFound(w, fmt.Errorf("Undefined request: %v", r.URL))
+func handleUndefinedRoute(w http.ResponseWriter, r *http.Request) {
+	resourceNotFound(w, fmt.Errorf("Invalid path: %v", r.URL))
+}
+
+// RequestHandler interface for handling requests
+type RequestHandler interface {
+	Get(w http.ResponseWriter, r *http.Request)
+}
+
+// RouteRequest takes a RequestHandler and routes requests to its methods
+func RouteRequest(h RequestHandler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		switch r.Method {
+		case http.MethodGet:
+			h.Get(w, r)
+		default:
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+			return
+		}
+	})
 }
 
 // WithAcceptType decorates a handle with content type check
@@ -38,7 +58,8 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 			return
 		}
 
-		if !ok || !us.Valid(user) {
+		if !ok || !us.Exists(user) {
+			log.WithFields(log.Fields{"user": u}).Warn("User authentication failed!	")
 			unauthorized(w, errors.New("Invalid user/pass combination"))
 			return
 		}

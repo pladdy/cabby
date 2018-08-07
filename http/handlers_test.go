@@ -18,7 +18,59 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func TestRequireAcceptType(t *testing.T) {
+func TestHandleUndefinedRequest(t *testing.T) {
+	status, body := handlerTest(handleUndefinedRoute, "GET", "/", nil)
+
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
+	}
+
+	expected := cabby.Error{Title: "Resource not found", Description: "Invalid path: /", HTTPStatus: 404}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Title != expected.Title {
+		t.Error("Got:", result.Title, "Expected:", expected.Title)
+	}
+	if result.Description != expected.Description {
+		t.Error("Got:", result.Description, "Expected:", expected.Description)
+	}
+	if result.HTTPStatus != expected.HTTPStatus {
+		t.Error("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
+	}
+}
+
+func TestRequestHandlerRouteRequest(t *testing.T) {
+	// set up service
+	ds := DiscoveryService{}
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return testDiscovery(), nil
+	}
+
+	tests := []struct {
+		method         string
+		requestHandler RequestHandler
+		url            string
+		status         int
+	}{
+		{"CUSTOM", DiscoveryHandler{DiscoveryService: &ds, Port: testPort}, testDiscoveryURL, http.StatusMethodNotAllowed},
+		{"GET", DiscoveryHandler{DiscoveryService: &ds, Port: testPort}, testDiscoveryURL, http.StatusOK},
+	}
+
+	for _, test := range tests {
+		status, _ := handlerTest(RouteRequest(test.requestHandler), test.method, test.url, nil)
+
+		if status != test.status {
+			t.Error("Got:", status, "Expected:", test.status)
+		}
+	}
+}
+
+func TestWithAcceptType(t *testing.T) {
 	tests := []struct {
 		acceptedHeader string
 		acceptHeader   string
@@ -61,23 +113,23 @@ func TestRequireAcceptType(t *testing.T) {
 func TestWithBasicAuth(t *testing.T) {
 	tests := []struct {
 		userFn         func(user, password string) (cabby.User, error)
-		validFn        func(cabby.User) bool
+		existsFn       func(cabby.User) bool
 		expectedStatus int
 	}{
 		{userFn: func(user, password string) (cabby.User, error) {
 			return cabby.User{Email: testUserEmail}, nil
 		},
-			validFn:        func(cabby.User) bool { return true },
+			existsFn:       func(cabby.User) bool { return true },
 			expectedStatus: http.StatusOK},
 		{userFn: func(user, password string) (cabby.User, error) {
 			return cabby.User{}, errors.New("service error")
 		},
-			validFn:        func(cabby.User) bool { return true },
+			existsFn:       func(cabby.User) bool { return true },
 			expectedStatus: http.StatusInternalServerError},
 		{userFn: func(user, password string) (cabby.User, error) {
 			return cabby.User{}, nil
 		},
-			validFn:        func(cabby.User) bool { return false },
+			existsFn:       func(cabby.User) bool { return false },
 			expectedStatus: http.StatusUnauthorized},
 	}
 
@@ -85,7 +137,7 @@ func TestWithBasicAuth(t *testing.T) {
 		// set up service
 		us := UserService{}
 		us.UserFn = test.userFn
-		us.ValidFn = test.validFn
+		us.ExistsFn = test.existsFn
 
 		// set up handler
 		mockHandler := mockHandler(t.Name())

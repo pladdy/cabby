@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -14,36 +13,28 @@ import (
 // DiscoveryHandler holds a cabby DiscoveryService
 type DiscoveryHandler struct {
 	DiscoveryService cabby.DiscoveryService
+	Port             int
 }
 
-// HandleDiscovery serves a discovery resource
-func (h *DiscoveryHandler) HandleDiscovery(port int) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer recoverFromPanic(w)
+// Get serves a discovery resource
+func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
+	discovery, err := h.DiscoveryService.Discovery()
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
 
-		if !requestMethodIsGet(r) {
-			methodNotAllowed(w, fmt.Errorf("Invalid method: %s", r.Method))
-			return
-		}
+	discovery.Default = insertPort(discovery.Default, h.Port)
 
-		discovery, err := h.DiscoveryService.Discovery()
-		if err != nil {
-			internalServerError(w, err)
-			return
-		}
+	for i := 0; i < len(discovery.APIRoots); i++ {
+		discovery.APIRoots[i] = swapPath(discovery.Default, discovery.APIRoots[i]) + "/"
+	}
 
-		discovery.Default = insertPort(discovery.Default, port)
-
-		for i := 0; i < len(discovery.APIRoots); i++ {
-			discovery.APIRoots[i] = swapPath(discovery.Default, discovery.APIRoots[i]) + "/"
-		}
-
-		if discovery.Title == "" {
-			resourceNotFound(w, errors.New("Discovery not defined"))
-		} else {
-			writeContent(w, TaxiiContentType, resourceToJSON(discovery))
-		}
-	})
+	if discovery.Title == "" {
+		resourceNotFound(w, errors.New("Discovery not defined"))
+	} else {
+		writeContent(w, TaxiiContentType, resourceToJSON(discovery))
+	}
 }
 
 /* helpers */

@@ -9,15 +9,15 @@ import (
 	cabby "github.com/pladdy/cabby2"
 )
 
-func TestDiscoveryHandlerHandleDiscovery(t *testing.T) {
+func TestDiscoveryHandlerGet(t *testing.T) {
 	ds := DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) {
 		return testDiscovery(), nil
 	}
 
 	// call handler
-	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: testPort}
+	status, result := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -44,9 +44,13 @@ func TestDiscoveryHandlerHandleDiscovery(t *testing.T) {
 	if discovery.Default != expectedDefault {
 		t.Error("Got:", discovery.Default, "Expected:", expectedDefault)
 	}
+	expectedAPIRoots := []string{"https://localhost:1234/test_api_root/"}
+	if discovery.APIRoots[0] != expectedAPIRoots[0] {
+		t.Error("Got:", discovery.APIRoots[0], "Expected:", expectedAPIRoots[0])
+	}
 }
 
-func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
+func TestDiscoveryHandlerGetFailures(t *testing.T) {
 	tests := []struct {
 		method          string
 		hasDiscoveryErr bool
@@ -54,11 +58,6 @@ func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 		expectedError   cabby.Error
 		expectedStatus  int
 	}{
-		{method: "INVALID",
-			hasDiscoveryErr: true,
-			errorDesc:       "Invalid method: INVALID",
-			expectedError:   cabby.Error{Title: "Method Not Allowed"},
-			expectedStatus:  http.StatusMethodNotAllowed},
 		{method: "GET",
 			hasDiscoveryErr: true,
 			errorDesc:       "Discovery failure",
@@ -80,8 +79,8 @@ func TestDiscoveryHandlerHandleDiscoveryFailures(t *testing.T) {
 			return cabby.Discovery{}, err
 		}
 
-		h := DiscoveryHandler{DiscoveryService: &ds}
-		status, result := handlerTest(h.HandleDiscovery(testPort), test.method, testDiscoveryURL, nil)
+		h := DiscoveryHandler{DiscoveryService: &ds, Port: testPort}
+		status, result := handlerTest(h.Get, test.method, testDiscoveryURL, nil)
 
 		if status != test.expectedStatus {
 			t.Error("Got:", status, "Expected:", test.expectedStatus)
@@ -111,8 +110,8 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 		return cabby.Discovery{Title: ""}, nil
 	}
 
-	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: testPort}
+	status, result := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -134,47 +133,6 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	}
 	if cabbyError.HTTPStatus != expected.HTTPStatus {
 		t.Error("Got:", cabbyError.HTTPStatus, "Expected:", expected.HTTPStatus)
-	}
-}
-
-func TestDiscoveryHandlerAPIRoots(t *testing.T) {
-	ds := DiscoveryService{}
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
-		return testDiscovery(), nil
-	}
-
-	h := DiscoveryHandler{DiscoveryService: &ds}
-	status, result := handlerTest(h.HandleDiscovery(testPort), "GET", testDiscoveryURL, nil)
-
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected:", http.StatusOK)
-	}
-
-	var discovery cabby.Discovery
-	err := json.Unmarshal([]byte(result), &discovery)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := testDiscovery()
-
-	if discovery.Title != expected.Title {
-		t.Error("Got:", discovery.Title, "Expected:", expected.Title)
-	}
-	if discovery.Description != expected.Description {
-		t.Error("Got:", discovery.Description, "Expected:", expected.Description)
-	}
-	if discovery.Contact != expected.Contact {
-		t.Error("Got:", discovery.Contact, "Expected:", expected.Contact)
-	}
-
-	expectedDefault := insertPort(expected.Default, testPort)
-	if discovery.Default != expectedDefault {
-		t.Error("Got:", discovery.Default, "Expected:", expectedDefault)
-	}
-
-	expectedAPIRoots := []string{"https://localhost:1234/test_api_root/"}
-	if discovery.APIRoots[0] != expectedAPIRoots[0] {
-		t.Error("Got:", discovery.APIRoots[0], "Expected:", expectedAPIRoots[0])
 	}
 }
 

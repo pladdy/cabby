@@ -1,5 +1,11 @@
 package http
 
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
 // func TestNewTaxiiRange(t *testing.T) {
 // 	invalidRange := taxiiRange{first: -1, last: -1}
 //
@@ -125,3 +131,20 @@ package http
 // 		t.Error("Expected validation to be false")
 // 	}
 // }
+
+func TestUserExists(t *testing.T) {
+	tests := []struct {
+		request  *http.Request
+		expected bool
+	}{
+		{withAuthentication(httptest.NewRequest("GET", "/", nil)), true},
+		{httptest.NewRequest("GET", "/", nil), false},
+	}
+
+	for _, test := range tests {
+		result := userExists(test.request)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}

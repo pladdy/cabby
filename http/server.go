@@ -12,8 +12,11 @@ import (
 // NewCabby returns a new http server
 func NewCabby(ds cabby.DataStore, c cabby.Config) *http.Server {
 	handler := http.NewServeMux()
-	dh := DiscoveryHandler{DiscoveryService: ds.DiscoveryService()}
-	registerRoute(handler, "taxii", WithAcceptType(dh.HandleDiscovery(c.Port), TaxiiContentType))
+
+	dh := DiscoveryHandler{DiscoveryService: ds.DiscoveryService(), Port: c.Port}
+	registerRoute(handler, "taxii", WithAcceptType(RouteRequest(dh), TaxiiContentType))
+
+	registerRoute(handler, "/", handleUndefinedRoute)
 
 	return setupServer(ds, handler, c)
 }

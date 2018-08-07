@@ -28,6 +28,11 @@ func NewDataStore(path string) (*DataStore, error) {
 	return &s, err
 }
 
+// APIRootService returns a discovery service
+func (s *DataStore) APIRootService() cabby.APIRootService {
+	return APIRootService{DB: s.DB}
+}
+
 // Close connection to datastore
 func (s *DataStore) Close() {
 	s.DB.Close()

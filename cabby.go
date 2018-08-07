@@ -16,6 +16,20 @@ type APIRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+// APIRootService for interacting with APIRoots
+type APIRootService interface {
+	APIRoot(path string) (APIRoot, error)
+}
+
+// Config for a server
+type Config struct {
+	Host      string
+	Port      int
+	SSLCert   string            `json:"ssl_cert"`
+	SSLKey    string            `json:"ssl_key"`
+	DataStore map[string]string `json:"data_store"`
+}
+
 // Configs holds Configs by key (environment)
 type Configs map[string]Config
 
@@ -33,17 +47,9 @@ func (c Configs) Parse(file string) (cs Configs) {
 	return
 }
 
-// Config for a server
-type Config struct {
-	Host      string
-	Port      int
-	SSLCert   string            `json:"ssl_cert"`
-	SSLKey    string            `json:"ssl_key"`
-	DataStore map[string]string `json:"data_store"`
-}
-
 // DataStore interface for backend implementations
 type DataStore interface {
+	APIRootService() APIRootService
 	Close()
 	DiscoveryService() DiscoveryService
 	Open() error
@@ -93,5 +99,5 @@ type User struct {
 // UserService provides Users behavior
 type UserService interface {
 	User(user, password string) (User, error)
-	Valid(User) bool
+	Exists(User) bool
 }

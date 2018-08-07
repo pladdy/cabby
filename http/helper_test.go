@@ -11,13 +11,24 @@ import (
 )
 
 const (
+	eightMB          = 8388608
 	testPort         = 1234
+	testAPIRootPath  = "cabby_test_root"
+	testAPIRootURL   = "https://localhost:1234/" + testAPIRootPath + "/"
 	testDiscoveryURL = "https://localhost:1234/taxii/"
 	testUserEmail    = "test@cabby.com"
 	testUserPassword = "test"
 )
 
 /* mock services */
+
+type APIRootService struct {
+	APIRootFn func(path string) (cabby.APIRoot, error)
+}
+
+func (s *APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
+	return s.APIRootFn(testAPIRootPath)
+}
 
 type DiscoveryService struct {
 	DiscoveryFn func() (cabby.Discovery, error)
@@ -28,21 +39,21 @@ func (s *DiscoveryService) Discovery() (cabby.Discovery, error) {
 }
 
 type UserService struct {
-	UserFn  func(user, password string) (cabby.User, error)
-	ValidFn func(cabby.User) bool
+	UserFn   func(user, password string) (cabby.User, error)
+	ExistsFn func(cabby.User) bool
 }
 
 func (s *UserService) User(user, password string) (cabby.User, error) {
 	return s.UserFn(user, password)
 }
 
-func (s *UserService) Valid(u cabby.User) bool {
-	return s.ValidFn(u)
+func (s *UserService) Exists(u cabby.User) bool {
+	return s.ExistsFn(u)
 }
 
 /* helper functions */
 
-// handle generic testing of handlers.  It takes a handler function to call with a url;
+// test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
 	var req *http.Request
@@ -58,6 +69,14 @@ func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, 
 
 	body, _ := ioutil.ReadAll(res.Body)
 	return res.Code, string(body)
+}
+
+func testAPIRoot() cabby.APIRoot {
+	return cabby.APIRoot{Path: testAPIRootPath,
+		Title:            "test api root title",
+		Description:      "test api root description",
+		Versions:         []string{"taxii-2.0"},
+		MaxContentLength: eightMB}
 }
 
 func testDiscovery() cabby.Discovery {

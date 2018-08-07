@@ -46,8 +46,8 @@ func (s UserService) User(user, password string) (cabby.User, error) {
 	return u, err
 }
 
-// Valid returns a bool indicating if a user is valid
-func (s UserService) Valid(u cabby.User) bool {
+// Exists returns a bool indicating if a user is valid
+func (s UserService) Exists(u cabby.User) bool {
 	if u.Email == "" {
 		return false
 	}

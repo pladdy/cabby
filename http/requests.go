@@ -3,6 +3,8 @@ package http
 import (
 	"context"
 	"net/http"
+	"regexp"
+	"strings"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -29,14 +31,6 @@ const (
 
 /* request helpers */
 
-func requestMethodIsGet(r *http.Request) bool {
-	if r.Method == http.MethodGet {
-		return true
-	}
-	return false
-}
-
-//
 // func takeAddedAfter(r *http.Request) string {
 // 	af := r.URL.Query()["added_after"]
 //
@@ -130,10 +124,34 @@ func requestMethodIsGet(r *http.Request) bool {
 // 	}
 // 	return ""
 // }
+
+func trimSlashes(s string) string {
+	re := regexp.MustCompile("^/")
+	s = re.ReplaceAllString(s, "")
+
+	re = regexp.MustCompile("/$")
+	s = re.ReplaceAllString(s, "")
+
+	parts := strings.Split(s, "/")
+	return strings.Join(parts, "/")
+}
+
+func userExists(r *http.Request) bool {
+	_, ok := r.Context().Value(userName).(string)
+	if !ok {
+		return false
+	}
+	return true
+}
+
+// func userAuthorized(w http.ResponseWriter, r *http.Request) bool {
+// 	if !userExists(r) {
+// 		unauthorized(w, errors.New("No user specified"))
+// 		return false
+// 	}
 //
-// func userExists(r *http.Request) bool {
-// 	_, ok := r.Context().Value(userName).(string)
-// 	if !ok {
+// 	if !takeCanAdmin(r) {
+// 		forbidden(w, errors.New("Not authorized to create API Roots"))
 // 		return false
 // 	}
 // 	return true

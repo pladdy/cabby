@@ -42,7 +42,7 @@ func TestUserServiceReadQueryErr(t *testing.T) {
 	}
 }
 
-func TestUserServiceValid(t *testing.T) {
+func TestUserServiceExists(t *testing.T) {
 	tests := []struct {
 		user     cabby.User
 		expected bool
@@ -55,7 +55,7 @@ func TestUserServiceValid(t *testing.T) {
 	s := UserService{DB: ds.DB}
 
 	for _, test := range tests {
-		result := s.Valid(test.user)
+		result := s.Exists(test.user)
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
