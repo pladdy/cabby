@@ -44,25 +44,33 @@ func TestHandleUndefinedRequest(t *testing.T) {
 	}
 }
 
-func TestRequestHandlerRouteRequest(t *testing.T) {
-	// set up service
-	ds := DiscoveryService{}
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
-		return testDiscovery(), nil
+// set up mock handler
+type mockRequestHandler struct {
+}
+
+func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		io.WriteString(w, "valid http method")
+	default:
+		io.WriteString(w, "invalid http method")
 	}
+}
+
+func TestRequestHandlerRouteRequest(t *testing.T) {
+	mock := mockRequestHandler{}
 
 	tests := []struct {
-		method         string
-		requestHandler RequestHandler
-		url            string
-		status         int
+		method string
+		url    string
+		status int
 	}{
-		{"CUSTOM", DiscoveryHandler{DiscoveryService: &ds, Port: testPort}, testDiscoveryURL, http.StatusMethodNotAllowed},
-		{"GET", DiscoveryHandler{DiscoveryService: &ds, Port: testPort}, testDiscoveryURL, http.StatusOK},
+		{"CUSTOM", testDiscoveryURL, http.StatusMethodNotAllowed},
+		{"GET", testDiscoveryURL, http.StatusOK},
 	}
 
 	for _, test := range tests {
-		status, _ := handlerTest(RouteRequest(test.requestHandler), test.method, test.url, nil)
+		status, _ := handlerTest(RouteRequest(mock), test.method, test.url, nil)
 
 		if status != test.status {
 			t.Error("Got:", status, "Expected:", test.status)
