@@ -1,6 +1,6 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/pladdy/cabby)](https://goreportcard.com/report/github.com/pladdy/cabby)
-[![Code Coverage](https://codecov.io/gh/pladdy/cabby/branch/master/graph/badge.svg)](https://codecov.io/gh/pladdy/cabby)
-[![Build Status](https://travis-ci.org/pladdy/cabby.svg?branch=master)](https://travis-ci.org/pladdy/cabby)
+[![Go Report Card](https://goreportcard.com/badge/github.com/pladdy/cabby2)](https://goreportcard.com/report/github.com/pladdy/cabby2)
+[![Code Coverage](https://codecov.io/gh/pladdy/cabby2/branch/master/graph/badge.svg)](https://codecov.io/gh/pladdy/cabby2)
+[![Build Status](https://travis-ci.org/pladdy/cabby2.svg?branch=master)](https://travis-ci.org/pladdy/cabby2)
 
 # cabby
 TAXII 2.0 server in Golang.

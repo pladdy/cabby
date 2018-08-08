@@ -43,3 +43,35 @@ func (s APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
 	cabby.LogServiceEnd(resource, action, start)
 	return a, err
 }
+
+// APIRoots will read from the data store and populate the result with a resource
+func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
+	resource, action := "api_roots", "read"
+	start := cabby.LogServiceStart(resource, action)
+
+	sql := `select api_root_path, title, description, versions, max_content_length
+				  from taxii_api_root`
+
+	as := []cabby.APIRoot{}
+
+	rows, err := s.DB.Query(sql)
+	if err != nil {
+		return as, err
+	}
+
+	for rows.Next() {
+		var a cabby.APIRoot
+		var versions string
+
+		if err := rows.Scan(&a.Path, &a.Title, &a.Description, &versions, &a.MaxContentLength); err != nil {
+			return as, err
+		}
+		a.Versions = strings.Split(versions, ",")
+
+		as = append(as, a)
+	}
+
+	err = rows.Err()
+	cabby.LogServiceEnd(resource, action, start)
+	return as, err
+}

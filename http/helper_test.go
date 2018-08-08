@@ -23,11 +23,16 @@ const (
 /* mock services */
 
 type APIRootService struct {
-	APIRootFn func(path string) (cabby.APIRoot, error)
+	APIRootFn  func(path string) (cabby.APIRoot, error)
+	APIRootsFn func() ([]cabby.APIRoot, error)
 }
 
 func (s *APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
 	return s.APIRootFn(testAPIRootPath)
+}
+
+func (s *APIRootService) APIRoots() ([]cabby.APIRoot, error) {
+	return s.APIRootsFn()
 }
 
 type DiscoveryService struct {

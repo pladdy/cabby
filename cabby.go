@@ -19,6 +19,7 @@ type APIRoot struct {
 // APIRootService for interacting with APIRoots
 type APIRootService interface {
 	APIRoot(path string) (APIRoot, error)
+	APIRoots() ([]APIRoot, error)
 }
 
 // Config for a server

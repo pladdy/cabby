@@ -13,6 +13,8 @@ import (
 func NewCabby(ds cabby.DataStore, c cabby.Config) *http.Server {
 	handler := http.NewServeMux()
 
+	registerAPIRoots(ds, handler)
+
 	dh := DiscoveryHandler{DiscoveryService: ds.DiscoveryService(), Port: c.Port}
 	registerRoute(handler, "taxii", WithAcceptType(RouteRequest(dh), TaxiiContentType))
 
