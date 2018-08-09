@@ -10,8 +10,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"regexp"
-	"strings"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
@@ -177,7 +175,7 @@ func TestWithRequestLogging(t *testing.T) {
 	}()
 
 	// set up handler
-	mockHandler := mockHandler(t.Name())
+	mockHandler := mockHandlerFunc(t.Name())
 	decoratedHandler := withRequestLogging(mockHandler)
 
 	// set up a server
@@ -191,68 +189,12 @@ func TestWithRequestLogging(t *testing.T) {
 		t.Error("Got:", res.StatusCode, "Expected:", http.StatusOK)
 	}
 
-	// get last log
-	logs := regexp.MustCompile("\n").Split(strings.TrimSpace(buf.String()), -1)
-	lastLog := logs[len(logs)-1]
-
-	type expectedLog struct {
-		Time      string
-		Level     string
-		Msg       string
-		ElapsedTs float64 `json:"elapsed_ts"`
-		EndTs     int64   `json:"end_ts"`
-		Method    string
-		URL       string
-	}
-
 	// parse log into struct
-	var result expectedLog
-	err := json.Unmarshal([]byte(lastLog), &result)
+	var result requestLog
+	err := json.Unmarshal([]byte(lastLog(buf)), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(result.Time) <= 0 {
-		t.Error("Got:", result.Time, "Expected: a time")
-	}
-	if result.Level != "info" {
-		t.Error("Got:", result.Level, "Expected: info")
-	}
-	if len(result.Msg) <= 0 {
-		t.Error("Got:", result.Msg, "Expected: a message")
-	}
-	if result.ElapsedTs < 0 {
-		t.Error("Got:", result.ElapsedTs, "Expected: elapsed time >= 0 ms")
-	}
-	if result.EndTs < 0 {
-		t.Error("Got:", result.EndTs, "Expected: end time > 0 ms")
-	}
-	if len(result.Method) <= 0 {
-		t.Error("Got:", result.Msg, "Expected: a method")
-	}
-	if len(result.URL) <= 0 {
-		t.Error("Got:", result.Msg, "Expected: a URL")
-	}
-}
-
-/* helpers */
-
-func getResponse(req *http.Request, server *httptest.Server) (*http.Response, error) {
-	c := server.Client()
-	return c.Do(req)
-}
-
-func mockHandler(testName string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, testName)
-	})
-}
-
-func newServerRequest(method, url string) *http.Request {
-	req := httptest.NewRequest("GET", url, nil)
-	// this can't be set in client requests
-	req.RequestURI = ""
-	// the values don't matter, but have to be set for
-	req.SetBasicAuth("user", "password")
-	return req
+	testRequestLog(result, t)
 }
