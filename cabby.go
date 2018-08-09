@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -82,6 +83,44 @@ type Error struct {
 	Details         map[string]string `json:"details,omitempty"`
 }
 
+// ID for taxii resources
+type ID struct {
+	uuid.UUID
+}
+
+const cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
+
+// IDFromString takes a uuid string and coerces to ID
+func IDFromString(s string) (ID, error) {
+	id, err := uuid.FromString(s)
+	return ID{id}, err
+}
+
+// IDUsingString creates a V5 UUID from the given string
+func IDUsingString(s string) (ID, error) {
+	ns, err := uuid.FromString(cabbyTaxiiNamespace)
+	if err != nil {
+		return ID{}, err
+	}
+
+	id := uuid.NewV5(ns, s)
+	return ID{id}, err
+}
+
+// NewID a V4 UUID and returns it as a ID
+func NewID() (ID, error) {
+	id, err := uuid.NewV4()
+	return ID{id}, err
+}
+
+func (id *ID) isEmpty() bool {
+	empty := &ID{}
+	if id.String() == empty.String() {
+		return true
+	}
+	return false
+}
+
 // Result struct for data returned from backend
 type Result struct {
 	Data      interface{}
@@ -94,7 +133,7 @@ type Result struct {
 type User struct {
 	Email    string `json:"email"`
 	CanAdmin bool   `json:"can_admin"`
-	// CollectionAccessList map[taxiiID]taxiiCollectionAccess `json:"collection_access_list"`
+	// CollectionAccessList map[ID]taxiiCollectionAccess `json:"collection_access_list"`
 }
 
 // UserService provides Users behavior

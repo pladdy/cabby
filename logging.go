@@ -15,7 +15,7 @@ func LogServiceStart(resource, action string) time.Time {
 		"action":   action,
 		"resource": resource,
 		"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
-	}).Info("Starting with resource")
+	}).Info("Serving resource")
 	return start
 }
 
@@ -29,5 +29,5 @@ func LogServiceEnd(resource, action string, start time.Time) {
 		"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 		"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
 		"resource":   resource,
-	}).Info("Finished with resource")
+	}).Info("Finished serving resource")
 }

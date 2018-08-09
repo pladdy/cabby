@@ -3,6 +3,7 @@
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
+PACKAGES=./ sqlite/... http/...
 
 all: config cert dependencies
 
@@ -45,12 +46,12 @@ config:
 
 cover: test-install
 ifdef pkg
-	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)/...
+	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 	rm $(pkg).out
 else
-	@for package in sqlite http; do \
-		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}/...; \
+	@for package in $(PACKAGES); do \
+		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 		rm $${package}.out; \
 	done
@@ -58,13 +59,13 @@ endif
 
 cover-html: test-install
 ifdef pkg
-	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)/...
+	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 	go tool cover -html=$(pkg).out
 	rm $(pkg).out
 else
-	@for package in sqlite http; do \
-		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}/...; \
+	@for package in $(PACKAGES); do \
+		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 		go tool cover -html=$${package}.out; \
 		rm $${package}.out; \
@@ -95,7 +96,7 @@ run-log:
 
 test: test-install
 ifdef pkg
-	go test $(BUILD_TAGS) -v ./$(pkg)/...
+	go test $(BUILD_TAGS) -v ./$(pkg)
 else
 	go test $(BUILD_TAGS) -v -cover ./...
 endif
