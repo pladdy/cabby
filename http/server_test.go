@@ -13,6 +13,49 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func TestNewCabby(t *testing.T) {
+	// mock up services
+	us := UserService{}
+	us.UserFn = func(user, password string) (cabby.User, error) {
+		return cabby.User{}, nil
+	}
+	us.ExistsFn = func(cabby.User) bool { return true }
+
+	as := APIRootService{}
+	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{cabby.APIRoot{}}, nil }
+
+	ds := DiscoveryService{}
+	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }
+
+	// set up a data store with mocked services
+	md := mockDataStore{}
+	md.APIRootServiceFn = func() APIRootService { return as }
+	md.DiscoveryServiceFn = func() DiscoveryService { return ds }
+	md.UserServiceFn = func() UserService { return us }
+
+	port := 1212
+	server := NewCabby(md, cabby.Config{Port: port})
+	defer server.Close()
+
+	go func() {
+		log.Info(server.ListenAndServe())
+	}()
+
+	// send request
+	client := http.Client{}
+	req := newServerRequest("GET", "http://localhost:"+strconv.Itoa(port)+"/taxii/")
+	req.Header.Set("Accept", TaxiiContentType)
+
+	res, err := attemptRequest(&client, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		t.Error("Got:", res.StatusCode, "Expected:", http.StatusOK)
+	}
+}
+
 func TestSetupServerHandler(t *testing.T) {
 	// redirect log output for test
 	var buf bytes.Buffer

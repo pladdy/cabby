@@ -40,7 +40,9 @@ type requestLog struct {
 /* mock services */
 
 type mockDataStore struct {
-	UserServiceFn func() UserService
+	APIRootServiceFn   func() APIRootService
+	DiscoveryServiceFn func() DiscoveryService
+	UserServiceFn      func() UserService
 }
 
 func newMockDataStore() *mockDataStore {
@@ -48,7 +50,7 @@ func newMockDataStore() *mockDataStore {
 }
 
 func (s mockDataStore) APIRootService() cabby.APIRootService {
-	return APIRootService{}
+	return s.APIRootServiceFn()
 }
 
 func (s mockDataStore) Close() {
@@ -56,7 +58,7 @@ func (s mockDataStore) Close() {
 }
 
 func (s mockDataStore) DiscoveryService() cabby.DiscoveryService {
-	return DiscoveryService{}
+	return s.DiscoveryServiceFn()
 }
 
 func (s mockDataStore) Open() error {
