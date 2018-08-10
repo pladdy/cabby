@@ -8,6 +8,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	// StixContentType20 represents a stix 2.0 content type
+	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
+	// StixContentType represents a stix 2 content type
+	StixContentType = "application/vnd.oasis.stix+json"
+	// TaxiiContentType20 represents a taxii 2.0 content type
+	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
+	// TaxiiContentType represents a taxii 2 content type
+	TaxiiContentType = "application/vnd.oasis.taxii+json"
+)
+
 // APIRoot resource
 type APIRoot struct {
 	Path             string   `json:"path,omitempty"`
@@ -21,6 +32,43 @@ type APIRoot struct {
 type APIRootService interface {
 	APIRoot(path string) (APIRoot, error)
 	APIRoots() ([]APIRoot, error)
+}
+
+// Collection resource
+type Collection struct {
+	APIRootPath string   `json:"api_root_path,omitempty"`
+	ID          ID       `json:"id"`
+	CanRead     bool     `json:"can_read"`
+	CanWrite    bool     `json:"can_write"`
+	Title       string   `json:"title"`
+	Description string   `json:"description,omitempty"`
+	MediaTypes  []string `json:"media_types,omitempty"`
+}
+
+// NewCollection returns a collection resource; it takes an optional id string
+func NewCollection(id ...string) (Collection, error) {
+	var err error
+	c := Collection{}
+
+	// create an ID unless the parameter is a string of 'collections'...
+	// TODO: document why this is here?  when can this happen and why?
+	if id[0] != "collections" {
+		c.ID, err = IDFromString(id[0])
+	}
+
+	c.MediaTypes = []string{TaxiiContentType}
+	return c, err
+}
+
+// Collections resource
+type Collections struct {
+	Collections []Collection `json:"collections"`
+}
+
+// CollectionService interface for interacting with data store
+type CollectionService interface {
+	Collection(user, id string) (Collection, error)
+	Collections(user string) (Collections, error)
 }
 
 // Config for a server

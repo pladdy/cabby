@@ -26,7 +26,7 @@ func registerAPIRoot(ah APIRootHandler, ar cabby.APIRoot, sm *http.ServeMux) {
 		// registerCollectionRoutes(ds, ar, rootPath, sm)
 		// registerRoute(sm, rootPath+"/collections", withAcceptTaxii(handleTaxiiCollections(ds)))
 		// registerRoute(sm, rootPath+"/status", withAcceptTaxii(handleTaxiiStatus(ds)))
-		registerRoute(sm, ar.Path, WithAcceptType(RouteRequest(ah), TaxiiContentType))
+		registerRoute(sm, ar.Path, WithAcceptType(RouteRequest(ah), cabby.TaxiiContentType))
 	}
 }
 

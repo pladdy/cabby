@@ -38,6 +38,11 @@ func (s *DataStore) Close() {
 	s.DB.Close()
 }
 
+// CollectionService returns a collections service
+func (s *DataStore) CollectionService() cabby.CollectionService {
+	return CollectionService{DB: s.DB}
+}
+
 // DiscoveryService returns a discovery service
 func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 	return DiscoveryService{DB: s.DB}

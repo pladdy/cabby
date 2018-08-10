@@ -44,7 +44,7 @@ func TestNewCabby(t *testing.T) {
 	// send request
 	client := http.Client{}
 	req := newServerRequest("GET", "http://localhost:"+strconv.Itoa(port)+"/taxii/")
-	req.Header.Set("Accept", TaxiiContentType)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
 
 	res, err := attemptRequest(&client, req)
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestAPIRootServiceRead(t *testing.T) {
+func TestAPIRootServiceAPIRoot(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := APIRootService{DB: ds.DB}
@@ -34,7 +34,7 @@ func TestAPIRootServiceRead(t *testing.T) {
 	}
 }
 
-func TestAPIRootServiceReadQueryErr(t *testing.T) {
+func TestAPIRootServiceAPIRootQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := APIRootService{DB: ds.DB}
@@ -50,7 +50,7 @@ func TestAPIRootServiceReadQueryErr(t *testing.T) {
 	}
 }
 
-func TestAPIRootsServiceRead(t *testing.T) {
+func TestAPIRootsServiceAPIRoots(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := APIRootService{DB: ds.DB}
@@ -83,7 +83,7 @@ func TestAPIRootsServiceRead(t *testing.T) {
 	}
 }
 
-func TestAPIRootsServiceReadQueryErr(t *testing.T) {
+func TestAPIRootsServiceAPIRootsQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := APIRootService{DB: ds.DB}

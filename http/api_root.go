@@ -25,6 +25,6 @@ func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if apiRoot.Title == "" {
 		resourceNotFound(w, fmt.Errorf("API Root not found: %v", path))
 	} else {
-		writeContent(w, TaxiiContentType, resourceToJSON(apiRoot))
+		writeContent(w, cabby.TaxiiContentType, resourceToJSON(apiRoot))
 	}
 }

@@ -82,18 +82,18 @@ func TestWithAcceptType(t *testing.T) {
 		acceptHeader   string
 		responseCode   int
 	}{
-		{StixContentType, "application/vnd.oasis.stix+json; version=2.0", http.StatusOK},
-		{StixContentType, "application/vnd.oasis.stix+json", http.StatusOK},
-		{StixContentType, "application/vnd.oasis.stix+json;verion=2.0", http.StatusOK},
-		{StixContentType, "", http.StatusUnsupportedMediaType},
-		{StixContentType, "application/vnd.oasis.stix+jsonp", http.StatusUnsupportedMediaType},
-		{StixContentType, "application/vnd.oasis.stix+jsonp; version=3.0", http.StatusUnsupportedMediaType},
-		{TaxiiContentType, "application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
-		{TaxiiContentType, "application/vnd.oasis.taxii+json", http.StatusOK},
-		{TaxiiContentType, "application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
-		{TaxiiContentType, "", http.StatusUnsupportedMediaType},
-		{TaxiiContentType, "application/vnd.oasis.taxii+jsonp", http.StatusUnsupportedMediaType},
-		{TaxiiContentType, "application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusUnsupportedMediaType},
+		{cabby.StixContentType, "application/vnd.oasis.stix+json; version=2.0", http.StatusOK},
+		{cabby.StixContentType, "application/vnd.oasis.stix+json", http.StatusOK},
+		{cabby.StixContentType, "application/vnd.oasis.stix+json;verion=2.0", http.StatusOK},
+		{cabby.StixContentType, "", http.StatusUnsupportedMediaType},
+		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp", http.StatusUnsupportedMediaType},
+		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp; version=3.0", http.StatusUnsupportedMediaType},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json", http.StatusOK},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
+		{cabby.TaxiiContentType, "", http.StatusUnsupportedMediaType},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp", http.StatusUnsupportedMediaType},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusUnsupportedMediaType},
 	}
 
 	for _, test := range tests {

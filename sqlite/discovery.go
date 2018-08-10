@@ -9,7 +9,7 @@ import (
 	cabby "github.com/pladdy/cabby2"
 )
 
-// DiscoveryService implements a SQLite version of the servce
+// DiscoveryService implements a SQLite version of the DiscoveryService interface
 type DiscoveryService struct {
 	DB *sql.DB
 }

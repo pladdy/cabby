@@ -33,7 +33,7 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if discovery.Title == "" {
 		resourceNotFound(w, errors.New("Discovery not defined"))
 	} else {
-		writeContent(w, TaxiiContentType, resourceToJSON(discovery))
+		writeContent(w, cabby.TaxiiContentType, resourceToJSON(discovery))
 	}
 }
 

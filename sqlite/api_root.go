@@ -10,7 +10,7 @@ import (
 	cabby "github.com/pladdy/cabby2"
 )
 
-// APIRootService implements a SQLite version of the servce
+// APIRootService implements a SQLite version of the APIRootService interface
 type APIRootService struct {
 	DB *sql.DB
 }

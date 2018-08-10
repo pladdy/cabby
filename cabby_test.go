@@ -6,8 +6,31 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 )
+
+func TestNewCollection(t *testing.T) {
+	tests := []struct {
+		idString    string
+		shouldError bool
+	}{
+		{"invalid", true},
+		{uuid.Must(uuid.NewV4()).String(), false},
+	}
+
+	for _, test := range tests {
+		c, err := NewCollection(test.idString)
+
+		if test.shouldError && err == nil {
+			t.Error("Test with id of", test.idString, "should produce an error!")
+		}
+
+		if err == nil && c.ID.String() != test.idString {
+			t.Error("Got:", c.ID.String(), "Expected:", test.idString)
+		}
+	}
+}
 
 func TestParseConfig(t *testing.T) {
 	cs := Configs{}.Parse("config/cabby.example.json")

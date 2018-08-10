@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDiscoveryServiceRead(t *testing.T) {
+func TestDiscoveryServiceDiscovery(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
@@ -30,7 +30,7 @@ func TestDiscoveryServiceRead(t *testing.T) {
 	}
 }
 
-func TestDiscoveryServiceReadQueryErr(t *testing.T) {
+func TestDiscoveryServiceDiscoveryQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
@@ -46,7 +46,7 @@ func TestDiscoveryServiceReadQueryErr(t *testing.T) {
 	}
 }
 
-func TestDiscoveryServiceReadNoAPIRoot(t *testing.T) {
+func TestDiscoveryServiceDiscoveryNoAPIRoot(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
