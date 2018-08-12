@@ -30,6 +30,9 @@ func TestNewCabby(t *testing.T) {
 		return cabby.Collection{}, nil
 	}
 	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return cabby.Collections{}, nil }
+	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+		return cabby.CollectionsInAPIRoot{}, nil
+	}
 
 	ds := tester.DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }

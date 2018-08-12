@@ -91,7 +91,7 @@ func TestCollectionsHandlerNoCollections(t *testing.T) {
 	}
 
 	expected := cabby.Error{Title: "Resource not found",
-		Description: "No collections defined", HTTPStatus: http.StatusNotFound}
+		Description: "No collections defined in this API Root", HTTPStatus: http.StatusNotFound}
 
 	tester.CompareError(result, expected, t)
 }

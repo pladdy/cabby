@@ -46,11 +46,13 @@ config:
 
 cover: test-install
 ifdef pkg
+	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 	rm $(pkg).out
 else
 	@for package in $(PACKAGES); do \
+	  go test $(BUILD_TAGS) -i ./$${package}; \
 		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 		rm $${package}.out; \
@@ -59,12 +61,14 @@ endif
 
 cover-html: test-install
 ifdef pkg
+	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 	go tool cover -html=$(pkg).out
 	rm $(pkg).out
 else
 	@for package in $(PACKAGES); do \
+	  go test $(BUILD_TAGS) -i ./$${package}; \
 		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 		go tool cover -html=$${package}.out; \
@@ -94,21 +98,20 @@ run:
 run-log:
 	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log
 
-test: test-install
+test:
 ifdef pkg
-	go test $(BUILD_TAGS) -v ./$(pkg)
+	go test $(BUILD_TAGS) -i ./$(pkg)
+	go test $(BUILD_TAGS) -v -cover ./$(pkg)
 else
 	go test $(BUILD_TAGS) -v -cover ./...
 endif
 
-test-failures: test-install
+test-failures:
 	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
 
-test-install:
-	go test $(BUILD_TAGS) -i ./
-
-test-run: test-install
+test-run:
 ifdef test
+	go test $(BUILD_TAGS) -i ./...
 	go test $(BUILD_TAGS) -v ./... -run $(test)
 else
 	@echo Syntax is 'make $@ test=<test name>'

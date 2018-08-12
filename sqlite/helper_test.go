@@ -49,7 +49,6 @@ func createCollection(ds *DataStore) {
 	// collection
 	stmt, err := tx.Prepare(`insert into taxii_collection (id, api_root_path, title, description, media_types)
 	  values (?, ?, ?, ?, ?)`)
-
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
@@ -63,10 +62,10 @@ func createCollection(ds *DataStore) {
 	// user collection
 	stmt, err = tx.Prepare(`insert into taxii_user_collection (email, collection_id, can_read, can_write)
 		values (?, ?, ?, ?)`)
-
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(tester.UserEmail, c.ID.String(), c.CanRead, c.CanWrite)
 	if err != nil {
@@ -120,6 +119,7 @@ func createUser(ds *DataStore) {
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
+	defer stmt.Close()
 
 	_, err = stmt.Exec(u.Email, hash(tester.UserPassword))
 	if err != nil {
