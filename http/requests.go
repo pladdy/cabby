@@ -21,7 +21,20 @@ const (
 	sixMonthsOfSeconds     = "63072000"
 )
 
-/* request helpers */
+func getToken(s string, i int) string {
+	tokens := strings.Split(s, "/")
+
+	if len(tokens) > i {
+		return tokens[i]
+	}
+	return ""
+}
+
+func lastURLPathToken(u string) string {
+	u = strings.TrimSuffix(u, "/")
+	tokens := strings.Split(u, "/")
+	return tokens[len(tokens)-1]
+}
 
 // func takeAddedAfter(r *http.Request) string {
 // 	af := r.URL.Query()["added_after"]
@@ -57,10 +70,16 @@ const (
 // 	return ca[tid]
 // }
 
-// func takeCollectionID(r *http.Request) string {
-// 	var collectionIndex = 3
-// 	return getToken(r.URL.Path, collectionIndex)
-// }
+func takeAPIRoot(r *http.Request) string {
+	var apiRootIndex = 1
+	return getToken(r.URL.Path, apiRootIndex)
+}
+
+func takeCollectionID(r *http.Request) string {
+	var collectionIndex = 3
+	return getToken(r.URL.Path, collectionIndex)
+}
+
 //
 // func takeObjectID(r *http.Request) string {
 // 	var objectIDIndex = 5
@@ -100,13 +119,14 @@ const (
 // 	return []string{}
 // }
 //
-// func takeUser(r *http.Request) string {
-// 	user, ok := r.Context().Value(userName).(string)
-// 	if !ok {
-// 		return ""
-// 	}
-// 	return user
-// }
+func takeUser(r *http.Request) string {
+	user, ok := r.Context().Value(userName).(string)
+	if !ok {
+		return ""
+	}
+	return user
+}
+
 //
 // func takeVersion(r *http.Request) string {
 // 	v := r.URL.Query()["match[version]"]

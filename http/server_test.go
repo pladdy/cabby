@@ -10,28 +10,36 @@ import (
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/cabby2/tester"
 	log "github.com/sirupsen/logrus"
 )
 
 func TestNewCabby(t *testing.T) {
 	// mock up services
-	us := UserService{}
+	us := tester.UserService{}
 	us.UserFn = func(user, password string) (cabby.User, error) {
 		return cabby.User{}, nil
 	}
 	us.ExistsFn = func(cabby.User) bool { return true }
 
-	as := APIRootService{}
+	as := tester.APIRootService{}
 	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{cabby.APIRoot{}}, nil }
 
-	ds := DiscoveryService{}
+	cs := tester.CollectionService{}
+	cs.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+		return cabby.Collection{}, nil
+	}
+	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return cabby.Collections{}, nil }
+
+	ds := tester.DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }
 
 	// set up a data store with mocked services
-	md := mockDataStore{}
-	md.APIRootServiceFn = func() APIRootService { return as }
-	md.DiscoveryServiceFn = func() DiscoveryService { return ds }
-	md.UserServiceFn = func() UserService { return us }
+	md := tester.DataStore{}
+	md.APIRootServiceFn = func() tester.APIRootService { return as }
+	md.CollectionServiceFn = func() tester.CollectionService { return cs }
+	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
+	md.UserServiceFn = func() tester.UserService { return us }
 
 	port := 1212
 	server := NewCabby(md, cabby.Config{Port: port})
@@ -69,7 +77,7 @@ func TestSetupServerHandler(t *testing.T) {
 	}()
 
 	// mock up service; add a variable to track if User() is called
-	us := UserService{}
+	us := tester.UserService{}
 	userCalled := false
 
 	us.UserFn = func(user, password string) (cabby.User, error) {
@@ -79,13 +87,11 @@ func TestSetupServerHandler(t *testing.T) {
 	us.ExistsFn = func(cabby.User) bool { return true }
 
 	// set up a data store with mocked services
-	ds := mockDataStore{}
-	ds.UserServiceFn = func() UserService {
-		return us
-	}
+	ds := tester.DataStore{}
+	ds.UserServiceFn = func() tester.UserService { return us }
 
 	// create and register a handler on a test route
-	h := mockHandler(t.Name())
+	h := testHandler(t.Name())
 	sm := http.NewServeMux()
 	sm.HandleFunc("/test/", h)
 
@@ -137,9 +143,9 @@ func TestSetupServerLogging(t *testing.T) {
 	}()
 
 	// set up test
-	ds := mockDataStore{}
-	ds.UserServiceFn = func() UserService {
-		return UserService{}
+	ds := tester.DataStore{}
+	ds.UserServiceFn = func() tester.UserService {
+		return tester.UserService{}
 	}
 
 	handler := http.NewServeMux()
@@ -166,9 +172,9 @@ func TestSetupServerLogging(t *testing.T) {
 
 func TestSetupServerSettings(t *testing.T) {
 	// set up test
-	ds := mockDataStore{}
-	ds.UserServiceFn = func() UserService {
-		return UserService{}
+	ds := tester.DataStore{}
+	ds.UserServiceFn = func() tester.UserService {
+		return tester.UserService{}
 	}
 
 	handler := http.NewServeMux()

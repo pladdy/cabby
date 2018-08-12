@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/cabby2/tester"
 )
 
 func TestUserServiceRead(t *testing.T) {
@@ -11,9 +12,9 @@ func TestUserServiceRead(t *testing.T) {
 	ds := testDataStore()
 	s := UserService{DB: ds.DB}
 
-	expected := testUser
+	expected := tester.User
 
-	result, err := s.User(testUserEmail, testUserPassword)
+	result, err := s.User(expected.Email, tester.UserPassword)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -36,7 +37,7 @@ func TestUserServiceReadQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.User(testUserEmail, testUserPassword)
+	_, err = s.User(tester.UserEmail, tester.UserPassword)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -47,7 +48,7 @@ func TestUserServiceExists(t *testing.T) {
 		user     cabby.User
 		expected bool
 	}{
-		{user: cabby.User{Email: testUserEmail}, expected: true},
+		{user: cabby.User{Email: tester.UserEmail}, expected: true},
 		{user: cabby.User{}, expected: false},
 	}
 

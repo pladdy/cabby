@@ -2,12 +2,12 @@ package http
 
 import (
 	"errors"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 
 	cabby "github.com/pladdy/cabby2"
+	log "github.com/sirupsen/logrus"
 )
 
 // DiscoveryHandler holds a cabby DiscoveryService
@@ -27,7 +27,7 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	discovery.Default = insertPort(discovery.Default, h.Port)
 
 	for i := 0; i < len(discovery.APIRoots); i++ {
-		discovery.APIRoots[i] = swapPath(discovery.Default, discovery.APIRoots[i]) + "/"
+		discovery.APIRoots[i] = swapPath(discovery.Default, discovery.APIRoots[i])
 	}
 
 	if discovery.Title == "" {
@@ -39,20 +39,24 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 /* helpers */
 
-func insertPort(u string, port int) string {
-	tokens := urlTokens(u)
-	return tokens["scheme"] + "://" + tokens["host"] + ":" + strconv.Itoa(port) + tokens["path"]
-}
-
-func swapPath(u, p string) string {
-	tokens := urlTokens(u)
-	return tokens["scheme"] + "://" + tokens["host"] + "/" + p
-}
-
-func urlTokens(u string) map[string]string {
-	tokens, err := url.Parse(u)
+func parseURL(rawurl string) *url.URL {
+	u, err := url.Parse(rawurl)
 	if err != nil {
-		log.Panic("Can't parse url")
+		log.WithFields(log.Fields{"URL": rawurl}).Warn("Failed to parse URL and insert port")
 	}
-	return map[string]string{"scheme": tokens.Scheme, "host": tokens.Host, "path": tokens.Path}
+	return u
+}
+
+func insertPort(rawurl string, port int) string {
+	u := parseURL(rawurl)
+
+	if u.Port() == "" {
+		return u.Scheme + "://" + u.Host + ":" + strconv.Itoa(port) + u.Path
+	}
+	return u.Scheme + "://" + u.Host + u.Path
+}
+
+func swapPath(rawurl, newPath string) string {
+	u := parseURL(rawurl)
+	return u.Scheme + "://" + u.Host + "/" + newPath
 }

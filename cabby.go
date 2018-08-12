@@ -67,8 +67,8 @@ type Collections struct {
 
 // CollectionService interface for interacting with data store
 type CollectionService interface {
-	Collection(user, id string) (Collection, error)
-	Collections(user string) (Collections, error)
+	Collection(user, collectionID, apiRoot string) (Collection, error)
+	Collections(user, apiRoot string) (Collections, error)
 }
 
 // Config for a server
@@ -101,6 +101,7 @@ func (c Configs) Parse(file string) (cs Configs) {
 type DataStore interface {
 	APIRootService() APIRootService
 	Close()
+	CollectionService() CollectionService
 	DiscoveryService() DiscoveryService
 	Open() error
 	UserService() UserService
@@ -161,7 +162,9 @@ func NewID() (ID, error) {
 	return ID{id}, err
 }
 
-func (id *ID) isEmpty() bool {
+// IsEmpty returns a boolean based on whether the UUID is not "set"
+//  IE: the string representation is 00000000-0000-0000-0000-000000000000
+func (id *ID) IsEmpty() bool {
 	empty := &ID{}
 	if id.String() == empty.String() {
 		return true

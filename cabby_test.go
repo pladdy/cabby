@@ -119,12 +119,12 @@ func TestIDIsEmpty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if id.isEmpty() == true {
+	if id.IsEmpty() == true {
 		t.Error("Expected to NOT be empty")
 	}
 
 	emptyID := ID{}
-	if emptyID.isEmpty() == false {
+	if emptyID.IsEmpty() == false {
 		t.Error("Expected ID to be empty")
 	}
 }

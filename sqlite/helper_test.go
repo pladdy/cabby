@@ -3,48 +3,15 @@ package sqlite
 import (
 	"database/sql"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
-	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/cabby2/tester"
 )
 
 const (
-	eightMB          = 8388608
-	testAPIRootPath  = "cabby_test_root"
-	testCollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
-	testDB           = "testdata/test.db"
-	testUserEmail    = "test@cabby.com"
-	testUserPassword = "test"
-	schema           = "schema.sql"
-)
-
-var (
-	info = log.New(os.Stderr, "INFO: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	warn = log.New(os.Stderr, "WARN: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-	fail = log.New(os.Stderr, "ERROR: ", log.Ldate|log.Ltime|log.Lmicroseconds|log.Lshortfile|log.LUTC)
-
-	testAPIRoot = cabby.APIRoot{
-		Path:             testAPIRootPath,
-		Title:            "test api root title",
-		Description:      "test api root description",
-		Versions:         []string{"taxii-2.0"},
-		MaxContentLength: eightMB}
-	testCollectionNoID = cabby.Collection{
-		APIRootPath: testAPIRootPath,
-		Title:       "test collection",
-		Description: "collection for testing",
-		CanRead:     true,
-		CanWrite:    true,
-	}
-	testDiscovery = cabby.Discovery{
-		Title:       "test discovery",
-		Description: "test discovery description",
-		Contact:     "cabby test",
-		Default:     "https://localhost/taxii/"}
-	testUser = cabby.User{Email: testUserEmail,
-		CanAdmin: true}
+	testDB = "testdata/tester.db"
+	schema = "schema.sql"
 )
 
 /* helpers */
@@ -52,30 +19,31 @@ var (
 func createAPIRoot(ds *DataStore) {
 	tx, err := ds.DB.Begin()
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	stmt, err := tx.Prepare(`insert into taxii_api_root
 		(id, api_root_path, title, description, versions, max_content_length) values (?, ?, ?, ?, ?, ?)`)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec("testID",
-		testAPIRootPath, testAPIRoot.Title, testAPIRoot.Description, strings.Join(testAPIRoot.Versions, ","), testAPIRoot.MaxContentLength)
+	a := tester.APIRoot
+
+	_, err = stmt.Exec("testID", a.Path, a.Title, a.Description, strings.Join(a.Versions, ","), a.MaxContentLength)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	tx.Commit()
 }
 
 func createCollection(ds *DataStore) {
-	c := testCollection()
+	c := tester.Collection
 
 	tx, err := ds.DB.Begin()
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	// collection
@@ -83,13 +51,13 @@ func createCollection(ds *DataStore) {
 	  values (?, ?, ?, ?, ?)`)
 
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ","))
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	// user collection
@@ -97,12 +65,12 @@ func createCollection(ds *DataStore) {
 		values (?, ?, ?, ?)`)
 
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
-	_, err = stmt.Exec(testUserEmail, c.ID.String(), c.CanRead, c.CanWrite)
+	_, err = stmt.Exec(tester.UserEmail, c.ID.String(), c.CanRead, c.CanWrite)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	tx.Commit()
 }
@@ -110,18 +78,19 @@ func createCollection(ds *DataStore) {
 func createDiscovery(ds *DataStore) {
 	tx, err := ds.DB.Begin()
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	stmt, err := tx.Prepare("insert into taxii_discovery (title, description, contact, default_url) values (?, ?, ?, ?)")
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(testDiscovery.Title, testDiscovery.Description, testDiscovery.Contact, testDiscovery.Default)
+	d := tester.Discovery
+	_, err = stmt.Exec(d.Title, d.Description, d.Contact, d.Default)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	tx.Commit()
 }
@@ -129,30 +98,32 @@ func createDiscovery(ds *DataStore) {
 func createUser(ds *DataStore) {
 	tx, err := ds.DB.Begin()
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	// user
 	stmt, err := tx.Prepare("insert into taxii_user (email, can_admin) values (?, ?)")
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(testUser.Email, testUser.CanAdmin)
+	u := tester.User
+
+	_, err = stmt.Exec(u.Email, u.CanAdmin)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	// password
 	stmt, err = tx.Prepare("insert into taxii_user_pass (email, pass) values (?, ?)")
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
-	_, err = stmt.Exec(testUser.Email, hash(testUserPassword))
+	_, err = stmt.Exec(u.Email, hash(tester.UserPassword))
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 
 	tx.Commit()
@@ -161,27 +132,27 @@ func createUser(ds *DataStore) {
 func setupSQLite() {
 	tearDownSQLite()
 
-	info.Println("Setting up a test sqlite db:", testDB)
+	tester.Info.Println("Setting up a test sqlite db:", testDB)
 	var sqlDriver = "sqlite3"
 
 	db, err := sql.Open(sqlDriver, testDB)
 	if err != nil {
-		fail.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
+		tester.Error.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
 	}
 
 	f, err := os.Open(schema)
 	if err != nil {
-		fail.Fatal("Couldn't open schema file: ", err)
+		tester.Error.Fatal("Couldn't open schema file: ", err)
 	}
 
 	schema, err := ioutil.ReadAll(f)
 	if err != nil {
-		fail.Fatal("Couldn't read schema file: ", err)
+		tester.Error.Fatal("Couldn't read schema file: ", err)
 	}
 
 	_, err = db.Exec(string(schema))
 	if err != nil {
-		fail.Fatal("Couldn't load schema: ", err)
+		tester.Error.Fatal("Couldn't load schema: ", err)
 	}
 
 	ds := testDataStore()
@@ -191,16 +162,10 @@ func setupSQLite() {
 	createUser(ds)
 }
 
-func testCollection() cabby.Collection {
-	c := testCollectionNoID
-	c.ID, _ = cabby.IDFromString("82407036-edf9-4c75-9a56-e72697c53e99")
-	return c
-}
-
 func testDataStore() *DataStore {
 	ds, err := NewDataStore(testDB)
 	if err != nil {
-		fail.Fatal(err)
+		tester.Error.Fatal(err)
 	}
 	return ds
 }

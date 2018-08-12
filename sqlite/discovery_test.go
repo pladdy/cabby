@@ -2,6 +2,8 @@ package sqlite
 
 import (
 	"testing"
+
+	"github.com/pladdy/cabby2/tester"
 )
 
 func TestDiscoveryServiceDiscovery(t *testing.T) {
@@ -9,7 +11,7 @@ func TestDiscoveryServiceDiscovery(t *testing.T) {
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
 
-	expected := testDiscovery
+	expected := tester.Discovery
 
 	result, err := s.Discovery()
 	if err != nil {

@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/cabby2/tester"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -97,17 +98,17 @@ func TestWithAcceptType(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		mockHandler := func(w http.ResponseWriter, r *http.Request) {
+		testHandler := func(w http.ResponseWriter, r *http.Request) {
 			accept := r.Header.Get("Accept")
 			io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
 		}
-		mockHandler = WithAcceptType(mockHandler, test.acceptedHeader)
+		testHandler = WithAcceptType(testHandler, test.acceptedHeader)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Add("Accept", test.acceptHeader)
 		res := httptest.NewRecorder()
 
-		mockHandler(res, req)
+		testHandler(res, req)
 		body, _ := ioutil.ReadAll(res.Body)
 
 		if res.Code != test.responseCode {
@@ -123,7 +124,7 @@ func TestWithBasicAuth(t *testing.T) {
 		expectedStatus int
 	}{
 		{userFn: func(user, password string) (cabby.User, error) {
-			return cabby.User{Email: testUserEmail}, nil
+			return cabby.User{Email: tester.UserEmail}, nil
 		},
 			existsFn:       func(cabby.User) bool { return true },
 			expectedStatus: http.StatusOK},
@@ -141,13 +142,13 @@ func TestWithBasicAuth(t *testing.T) {
 
 	for _, test := range tests {
 		// set up service
-		us := UserService{}
+		us := tester.UserService{}
 		us.UserFn = test.userFn
 		us.ExistsFn = test.existsFn
 
 		// set up handler
-		mockHandler := mockHandler(t.Name())
-		decoratedHandler := withBasicAuth(mockHandler, &us)
+		testHandler := testHandler(t.Name())
+		decoratedHandler := withBasicAuth(testHandler, &us)
 
 		// set up a server
 		server := httptest.NewServer(decoratedHandler)
@@ -175,8 +176,8 @@ func TestWithRequestLogging(t *testing.T) {
 	}()
 
 	// set up handler
-	mockHandler := mockHandlerFunc(t.Name())
-	decoratedHandler := withRequestLogging(mockHandler)
+	testHandler := testHandlerFunc(t.Name())
+	decoratedHandler := withRequestLogging(testHandler)
 
 	// set up a server
 	server := httptest.NewServer(decoratedHandler)

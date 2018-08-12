@@ -16,7 +16,7 @@ type CollectionService struct {
 }
 
 // Collection will read from the data store and populate the result with a resource
-func (s CollectionService) Collection(user, id string) (cabby.Collection, error) {
+func (s CollectionService) Collection(user, id, apiRoot string) (cabby.Collection, error) {
 	resource, action := "collection", "read"
 	start := cabby.LogServiceStart(resource, action)
 
@@ -25,12 +25,12 @@ func (s CollectionService) Collection(user, id string) (cabby.Collection, error)
 						taxii_collection c
 						inner join taxii_user_collection uc
 							on c.id = uc.collection_id
-					where uc.email = ? and c.id = ? and uc.can_read = 1`
+					where uc.email = ? and c.id = ? and c.api_root_path = ? and uc.can_read = 1`
 
 	c := cabby.Collection{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, id)
+	rows, err := s.DB.Query(sql, user, id, apiRoot)
 	if err != nil {
 		return c, err
 	}
@@ -50,7 +50,7 @@ func (s CollectionService) Collection(user, id string) (cabby.Collection, error)
 }
 
 // Collections will read from the data store and populate the result with a resource
-func (s CollectionService) Collections(user string) (cabby.Collections, error) {
+func (s CollectionService) Collections(user, apiRoot string) (cabby.Collections, error) {
 	resource, action := "collections", "read"
 	start := cabby.LogServiceStart(resource, action)
 
@@ -64,6 +64,7 @@ func (s CollectionService) Collections(user string) (cabby.Collections, error) {
 								  on c.id = uc.collection_id
 						  where
 						 	 uc.email = ?
+							 and c.api_root_path = ?
 					 		 and (uc.can_read = 1 or uc.can_write = 1)
 					  )
 				  )
@@ -77,7 +78,7 @@ func (s CollectionService) Collections(user string) (cabby.Collections, error) {
 	cs := cabby.Collections{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user)
+	rows, err := s.DB.Query(sql, user, apiRoot)
 	if err != nil {
 		return cs, err
 	}

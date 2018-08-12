@@ -4,30 +4,9 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
-
-func getToken(s string, i int) string {
-	tokens := strings.Split(s, "/")
-
-	if len(tokens) > i {
-		return tokens[i]
-	}
-	return ""
-}
-
-func getAPIRoot(p string) string {
-	var rootIndex = 1
-	return getToken(p, rootIndex)
-}
-
-func lastURLPathToken(u string) string {
-	u = strings.TrimSuffix(u, "/")
-	tokens := strings.Split(u, "/")
-	return tokens[len(tokens)-1]
-}
 
 func resourceToJSON(v interface{}) string {
 	b, err := json.Marshal(v)

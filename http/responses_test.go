@@ -6,61 +6,6 @@ import (
 	cabby "github.com/pladdy/cabby2"
 )
 
-func TestGetToken(t *testing.T) {
-	tests := []struct {
-		url      string
-		index    int
-		expected string
-	}{
-		{"/api_root/collections/collection_id/objects/stix_id", 0, ""},
-		{"/api_root/collections/collection_id/objects/stix_id", 1, "api_root"},
-		{"/api_root/collections/collection_id/objects/stix_id", 3, "collection_id"},
-		{"/api_root/collections/collection_id/objects/stix_id", 5, "stix_id"},
-		{"/api_root/collections/collection_id/objects/stix_id", 7, ""},
-	}
-
-	for _, test := range tests {
-		result := getToken(test.url, test.index)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
-func TestGetAPIRoot(t *testing.T) {
-	tests := []struct {
-		urlPath  string
-		expected string
-	}{
-		{"/api_root/collection/1234", "api_root"},
-		{"/api_root/collections", "api_root"},
-	}
-
-	for _, test := range tests {
-		result := getAPIRoot(test.urlPath)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
-func TestLastURLPathToken(t *testing.T) {
-	tests := []struct {
-		path     string
-		expected string
-	}{
-		{"/collections/", "collections"},
-		{"/collections/someId", "someId"},
-	}
-
-	for _, test := range tests {
-		result := lastURLPathToken(test.path)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
 func TestResourceToJSON(t *testing.T) {
 	tests := []struct {
 		resource cabby.APIRoot

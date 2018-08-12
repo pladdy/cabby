@@ -6,6 +6,44 @@ import (
 	"testing"
 )
 
+func TestGetToken(t *testing.T) {
+	tests := []struct {
+		url      string
+		index    int
+		expected string
+	}{
+		{"/api_root/collections/collection_id/objects/stix_id", 0, ""},
+		{"/api_root/collections/collection_id/objects/stix_id", 1, "api_root"},
+		{"/api_root/collections/collection_id/objects/stix_id", 3, "collection_id"},
+		{"/api_root/collections/collection_id/objects/stix_id", 5, "stix_id"},
+		{"/api_root/collections/collection_id/objects/stix_id", 7, ""},
+	}
+
+	for _, test := range tests {
+		result := getToken(test.url, test.index)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestLastURLPathToken(t *testing.T) {
+	tests := []struct {
+		path     string
+		expected string
+	}{
+		{"/collections/", "collections"},
+		{"/collections/someId", "someId"},
+	}
+
+	for _, test := range tests {
+		result := lastURLPathToken(test.path)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
 // func TestNewTaxiiRange(t *testing.T) {
 // 	invalidRange := taxiiRange{first: -1, last: -1}
 //
