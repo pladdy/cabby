@@ -13,7 +13,7 @@ func TestCollectionServiceCollection(t *testing.T) {
 
 	expected := tester.Collection
 
-	result, err := s.Collection(tester.UserEmail, expected.ID.String(), expected.APIRootPath)
+	result, err := s.Collection(tester.UserEmail, expected.APIRootPath, expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}

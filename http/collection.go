@@ -14,7 +14,7 @@ type CollectionHandler struct {
 
 // Get handles a get request
 func (h CollectionHandler) Get(w http.ResponseWriter, r *http.Request) {
-	collection, err := h.CollectionService.Collection(takeUser(r), takeCollectionID(r), takeAPIRoot(r))
+	collection, err := h.CollectionService.Collection(takeUser(r), takeAPIRoot(r), takeCollectionID(r))
 	if err != nil {
 		internalServerError(w, err)
 		return

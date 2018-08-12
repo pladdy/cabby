@@ -16,7 +16,7 @@ type CollectionService struct {
 }
 
 // Collection will read from the data store and populate the result with a resource
-func (s CollectionService) Collection(user, id, apiRoot string) (cabby.Collection, error) {
+func (s CollectionService) Collection(user, apiRoot, collectionID string) (cabby.Collection, error) {
 	resource, action := "collection", "read"
 	start := cabby.LogServiceStart(resource, action)
 
@@ -25,12 +25,12 @@ func (s CollectionService) Collection(user, id, apiRoot string) (cabby.Collectio
 						taxii_collection c
 						inner join taxii_user_collection uc
 							on c.id = uc.collection_id
-					where uc.email = ? and c.id = ? and c.api_root_path = ? and uc.can_read = 1`
+					where uc.email = ? and c.api_root_path = ? and c.id = ? and uc.can_read = 1`
 
 	c := cabby.Collection{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, id, apiRoot)
+	rows, err := s.DB.Query(sql, user, apiRoot, collectionID)
 	if err != nil {
 		return c, err
 	}

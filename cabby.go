@@ -67,7 +67,7 @@ type Collections struct {
 
 // CollectionService interface for interacting with data store
 type CollectionService interface {
-	Collection(user, collectionID, apiRoot string) (Collection, error)
+	Collection(user, apiRoot, collectionID string) (Collection, error)
 	Collections(user, apiRoot string) (Collections, error)
 }
 
