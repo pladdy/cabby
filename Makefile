@@ -1,5 +1,5 @@
 .PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
-.PHONY: test test-failures test-install test test-run
+.PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
@@ -106,6 +106,9 @@ else
 	go test $(BUILD_TAGS) -i ./...
 	go test $(BUILD_TAGS) -v -cover ./...
 endif
+
+test-codecov:
+	go test -v $(BUILD_TAGS) -coverprofile=coverage.txt -covermode=atomic ./...
 
 test-failures:
 	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
