@@ -21,7 +21,7 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(collections.Collections) <= 0 {
-		resourceNotFound(w, errors.New("No collections defined"))
+		resourceNotFound(w, errors.New("No collections defined in this API Root"))
 		return
 	}
 

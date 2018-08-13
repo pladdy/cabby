@@ -65,10 +65,17 @@ type Collections struct {
 	Collections []Collection `json:"collections"`
 }
 
+// CollectionsInAPIRoot associated a list of collection IDs that belong to a API Root Path
+type CollectionsInAPIRoot struct {
+	Path          string
+	CollectionIDs []ID
+}
+
 // CollectionService interface for interacting with data store
 type CollectionService interface {
-	Collection(user, collectionID, apiRoot string) (Collection, error)
+	Collection(user, apiRoot, collectionID string) (Collection, error)
 	Collections(user, apiRoot string) (Collections, error)
+	CollectionsInAPIRoot(apiRoot string) (CollectionsInAPIRoot, error)
 }
 
 // Config for a server

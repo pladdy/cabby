@@ -32,22 +32,24 @@ func registerCollectionRoutes(ds cabby.DataStore, path string, sm *http.ServeMux
 
 	registerRoute(sm, path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
 
+	acs, err := ch.CollectionService.CollectionsInAPIRoot(path)
+	if err != nil {
+		log.WithFields(log.Fields{"api_root": path}).Error("Unable to read collections")
+	}
+
+	for _, id := range acs.CollectionIDs {
+		registerRoute(
+			sm,
+			path+"/collections/"+id.String(),
+			WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
+		// registerRoute(sm,
+		// 	path+"/collections/"+collection.ID.String()+"/objects",
+		// 	withAcceptStix(handleTaxiiObjects(ds, ar.MaxContentLength)))
+		// registerRoute(sm,
+		// 	path+"/collections/"+collection.ID.String()+"/manifest",
+		// 	withAcceptTaxii(handleTaxiiManifest(ds)))
+	}
 	//registerRoute(sm, ar.Path+"/status", withAcceptTaxii(handleTaxiiStatus(ds)))
-
-	// rcs := routableCollections{}
-	// err := rcs.read(ds, ar.Path)
-	// if err != nil {
-	// 	log.WithFields(log.Fields{"api_root": ar.Path}).Error("Unable to read routable collections")
-	// }
-
-	// for _, collectionID := range rcs.CollectionIDs {
-	// 	registerRoute(sm,
-	// 		ar.Path+"/collections/"+collectionID.String()+"/objects",
-	// 		withAcceptStix(handleTaxiiObjects(ds, ar.MaxContentLength)))
-	// 	registerRoute(sm,
-	// 		ar.Path+"/collections/"+collectionID.String()+"/manifest",
-	// 		withAcceptTaxii(handleTaxiiManifest(ds)))
-	// }
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {

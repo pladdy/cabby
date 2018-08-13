@@ -12,7 +12,7 @@ import (
 
 func TestCollectionHandlerGet(t *testing.T) {
 	ds := tester.CollectionService{}
-	ds.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return tester.Collection, nil
 	}
 
@@ -48,7 +48,7 @@ func TestCollectionGetFailures(t *testing.T) {
 		expected := test.expected
 
 		ds := tester.CollectionService{}
-		ds.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+		ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 			return cabby.Collection{}, errors.New(expected.Description)
 		}
 
@@ -71,7 +71,7 @@ func TestCollectionGetFailures(t *testing.T) {
 
 func TestCollectionHandlerNoCollection(t *testing.T) {
 	ds := tester.CollectionService{}
-	ds.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return cabby.Collection{}, nil
 	}
 

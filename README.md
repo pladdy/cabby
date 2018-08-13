@@ -101,6 +101,14 @@ curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+j
 curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' -H 'Range: items 1-1' 'https://localhost:1234/cabby_test_root/collections/' | jq .
 ```
 
+#### View Collection
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/' | jq .
+```
+
 #### Add Objects
 In the above example, new collections were added.  Kill the server (CTRL+C) and `make run` again.  The logs will show new routes are added.
 

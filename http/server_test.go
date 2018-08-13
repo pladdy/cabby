@@ -30,6 +30,9 @@ func TestNewCabby(t *testing.T) {
 		return cabby.Collection{}, nil
 	}
 	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return cabby.Collections{}, nil }
+	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+		return cabby.CollectionsInAPIRoot{}, nil
+	}
 
 	ds := tester.DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }
@@ -41,20 +44,21 @@ func TestNewCabby(t *testing.T) {
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
 	md.UserServiceFn = func() tester.UserService { return us }
 
-	port := 1212
-	server := NewCabby(md, cabby.Config{Port: port})
+	c := cabby.Config{Port: 1212, SSLCert: "../server.crt", SSLKey: "../server.key"}
+	server := NewCabby(md, c)
 	defer server.Close()
 
+	// use tls which requires cert/key files
 	go func() {
-		log.Info(server.ListenAndServe())
+		log.Info(server.ListenAndServeTLS(c.SSLCert, c.SSLKey))
 	}()
 
 	// send request
-	client := http.Client{}
-	req := newServerRequest("GET", "http://localhost:"+strconv.Itoa(port)+"/taxii/")
+	req := newServerRequest("GET", "https://localhost:"+strconv.Itoa(c.Port)+"/taxii/")
 	req.Header.Set("Accept", cabby.TaxiiContentType)
 
-	res, err := attemptRequest(&client, req)
+	client := tlsClient()
+	res, err := attemptRequest(client, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,6 +103,7 @@ func TestSetupServerHandler(t *testing.T) {
 	server := setupServer(ds, sm, cabby.Config{Port: port})
 	defer server.Close()
 
+	// ignore TLS, not needed for log test
 	go func() {
 		log.Info(server.ListenAndServe())
 	}()
