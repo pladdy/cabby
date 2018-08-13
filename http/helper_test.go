@@ -43,11 +43,11 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 
 	for i := 0; i < MaxTries; i++ {
 		res, err := c.Do(r)
-		if err != nil || res != nil {
+		if err == nil {
 			return res, err
 		}
 
-		tester.Info.Println("Web server for test not responding, waiting...")
+		tester.Warn.Println("  Web server for test not responding, waiting...")
 		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 
