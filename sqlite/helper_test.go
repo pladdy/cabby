@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -10,8 +9,8 @@ import (
 )
 
 const (
-	testDB = "testdata/tester.db"
-	schema = "schema.sql"
+	testDBPath = "testdata/tester.db"
+	schema     = "schema.sql"
 )
 
 /* helpers */
@@ -132,13 +131,9 @@ func createUser(ds *DataStore) {
 func setupSQLite() {
 	tearDownSQLite()
 
-	tester.Info.Println("Setting up a test sqlite db:", testDB)
-	var sqlDriver = "sqlite3"
+	tester.Info.Println("Setting up test sqlite db:", testDBPath)
 
-	db, err := sql.Open(sqlDriver, testDB)
-	if err != nil {
-		tester.Error.Fatal("Can't connect to test DB: ", testDB, "Error: ", err)
-	}
+	ds := testDataStore()
 
 	f, err := os.Open(schema)
 	if err != nil {
@@ -150,20 +145,19 @@ func setupSQLite() {
 		tester.Error.Fatal("Couldn't read schema file: ", err)
 	}
 
-	_, err = db.Exec(string(schema))
+	_, err = ds.DB.Exec(string(schema))
 	if err != nil {
 		tester.Error.Fatal("Couldn't load schema: ", err)
 	}
 
-	ds := testDataStore()
+	createUser(ds)
 	createDiscovery(ds)
 	createAPIRoot(ds)
 	createCollection(ds)
-	createUser(ds)
 }
 
 func testDataStore() *DataStore {
-	ds, err := NewDataStore(testDB)
+	ds, err := NewDataStore(testDBPath)
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
@@ -171,5 +165,6 @@ func testDataStore() *DataStore {
 }
 
 func tearDownSQLite() {
-	os.Remove(testDB)
+	tester.Info.Println("Tearing down test sqlite db:", testDBPath)
+	os.Remove(testDBPath)
 }
