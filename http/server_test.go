@@ -44,20 +44,20 @@ func TestNewCabby(t *testing.T) {
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
 	md.UserServiceFn = func() tester.UserService { return us }
 
-	port := 78122
-	server := NewCabby(md, cabby.Config{Port: port})
+	c := cabby.Config{Port: 1212, SSLCert: "../server.crt", SSLKey: "../server.key"}
+	server := NewCabby(md, c)
 	defer server.Close()
 
 	go func() {
-		log.Info(server.ListenAndServe())
+		log.Info(server.ListenAndServeTLS(c.SSLCert, c.SSLKey))
 	}()
 
 	// send request
-	client := http.Client{}
-	req := newServerRequest("GET", "http://localhost:"+strconv.Itoa(port)+"/taxii/")
+	req := newServerRequest("GET", "https://localhost:"+strconv.Itoa(c.Port)+"/taxii/")
 	req.Header.Set("Accept", cabby.TaxiiContentType)
 
-	res, err := attemptRequest(&client, req)
+	client := tlsClient()
+	res, err := attemptRequest(client, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestSetupServerHandler(t *testing.T) {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/test/", h)
 
-	port := 78122
+	port := 1212
 	server := setupServer(ds, sm, cabby.Config{Port: port})
 	defer server.Close()
 

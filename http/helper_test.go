@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -13,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
@@ -80,6 +82,19 @@ func lastLog(buf bytes.Buffer) string {
 	return logs[len(logs)-1]
 }
 
+func newServerRequest(method, url string) *http.Request {
+	req := httptest.NewRequest("GET", url, nil)
+
+	// this can't be set in client requests
+	req.RequestURI = ""
+
+	// the values don't matter, but have to be set in the request
+	req.SetBasicAuth("user", "password")
+
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	return req
+}
+
 func testHandler(testName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, testName)
@@ -90,15 +105,6 @@ func testHandlerFunc(testName string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, testName)
 	})
-}
-
-func newServerRequest(method, url string) *http.Request {
-	req := httptest.NewRequest("GET", url, nil)
-	// this can't be set in client requests
-	req.RequestURI = ""
-	// the values don't matter, but have to be set for
-	req.SetBasicAuth("user", "password")
-	return req
 }
 
 func testRequestLog(result requestLog, t *testing.T) {
@@ -123,6 +129,15 @@ func testRequestLog(result requestLog, t *testing.T) {
 	if len(result.URL) <= 0 {
 		t.Error("Got:", result.Msg, "Expected: a URL")
 	}
+}
+
+// set up a http client that uses TLS
+func tlsClient() *http.Client {
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	tr := &http.Transport{TLSClientConfig: tlsConfig}
+	return &http.Client{Transport: tr}
 }
 
 // create a context for the testUser and give it read/write access to the test collection
