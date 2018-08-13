@@ -44,7 +44,7 @@ func TestNewCabby(t *testing.T) {
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
 	md.UserServiceFn = func() tester.UserService { return us }
 
-	port := 1212
+	port := 78122
 	server := NewCabby(md, cabby.Config{Port: port})
 	defer server.Close()
 
@@ -98,7 +98,7 @@ func TestSetupServerHandler(t *testing.T) {
 	sm := http.NewServeMux()
 	sm.HandleFunc("/test/", h)
 
-	port := 1212
+	port := 78122
 	server := setupServer(ds, sm, cabby.Config{Port: port})
 	defer server.Close()
 
