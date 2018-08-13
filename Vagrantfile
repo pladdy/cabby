@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "dependencies", type: "shell" do |s|
     s.inline = <<-OUT
       apt-get update
-      apt-get install -y golang-1.9 ruby-dev build-essential jq sqlite
+      apt-get install -y make golang-1.9 ruby-dev build-essential jq sqlite
       gem install --no-ri --no-doc fpm
     OUT
   end

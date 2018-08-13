@@ -15,8 +15,16 @@ type CollectionService struct {
 	DB *sql.DB
 }
 
-// Collection will read from the data store and populate the result with a resource
-func (s CollectionService) Collection(user, apiRoot, collectionID string) (cabby.Collection, error) {
+// Collection will read from the data store and return the resource
+func (s CollectionService) Collection(user, apiRootPath, collectionID string) (cabby.Collection, error) {
+	resource, action := "Collection", "read"
+	start := cabby.LogServiceStart(resource, action)
+	result, err := s.collection(user, apiRootPath, collectionID)
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
+
+func (s CollectionService) collection(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 	resource, action := "Collection", "read"
 	start := cabby.LogServiceStart(resource, action)
 
@@ -30,7 +38,7 @@ func (s CollectionService) Collection(user, apiRoot, collectionID string) (cabby
 	c := cabby.Collection{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, apiRoot, collectionID)
+	rows, err := s.DB.Query(sql, user, apiRootPath, collectionID)
 	if err != nil {
 		return c, err
 	}
@@ -49,11 +57,16 @@ func (s CollectionService) Collection(user, apiRoot, collectionID string) (cabby
 	return c, err
 }
 
-// Collections will read from the data store and populate the result with a resource
-func (s CollectionService) Collections(user, apiRoot string) (cabby.Collections, error) {
+// Collections will read from the data store and return the resource
+func (s CollectionService) Collections(user, apiRootPath string) (cabby.Collections, error) {
 	resource, action := "Collections", "read"
 	start := cabby.LogServiceStart(resource, action)
+	result, err := s.collections(user, apiRootPath)
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
 
+func (s CollectionService) collections(user, apiRootPath string) (cabby.Collections, error) {
 	sql := `with data as (
 					  select rowid, id, title, description, can_read, can_write, media_types, 1 count
 					  from (
@@ -78,7 +91,7 @@ func (s CollectionService) Collections(user, apiRoot string) (cabby.Collections,
 	cs := cabby.Collections{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, apiRoot)
+	rows, err := s.DB.Query(sql, user, apiRootPath)
 	if err != nil {
 		return cs, err
 	}
@@ -95,7 +108,6 @@ func (s CollectionService) Collections(user, apiRoot string) (cabby.Collections,
 	}
 
 	err = rows.Err()
-	cabby.LogServiceEnd(resource, action, start)
 	return cs, err
 }
 
@@ -103,7 +115,12 @@ func (s CollectionService) Collections(user, apiRoot string) (cabby.Collections,
 func (s CollectionService) CollectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 	resource, action := "APIRootCollections", "read"
 	start := cabby.LogServiceStart(resource, action)
+	result, err := s.collectionsInAPIRoot(apiRootPath)
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
 
+func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 	sql := `select c.api_root_path, c.id
 					from
 						taxii_collection c
@@ -127,6 +144,5 @@ func (s CollectionService) CollectionsInAPIRoot(apiRootPath string) (cabby.Colle
 	}
 
 	err = rows.Err()
-	cabby.LogServiceEnd(resource, action, start)
 	return ac, err
 }

@@ -1,5 +1,5 @@
 .PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
-.PHONY: test test-failures test-install test test-run
+.PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
@@ -44,7 +44,7 @@ config:
 	done
 	@echo Configs available in config/
 
-cover: test-install
+cover:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
@@ -59,7 +59,20 @@ else
 	done
 endif
 
-cover-html: test-install
+cover-cabby.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
+
+cover-http.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
+
+cover-sqlite.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
+
+coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
+	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
+	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
+
+cover-html:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)

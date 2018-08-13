@@ -14,11 +14,16 @@ type DiscoveryService struct {
 	DB *sql.DB
 }
 
-// Discovery will read from the data store and populate the discovery resource
+// Discovery will read from the data store and return the resource
 func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
-	resource, action := "discovery", "read"
+	resource, action := "Discovery", "read"
 	start := cabby.LogServiceStart(resource, action)
+	result, err := s.discovery()
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
 
+func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 	sql := `select td.title, td.description, td.contact, td.default_url,
 						 case
 							 when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
@@ -48,6 +53,5 @@ func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 
 	err = rows.Err()
 	d.APIRoots = apiRoots
-	cabby.LogServiceEnd(resource, action, start)
 	return d, err
 }
