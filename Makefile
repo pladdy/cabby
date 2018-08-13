@@ -103,6 +103,7 @@ ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -cover ./$(pkg)
 else
+	go test $(BUILD_TAGS) -i ./...
 	go test $(BUILD_TAGS) -v -cover ./...
 endif
 
