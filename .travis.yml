@@ -9,7 +9,7 @@ before_install:
   - sudo apt-get install -y sqlite3 libsqlite3-dev
 
 script:
-  - make && make test-codecov
+  - make && make coverage.txt
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

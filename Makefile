@@ -44,7 +44,7 @@ config:
 	done
 	@echo Configs available in config/
 
-cover: test-install
+cover:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
@@ -59,7 +59,20 @@ else
 	done
 endif
 
-cover-html: test-install
+cover-cabby.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
+
+cover-http.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
+
+cover-sqlite.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
+
+coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
+	@cat ccover-cabby.txt cover-http.txt cover-sqlite.txt > $@
+	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
+
+cover-html:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
@@ -106,9 +119,6 @@ else
 	go test $(BUILD_TAGS) -i ./...
 	go test $(BUILD_TAGS) -v -cover ./...
 endif
-
-test-codecov:
-	go test -v $(BUILD_TAGS) -coverprofile=coverage.txt -covermode=atomic ./...
 
 test-failures:
 	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
