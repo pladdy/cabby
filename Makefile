@@ -69,7 +69,7 @@ cover-sqlite.txt:
 	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
 
 coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
-	@cat ccover-cabby.txt cover-http.txt cover-sqlite.txt > $@
+	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
 	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
 
 cover-html:
