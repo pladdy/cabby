@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/gofrs/uuid"
+	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -177,6 +178,26 @@ func (id *ID) IsEmpty() bool {
 		return true
 	}
 	return false
+}
+
+// Object for STIX 2 object data
+type Object struct {
+	RawID        string        `json:"id"`
+	ID           stones.StixID `json:"-"`
+	Type         string        `json:"type"`
+	Created      string        `json:"created"`
+	Modified     string        `json:"modified"`
+	Object       []byte
+	CollectionID ID
+}
+
+// Objects for STIX 2 Object lists
+type Objects []Object
+
+// ObjectService provides Object data
+type ObjectService interface {
+	Object(collectionID, stixID string) (Object, error)
+	Objects(collectionID string) (Objects, error)
 }
 
 // Result struct for data returned from backend
