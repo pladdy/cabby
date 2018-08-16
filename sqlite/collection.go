@@ -25,9 +25,6 @@ func (s CollectionService) Collection(user, apiRootPath, collectionID string) (c
 }
 
 func (s CollectionService) collection(user, apiRootPath, collectionID string) (cabby.Collection, error) {
-	resource, action := "Collection", "read"
-	start := cabby.LogServiceStart(resource, action)
-
 	sql := `select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
 					from
 						taxii_collection c
@@ -53,7 +50,6 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 	}
 
 	err = rows.Err()
-	cabby.LogServiceEnd(resource, action, start)
 	return c, err
 }
 

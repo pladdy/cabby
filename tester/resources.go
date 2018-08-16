@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/stones"
 )
 
 const (
@@ -48,6 +49,8 @@ var (
 		Contact:     "cabby test",
 		Default:     BaseURL + "taxii/",
 		APIRoots:    []string{BaseURL + APIRootPath + "/"}}
+	// Object mock
+	Object = object()
 	// User mock
 	User = cabby.User{
 		Email:    UserEmail,
@@ -64,4 +67,26 @@ func collection() cabby.Collection {
 
 	c.ID, _ = cabby.IDFromString(CollectionID)
 	return c
+}
+
+func object() cabby.Object {
+	o := cabby.Object{
+		RawID:    "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b",
+		Type:     "malware",
+		Created:  "2016-04-06T20:07:09.000Z",
+		Modified: "2016-04-06T20:07:09.000Z",
+	}
+
+	o.ID, _ = stones.MarshalStixID(o.RawID)
+	o.CollectionID, _ = cabby.IDFromString(CollectionID)
+	o.Object = []byte(`{
+	      "type": "malware",
+	      "id": "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b",
+	      "created": "2016-04-06T20:07:09.000Z",
+	      "modified": "2016-04-06T20:07:09.000Z",
+	      "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",
+	      "name": "Poison Ivy"
+	    }`)
+
+	return o
 }

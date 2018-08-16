@@ -196,7 +196,7 @@ type Objects []Object
 
 // ObjectService provides Object data
 type ObjectService interface {
-	Object(collectionID, stixID string) (Object, error)
+	Object(collectionID, objectID string) (Object, error)
 	Objects(collectionID string) (Objects, error)
 }
 

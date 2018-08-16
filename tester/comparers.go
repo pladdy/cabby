@@ -61,3 +61,32 @@ func CompareError(result, expected cabby.Error, t *testing.T) {
 		t.Error("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
 	}
 }
+
+// CompareObject compares two Collections
+func CompareObject(result, expected cabby.Object, t *testing.T) {
+	if result.RawID != expected.RawID {
+		t.Error("Got:", result.RawID, "Expected:", expected.RawID)
+	}
+	if result.ID.String() != expected.ID.String() {
+		t.Error("Got:", result.ID.String(), "Expected:", expected.ID.String())
+	}
+	if result.Type != expected.Type {
+		t.Error("Got:", result.Type, "Expected:", expected.Type)
+	}
+	if result.Created != expected.Created {
+		t.Error("Got:", result.Created, "Expected:", expected.Created)
+	}
+	if result.Modified != expected.Modified {
+		t.Error("Got:", result.Modified, "Expected:", expected.Modified)
+	}
+
+	rObject := string(result.Object)
+	eObject := string(expected.Object)
+	if rObject != eObject {
+		t.Error("Got:", rObject, "Expected:", eObject)
+	}
+
+	if result.CollectionID.String() != expected.CollectionID.String() {
+		t.Error("Got:", result.CollectionID.String(), "Expected:", expected.CollectionID.String())
+	}
+}
