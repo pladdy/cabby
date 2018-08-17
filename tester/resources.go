@@ -53,7 +53,7 @@ var (
 	// Object mock
 	Object = object()
 	// Objects mock
-	Objects = cabby.Objects{object()}
+	Objects = []cabby.Object{object()}
 	// User mock
 	User = cabby.User{
 		Email:    UserEmail,

@@ -191,13 +191,10 @@ type Object struct {
 	CollectionID ID
 }
 
-// Objects for STIX 2 Object lists
-type Objects []Object
-
 // ObjectService provides Object data
 type ObjectService interface {
 	Object(collectionID, objectID string) (Object, error)
-	Objects(collectionID string) (Objects, error)
+	Objects(collectionID string) ([]Object, error)
 }
 
 // Result struct for data returned from backend

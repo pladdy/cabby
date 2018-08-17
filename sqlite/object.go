@@ -47,7 +47,7 @@ func (s ObjectService) object(collectionID, objectID string) (cabby.Object, erro
 }
 
 // Objects will read from the data store and return the resource
-func (s ObjectService) Objects(collectionID string) (cabby.Objects, error) {
+func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
 	resource, action := "Objects", "read"
 	start := cabby.LogServiceStart(resource, action)
 	result, err := s.objects(collectionID)
@@ -55,7 +55,7 @@ func (s ObjectService) Objects(collectionID string) (cabby.Objects, error) {
 	return result, err
 }
 
-func (s ObjectService) objects(collectionID string) (cabby.Objects, error) {
+func (s ObjectService) objects(collectionID string) ([]cabby.Object, error) {
 	// filtering and pagination omitted below
 	sql := `with data as (
 						select rowid, id raw_id, type, created, modified, object, collection_id, 1 count
@@ -72,7 +72,7 @@ func (s ObjectService) objects(collectionID string) (cabby.Objects, error) {
 					from data`
 	// add $paginate here
 
-	objects := cabby.Objects{}
+	objects := []cabby.Object{}
 	var err error
 
 	rows, err := s.DB.Query(sql, collectionID)

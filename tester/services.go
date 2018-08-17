@@ -108,7 +108,7 @@ func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 // ObjectService is a mock implementation
 type ObjectService struct {
 	ObjectFn  func(collectionID, objectID string) (cabby.Object, error)
-	ObjectsFn func(collectionID string) (cabby.Objects, error)
+	ObjectsFn func(collectionID string) ([]cabby.Object, error)
 }
 
 // Object is a mock implementation
@@ -117,7 +117,7 @@ func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, erro
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(collectionID string) (cabby.Objects, error) {
+func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
 	return s.ObjectsFn(collectionID)
 }
 
