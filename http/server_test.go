@@ -37,11 +37,16 @@ func TestNewCabby(t *testing.T) {
 	ds := tester.DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }
 
+	os := tester.ObjectService{}
+	os.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return cabby.Object{}, nil }
+	os.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return []cabby.Object{}, nil }
+
 	// set up a data store with mocked services
 	md := tester.DataStore{}
 	md.APIRootServiceFn = func() tester.APIRootService { return as }
 	md.CollectionServiceFn = func() tester.CollectionService { return cs }
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
+	md.ObjectServiceFn = func() tester.ObjectService { return os }
 	md.UserServiceFn = func() tester.UserService { return us }
 
 	c := cabby.Config{Port: 1212, SSLCert: "../server.crt", SSLKey: "../server.key"}
