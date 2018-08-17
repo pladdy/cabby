@@ -13,7 +13,7 @@ func TestObjectServiceObject(t *testing.T) {
 
 	expected := tester.Object
 
-	result, err := s.Object(expected.CollectionID.String(), expected.ID.String())
+	result, err := s.Object(expected.CollectionID.String(), string(expected.ID))
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -32,25 +32,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 	}
 
 	expected := tester.Object
-	_, err = s.Object(expected.CollectionID.String(), expected.ID.String())
-	if err == nil {
-		t.Error("Got:", err, "Expected an error")
-	}
-}
-
-func TestObjectServiceObjectInvalidRawID(t *testing.T) {
-	setupSQLite()
-	ds := testDataStore()
-	s := ObjectService{DB: ds.DB}
-
-	_, err := s.DB.Exec(`insert into stix_objects (id, type, created, modified, object, collection_id)
-	                     values ('fail', 'fail', 'fail', 'fail', '{"fail": true}', 'fail')`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := tester.Object
-	_, err = s.Object(expected.CollectionID.String(), "fail")
+	_, err = s.Object(expected.CollectionID.String(), string(expected.ID))
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

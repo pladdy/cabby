@@ -107,7 +107,7 @@ func createObject(ds *DataStore) {
 	defer stmt.Close()
 
 	o := tester.Object
-	_, err = stmt.Exec(o.ID.String(), o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
+	_, err = stmt.Exec(o.ID, o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
 	if err != nil {
 		tester.Error.Fatal(err)
 	}

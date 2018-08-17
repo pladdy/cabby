@@ -7,7 +7,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	cabby "github.com/pladdy/cabby2"
-	"github.com/pladdy/stones"
 )
 
 // ObjectService implements a SQLite version of the ObjectService interface
@@ -38,14 +37,9 @@ func (s ObjectService) object(collectionID, objectID string) (cabby.Object, erro
 	}
 
 	for rows.Next() {
-		if err := rows.Scan(&o.RawID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
 			return o, err
 		}
-	}
-
-	o.ID, err = stones.MarshalStixID(o.RawID)
-	if err != nil {
-		return o, err
 	}
 
 	err = rows.Err()
@@ -88,14 +82,10 @@ func (s ObjectService) objects(collectionID string) (cabby.Objects, error) {
 
 	for rows.Next() {
 		var o cabby.Object
-		if err := rows.Scan(&o.RawID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
 			return objects, err
 		}
 
-		o.ID, err = stones.MarshalStixID(o.RawID)
-		if err != nil {
-			return objects, err
-		}
 		objects = append(objects, o)
 	}
 

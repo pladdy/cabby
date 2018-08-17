@@ -111,6 +111,7 @@ type DataStore interface {
 	Close()
 	CollectionService() CollectionService
 	DiscoveryService() DiscoveryService
+	ObjectService() ObjectService
 	Open() error
 	UserService() UserService
 }
@@ -170,8 +171,8 @@ func NewID() (ID, error) {
 	return ID{id}, err
 }
 
-// IsEmpty returns a boolean based on whether the UUID is not "set"
-//  IE: the string representation is 00000000-0000-0000-0000-000000000000
+// IsEmpty returns a boolean based on whether the UUID is not defined
+//  IE: string representation 00000000-0000-0000-0000-000000000000 is undefined
 func (id *ID) IsEmpty() bool {
 	empty := &ID{}
 	if id.String() == empty.String() {
@@ -182,11 +183,10 @@ func (id *ID) IsEmpty() bool {
 
 // Object for STIX 2 object data
 type Object struct {
-	RawID        string        `json:"id"`
-	ID           stones.StixID `json:"-"`
-	Type         string        `json:"type"`
-	Created      string        `json:"created"`
-	Modified     string        `json:"modified"`
+	ID           stones.ID `json:"id"`
+	Type         string    `json:"type"`
+	Created      string    `json:"created"`
+	Modified     string    `json:"modified"`
 	Object       []byte
 	CollectionID ID
 }

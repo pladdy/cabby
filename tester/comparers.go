@@ -64,11 +64,8 @@ func CompareError(result, expected cabby.Error, t *testing.T) {
 
 // CompareObject compares two Collections
 func CompareObject(result, expected cabby.Object, t *testing.T) {
-	if result.RawID != expected.RawID {
-		t.Error("Got:", result.RawID, "Expected:", expected.RawID)
-	}
-	if result.ID.String() != expected.ID.String() {
-		t.Error("Got:", result.ID.String(), "Expected:", expected.ID.String())
+	if result.ID != expected.ID {
+		t.Error("Got:", result.ID, "Expected:", expected.ID)
 	}
 	if result.Type != expected.Type {
 		t.Error("Got:", result.Type, "Expected:", expected.Type)
