@@ -31,7 +31,10 @@ func TestDiscoveryHandlerGet(t *testing.T) {
 	}
 	expected := tester.Discovery
 
-	tester.CompareDiscovery(result, expected, t)
+	passed := tester.CompareDiscovery(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestDiscoveryHandlerGetFailures(t *testing.T) {
@@ -65,7 +68,10 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		tester.CompareError(result, expected, t)
+		passed := tester.CompareError(result, expected)
+		if !passed {
+			t.Error("Comparison failed")
+		}
 	}
 }
 
@@ -91,7 +97,10 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	expected := cabby.Error{Title: "Resource not found",
 		Description: "Discovery not defined", HTTPStatus: http.StatusNotFound}
 
-	tester.CompareError(result, expected, t)
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestInsertPort(t *testing.T) {

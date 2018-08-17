@@ -2,88 +2,146 @@ package tester
 
 import (
 	"strings"
-	"testing"
 
 	cabby "github.com/pladdy/cabby2"
 )
 
-// CompareCollection compares two Collections
-func CompareCollection(result, expected cabby.Collection, t *testing.T) {
-	if result.ID.String() != expected.ID.String() {
-		t.Error("Got:", result.ID.String(), "Expected:", expected.ID.String())
+// CompareAPIRoot compares two APIRoots
+func CompareAPIRoot(result, expected cabby.APIRoot) bool {
+	passed := true
+
+	if result.Path != expected.Path {
+		Error.Println("Got:", result.Path, "Expected:", expected.Path)
 	}
 	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
+		Error.Println("Got:", result.Title, "Expected:", expected.Title)
 	}
 	if result.Description != expected.Description {
-		t.Error("Got:", result.Description, "Expected:", expected.Description)
+		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+	}
+	if strings.Join(result.Versions, ",") != strings.Join(expected.Versions, ",") {
+		Error.Println("Got:", strings.Join(result.Versions, ","), "Expected:", strings.Join(expected.Versions, ","))
+	}
+	if result.MaxContentLength != expected.MaxContentLength {
+		Error.Println("Got:", result.MaxContentLength, "Expected:", expected.MaxContentLength)
+	}
+
+	return passed
+}
+
+// CompareCollection compares two Collections
+func CompareCollection(result, expected cabby.Collection) bool {
+	passed := true
+
+	if result.ID.String() != expected.ID.String() {
+		Error.Println("Got:", result.ID.String(), "Expected:", expected.ID.String())
+		passed = false
+	}
+	if result.Title != expected.Title {
+		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		passed = false
+	}
+	if result.Description != expected.Description {
+		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		passed = false
 	}
 	if result.CanRead != expected.CanRead {
-		t.Error("Got:", result.CanRead, "Expected:", expected.CanRead)
+		Error.Println("Got:", result.CanRead, "Expected:", expected.CanRead)
+		passed = false
 	}
 	if result.CanWrite != expected.CanWrite {
-		t.Error("Got:", result.CanWrite, "Expected:", expected.CanWrite)
+		Error.Println("Got:", result.CanWrite, "Expected:", expected.CanWrite)
+		passed = false
 	}
 	if strings.Join(result.MediaTypes, ",") != strings.Join(expected.MediaTypes, ",") {
-		t.Error("Got:", strings.Join(result.MediaTypes, ","), "Expected:", strings.Join(expected.MediaTypes, ","))
+		Error.Println("Got:", strings.Join(result.MediaTypes, ","), "Expected:", strings.Join(expected.MediaTypes, ","))
+		passed = false
 	}
+
+	return passed
 }
 
 // CompareDiscovery compares two Discoverys
-func CompareDiscovery(result, expected cabby.Discovery, t *testing.T) {
+func CompareDiscovery(result, expected cabby.Discovery) bool {
+	passed := true
+
 	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
+		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		passed = false
 	}
 	if result.Description != expected.Description {
-		t.Error("Got:", result.Description, "Expected:", expected.Description)
+		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		passed = false
 	}
 	if result.Contact != expected.Contact {
-		t.Error("Got:", result.Contact, "Expected:", expected.Contact)
+		Error.Println("Got:", result.Contact, "Expected:", expected.Contact)
+		passed = false
 	}
 
 	if result.Default != expected.Default {
-		t.Error("Got:", result.Default, "Expected:", expected.Default)
+		Error.Println("Got:", result.Default, "Expected:", expected.Default)
+		passed = false
 	}
 	if result.APIRoots[0] != expected.APIRoots[0] {
-		t.Error("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
+		Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
+		passed = false
 	}
+
+	return passed
 }
 
 // CompareError compares two Errors
-func CompareError(result, expected cabby.Error, t *testing.T) {
+func CompareError(result, expected cabby.Error) bool {
+	passed := true
+
 	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
+		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		passed = false
 	}
 	if result.Description != expected.Description {
-		t.Error("Got:", result.Description, "Expected:", expected.Description)
+		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		passed = false
 	}
 	if result.HTTPStatus != expected.HTTPStatus {
-		t.Error("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
+		Error.Println("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
+		passed = false
 	}
+
+	return passed
 }
 
 // CompareObject compares two Collections
-func CompareObject(result, expected cabby.Object, t *testing.T) {
+func CompareObject(result, expected cabby.Object) bool {
+	passed := true
+
 	if result.ID != expected.ID {
-		t.Error("Got:", result.ID, "Expected:", expected.ID)
+		Error.Println("Got:", result.ID, "Expected:", expected.ID)
+		passed = false
 	}
 	if result.Type != expected.Type {
-		t.Error("Got:", result.Type, "Expected:", expected.Type)
+		Error.Println("Got:", result.Type, "Expected:", expected.Type)
+		passed = false
 	}
 	if result.Created != expected.Created {
-		t.Error("Got:", result.Created, "Expected:", expected.Created)
+		Error.Println("Got:", result.Created, "Expected:", expected.Created)
+		passed = false
 	}
 	if result.Modified != expected.Modified {
-		t.Error("Got:", result.Modified, "Expected:", expected.Modified)
+		Error.Println("Got:", result.Modified, "Expected:", expected.Modified)
+		passed = false
 	}
 
 	rObject := string(result.Object)
 	eObject := string(expected.Object)
 	if rObject != eObject {
-		t.Error("Got:", rObject, "Expected:", eObject)
+		Error.Println("Got:", rObject, "Expected:", eObject)
+		passed = false
 	}
 
 	if result.CollectionID.String() != expected.CollectionID.String() {
-		t.Error("Got:", result.CollectionID.String(), "Expected:", expected.CollectionID.String())
+		Error.Println("Got:", result.CollectionID.String(), "Expected:", expected.CollectionID.String())
+		passed = false
 	}
+
+	return passed
 }

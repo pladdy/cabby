@@ -32,14 +32,9 @@ func TestHandleUndefinedRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
-	}
-	if result.Description != expected.Description {
-		t.Error("Got:", result.Description, "Expected:", expected.Description)
-	}
-	if result.HTTPStatus != expected.HTTPStatus {
-		t.Error("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 

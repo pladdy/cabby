@@ -48,6 +48,11 @@ func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 	return DiscoveryService{DB: s.DB}
 }
 
+// ObjectService returns a discovery service
+func (s *DataStore) ObjectService() cabby.ObjectService {
+	return ObjectService{DB: s.DB}
+}
+
 // Open connection to datastore
 func (s *DataStore) Open() (err error) {
 	// set foreign key pragma to true in connection: https://github.com/mattn/go-sqlite3#connection-string

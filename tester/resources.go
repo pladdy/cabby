@@ -43,13 +43,20 @@ var (
 	// Collections mock
 	Collections = cabby.Collections{
 		Collections: []cabby.Collection{Collection}}
-	// Discovery mock
+	// Discovery mock; the handler mutates the returned path into a URL
 	Discovery = cabby.Discovery{
 		Title:       "test discovery",
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     BaseURL + "taxii/",
 		APIRoots:    []string{BaseURL + APIRootPath + "/"}}
+	// DiscoveryDataStore mock; the service just returns an API root path
+	DiscoveryDataStore = cabby.Discovery{
+		Title:       "test discovery",
+		Description: "test discovery description",
+		Contact:     "cabby test",
+		Default:     BaseURL + "taxii/",
+		APIRoots:    []string{APIRootPath}}
 	// Object mock
 	Object = object()
 	// Objects mock

@@ -67,7 +67,10 @@ func TestCollectionsGetFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		tester.CompareError(result, expected, t)
+		passed := tester.CompareError(result, expected)
+		if !passed {
+			t.Error("Comparison failed")
+		}
 	}
 }
 
@@ -93,5 +96,8 @@ func TestCollectionsHandlerNoCollections(t *testing.T) {
 	expected := cabby.Error{Title: "Resource not found",
 		Description: "No collections defined in this API Root", HTTPStatus: http.StatusNotFound}
 
-	tester.CompareError(result, expected, t)
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }

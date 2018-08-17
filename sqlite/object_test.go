@@ -18,7 +18,10 @@ func TestObjectServiceObject(t *testing.T) {
 		t.Error("Got:", err, "Expected no error")
 	}
 
-	tester.CompareObject(result, expected, t)
+	passed := tester.CompareObject(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestObjectServiceObjectQueryErr(t *testing.T) {
@@ -32,6 +35,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 	}
 
 	expected := tester.Object
+
 	_, err = s.Object(expected.CollectionID.String(), string(expected.ID))
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
@@ -54,8 +58,10 @@ func TestObjectsServiceObjects(t *testing.T) {
 		t.Error("Got:", len(results), "Expected: > 0")
 	}
 
-	result := results[0]
-	tester.CompareObject(result, expected, t)
+	passed := tester.CompareObject(results[0], expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestObjectsServiceObjectsQueryErr(t *testing.T) {
