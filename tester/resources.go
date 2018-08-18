@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	baseURL = "https://localhost"
-	eightMB = 8388608
+	baseURL       = "https://localhost"
+	eightMB       = 8388608
+	objectCreated = "2016-04-06T20:07:09.000Z"
 
 	// APIRootPath for tests
 	APIRootPath = "cabby_test_root"
@@ -60,6 +61,14 @@ var (
 		Contact:     "cabby test",
 		Default:     BaseURL + "taxii/",
 		APIRoots:    []string{APIRootPath}}
+	// Manifest mock
+	Manifest = cabby.Manifest{Objects: []cabby.ManifestEntry{ManifestEntry}}
+	// ManifestEntry mock
+	ManifestEntry = cabby.ManifestEntry{
+		ID:         ObjectID,
+		DateAdded:  objectCreated,
+		Versions:   []string{objectCreated},
+		MediaTypes: []string{cabby.StixContentType}}
 	// Object mock
 	Object = object()
 	// Objects mock
@@ -84,10 +93,10 @@ func collection() cabby.Collection {
 
 func object() cabby.Object {
 	o := cabby.Object{
-		ID:       "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b",
+		ID:       ObjectID,
 		Type:     "malware",
-		Created:  "2016-04-06T20:07:09.000Z",
-		Modified: "2016-04-06T20:07:09.000Z",
+		Created:  objectCreated,
+		Modified: objectCreated,
 	}
 
 	o.CollectionID, _ = cabby.IDFromString(CollectionID)

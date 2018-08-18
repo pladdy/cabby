@@ -105,6 +105,16 @@ func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 	return s.DiscoveryFn()
 }
 
+// ManifestService is a mock implementation
+type ManifestService struct {
+	ManifestFn func() (cabby.Manifest, error)
+}
+
+// Manifest is a mock implementation
+func (s ManifestService) Manifest() (cabby.Manifest, error) {
+	return s.ManifestFn()
+}
+
 // ObjectService is a mock implementation
 type ObjectService struct {
 	ObjectFn  func(collectionID, objectID string) (cabby.Object, error)

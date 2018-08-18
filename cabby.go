@@ -181,6 +181,24 @@ func (id *ID) IsEmpty() bool {
 	return false
 }
 
+// Manifest resource lists a summary of objects in a collection
+type Manifest struct {
+	Objects []ManifestEntry `json:"objects,omitempty"`
+}
+
+// ManifestEntry is a summary of an object in a manifest
+type ManifestEntry struct {
+	ID         string   `json:"id"`
+	DateAdded  string   `json:"date_added"`
+	Versions   []string `json:"versions"`
+	MediaTypes []string `json:"media_types"`
+}
+
+// ManifestService provides manifest data
+type ManifestService interface {
+	Manifest(collectionID string) (Manifest, error)
+}
+
 // Object for STIX 2 object data
 type Object struct {
 	ID           stones.ID `json:"id"`

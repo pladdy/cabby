@@ -110,6 +110,36 @@ func CompareError(result, expected cabby.Error) bool {
 	return passed
 }
 
+// CompareManifestEntry compares two manifest entries
+func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
+	passed := true
+
+	if result.ID != expected.ID {
+		Error.Println("Got:", result.ID, "Expected:", expected.ID)
+		passed = false
+	}
+	if result.DateAdded != expected.DateAdded {
+		Error.Println("Got:", result.DateAdded, "Expected:", expected.DateAdded)
+		passed = false
+	}
+
+	rVersions := strings.Join(result.Versions, ",")
+	eVersions := strings.Join(expected.Versions, ",")
+	if rVersions != eVersions {
+		Error.Println("Got:", rVersions, "Expected:", eVersions)
+		passed = false
+	}
+
+	rMediaTypes := strings.Join(result.MediaTypes, ",")
+	eMediaTypes := strings.Join(expected.MediaTypes, ",")
+	if rMediaTypes != eMediaTypes {
+		Error.Println("Got:", rMediaTypes, "Expected:", eMediaTypes)
+		passed = false
+	}
+
+	return passed
+}
+
 // CompareObject compares two Collections
 func CompareObject(result, expected cabby.Object) bool {
 	passed := true
