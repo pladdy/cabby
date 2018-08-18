@@ -78,7 +78,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 			"method":   r.Method,
 			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
 			"url":      r.URL.String(),
-		}).Info("Serving request made to server")
+		}).Info("Request received")
 
 		h.ServeHTTP(w, r)
 
@@ -90,7 +90,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 			"method":     r.Method,
 			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
 			"url":        r.URL.String(),
-		}).Info("Served request made to server")
+		}).Info("Request returned")
 	})
 }
 

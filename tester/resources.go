@@ -43,6 +43,9 @@ var (
 	// Collections mock
 	Collections = cabby.Collections{
 		Collections: []cabby.Collection{Collection}}
+	// CollectionsInAPIRoot mock
+	CollectionsInAPIRoot = cabby.CollectionsInAPIRoot{
+		Path: APIRootPath, CollectionIDs: []cabby.ID{Collection.ID}}
 	// Discovery mock; the handler mutates the returned path into a URL
 	Discovery = cabby.Discovery{
 		Title:       "test discovery",
