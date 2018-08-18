@@ -17,7 +17,7 @@ func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 
 	for _, apiRoot := range apiRoots {
 		registerAPIRoot(ah, apiRoot.Path, sm)
-		registerCollectionRoutes(ds, apiRoot.Path, sm)
+		registerCollectionRoutes(ds, apiRoot, sm)
 	}
 }
 
@@ -27,24 +27,26 @@ func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 	}
 }
 
-func registerCollectionRoutes(ds cabby.DataStore, path string, sm *http.ServeMux) {
+func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
 	ch := CollectionsHandler{CollectionService: ds.CollectionService()}
+	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
 
-	registerRoute(sm, path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
-
-	acs, err := ch.CollectionService.CollectionsInAPIRoot(path)
+	acs, err := ch.CollectionService.CollectionsInAPIRoot(apiRoot.Path)
 	if err != nil {
-		log.WithFields(log.Fields{"api_root": path}).Error("Unable to read collections")
+		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
 	}
 
-	for _, id := range acs.CollectionIDs {
+	oh := ObjectsHandler{ObjectService: ds.ObjectService(), MaxContentLength: apiRoot.MaxContentLength}
+
+	for _, collectionID := range acs.CollectionIDs {
 		registerRoute(
 			sm,
-			path+"/collections/"+id.String(),
+			apiRoot.Path+"/collections/"+collectionID.String(),
 			WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
-		// registerRoute(sm,
-		// 	path+"/collections/"+collection.ID.String()+"/objects",
-		// 	withAcceptStix(handleTaxiiObjects(ds, ar.MaxContentLength)))
+		registerRoute(
+			sm,
+			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
+			WithAcceptType(RouteRequest(oh), cabby.StixContentType))
 		// registerRoute(sm,
 		// 	path+"/collections/"+collection.ID.String()+"/manifest",
 		// 	withAcceptTaxii(handleTaxiiManifest(ds)))
