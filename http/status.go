@@ -44,16 +44,16 @@ func methodNotAllowed(w http.ResponseWriter, err error) {
 }
 
 func resourceNotFound(w http.ResponseWriter, err error) {
-	errorStatus(w, "Resource not found", err, http.StatusNotFound)
+	errorStatus(w, "Resource Not Found", err, http.StatusNotFound)
 }
 
 func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
 	err := fmt.Errorf("content length is %v, content length can't be bigger than %v", rc, mc)
-	errorStatus(w, "Request too large", err, http.StatusRequestEntityTooLarge)
+	errorStatus(w, "Request Too large", err, http.StatusRequestEntityTooLarge)
 }
 
 func rangeNotSatisfiable(w http.ResponseWriter, err error) {
-	errorStatus(w, "Requested ange cannot be satisfied", err, http.StatusRequestedRangeNotSatisfiable)
+	errorStatus(w, "Requested Range Not Satisfiable", err, http.StatusRequestedRangeNotSatisfiable)
 }
 
 func unauthorized(w http.ResponseWriter, err error) {

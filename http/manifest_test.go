@@ -10,54 +10,53 @@ import (
 	"github.com/pladdy/cabby2/tester"
 )
 
-func TestAPIRootHandlerGet(t *testing.T) {
-	ds := tester.APIRootService{}
-	ds.APIRootFn = func(path string) (cabby.APIRoot, error) {
-		return tester.APIRoot, nil
+func TestManifestHandlerGet(t *testing.T) {
+	ds := tester.ManifestService{}
+	ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+		return tester.Manifest, nil
 	}
 
 	// call handler
-	h := APIRootHandler{APIRootService: &ds}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	h := ManifestHandler{ManifestService: &ds}
+	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var result cabby.APIRoot
+	var result cabby.Manifest
 	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
+	expected := tester.ManifestEntry
 
-	expected := tester.APIRoot
-
-	passed := tester.CompareAPIRoot(result, expected)
+	passed := tester.CompareManifestEntry(result.Objects[0], expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
 }
 
-func TestAPIRootGetFailures(t *testing.T) {
+func TestManifestHandlerGetFailures(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected cabby.Error
 	}{
 		{method: "GET",
 			expected: cabby.Error{
-				Title: "Internal Server Error", Description: "APIRoot failure", HTTPStatus: http.StatusInternalServerError}},
+				Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}},
 	}
 
 	for _, test := range tests {
 		expected := test.expected
 
-		ds := tester.APIRootService{}
-		ds.APIRootFn = func(path string) (cabby.APIRoot, error) {
-			return cabby.APIRoot{}, errors.New(expected.Description)
+		ds := tester.ManifestService{}
+		ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+			return cabby.Manifest{}, errors.New(expected.Description)
 		}
 
-		h := APIRootHandler{APIRootService: &ds}
-		status, body := handlerTest(h.Get, test.method, testAPIRootURL, nil)
+		h := ManifestHandler{ManifestService: &ds}
+		status, body := handlerTest(h.Get, test.method, testManifestURL, nil)
 
 		if status != expected.HTTPStatus {
 			t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -76,14 +75,14 @@ func TestAPIRootGetFailures(t *testing.T) {
 	}
 }
 
-func TestAPIRootHandlerNoAPIRoot(t *testing.T) {
-	ds := tester.APIRootService{}
-	ds.APIRootFn = func(path string) (cabby.APIRoot, error) {
-		return cabby.APIRoot{Title: ""}, nil
+func TestManifestHandlerNoManifest(t *testing.T) {
+	ds := tester.ManifestService{}
+	ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+		return cabby.Manifest{}, nil
 	}
 
-	h := APIRootHandler{APIRootService: &ds}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	h := ManifestHandler{ManifestService: &ds}
+	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -96,7 +95,7 @@ func TestAPIRootHandlerNoAPIRoot(t *testing.T) {
 	}
 
 	expected := tester.ErrorResourceNotFound
-	expected.Description = "API Root not found"
+	expected.Description = "No manifest available for this collection"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

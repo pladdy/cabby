@@ -47,9 +47,10 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
 			WithAcceptType(RouteRequest(oh), cabby.StixContentType))
-		// registerRoute(sm,
-		// 	path+"/collections/"+collection.ID.String()+"/manifest",
-		// 	withAcceptTaxii(handleTaxiiManifest(ds)))
+		registerRoute(
+			sm,
+			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
+			WithAcceptType(RouteRequest(oh), cabby.TaxiiContentType))
 	}
 	//registerRoute(sm, ar.Path+"/status", withAcceptTaxii(handleTaxiiStatus(ds)))
 }

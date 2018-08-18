@@ -22,6 +22,7 @@ var (
 	testAPIRootURL     = tester.BaseURL + tester.APIRootPath + "/"
 	testCollectionsURL = testAPIRootURL + "collections/"
 	testCollectionURL  = testCollectionsURL + tester.CollectionID + "/"
+	testManifestURL    = testCollectionURL + "manifest/"
 	testObjectsURL     = testCollectionURL + "objects/"
 	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
 	testDiscoveryURL   = tester.BaseURL + "/taxii/"
