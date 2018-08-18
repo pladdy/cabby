@@ -15,11 +15,16 @@ type APIRootService struct {
 	DB *sql.DB
 }
 
-// APIRoot will read from the data store and populate the result with a resource
+// APIRoot will read from the data store and return the resource
 func (s APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
-	resource, action := "api_root", "read"
+	resource, action := "APIRoot", "read"
 	start := cabby.LogServiceStart(resource, action)
+	result, err := s.apiRoot(path)
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
 
+func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root
 				  where api_root_path = ?`
@@ -40,15 +45,19 @@ func (s APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
 	}
 
 	err = rows.Err()
-	cabby.LogServiceEnd(resource, action, start)
 	return a, err
 }
 
-// APIRoots will read from the data store and populate the result with a resource
+// APIRoots will read from the data store and return the resource
 func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
-	resource, action := "api_roots", "read"
+	resource, action := "APIRoots", "read"
 	start := cabby.LogServiceStart(resource, action)
+	result, err := s.apiRoots()
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
 
+func (s APIRootService) apiRoots() ([]cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root`
 
@@ -72,6 +81,5 @@ func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
 	}
 
 	err = rows.Err()
-	cabby.LogServiceEnd(resource, action, start)
 	return as, err
 }

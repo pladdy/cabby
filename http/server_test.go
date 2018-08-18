@@ -23,25 +23,30 @@ func TestNewCabby(t *testing.T) {
 	us.ExistsFn = func(cabby.User) bool { return true }
 
 	as := tester.APIRootService{}
-	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{cabby.APIRoot{}}, nil }
+	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, nil }
 
 	cs := tester.CollectionService{}
 	cs.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
-		return cabby.Collection{}, nil
+		return tester.Collection, nil
 	}
-	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return cabby.Collections{}, nil }
+	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return tester.Collections, nil }
 	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
-		return cabby.CollectionsInAPIRoot{}, nil
+		return tester.CollectionsInAPIRoot, nil
 	}
 
 	ds := tester.DiscoveryService{}
-	ds.DiscoveryFn = func() (cabby.Discovery, error) { return cabby.Discovery{Title: t.Name()}, nil }
+	ds.DiscoveryFn = func() (cabby.Discovery, error) { return tester.Discovery, nil }
+
+	os := tester.ObjectService{}
+	os.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
+	os.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
 
 	// set up a data store with mocked services
 	md := tester.DataStore{}
 	md.APIRootServiceFn = func() tester.APIRootService { return as }
 	md.CollectionServiceFn = func() tester.CollectionService { return cs }
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return ds }
+	md.ObjectServiceFn = func() tester.ObjectService { return os }
 	md.UserServiceFn = func() tester.UserService { return us }
 
 	c := cabby.Config{Port: 1212, SSLCert: "../server.crt", SSLKey: "../server.key"}

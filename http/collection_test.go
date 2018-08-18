@@ -31,7 +31,10 @@ func TestCollectionHandlerGet(t *testing.T) {
 	}
 	expected := tester.Collection
 
-	tester.CompareCollection(result, expected, t)
+	passed := tester.CompareCollection(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestCollectionGetFailures(t *testing.T) {
@@ -65,7 +68,10 @@ func TestCollectionGetFailures(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		tester.CompareError(result, expected, t)
+		passed := tester.CompareError(result, expected)
+		if !passed {
+			t.Error("Comparison failed")
+		}
 	}
 }
 
@@ -91,5 +97,8 @@ func TestCollectionHandlerNoCollection(t *testing.T) {
 	expected := cabby.Error{Title: "Resource not found",
 		Description: "Collection ID doesn't exist in this API Root", HTTPStatus: http.StatusNotFound}
 
-	tester.CompareError(result, expected, t)
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }

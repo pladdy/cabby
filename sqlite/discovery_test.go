@@ -11,24 +11,16 @@ func TestDiscoveryServiceDiscovery(t *testing.T) {
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
 
-	expected := tester.Discovery
+	expected := tester.DiscoveryDataStore
 
 	result, err := s.Discovery()
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
 
-	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title)
-	}
-	if result.Description != expected.Description {
-		t.Error("Got:", result.Description, "Expected:", expected.Description)
-	}
-	if result.Contact != expected.Contact {
-		t.Error("Got:", result.Contact, "Expected:", expected.Contact)
-	}
-	if result.Default != expected.Default {
-		t.Error("Got:", result.Default, "Expected:", expected.Default)
+	passed := tester.CompareDiscovery(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 

@@ -80,11 +80,10 @@ func takeCollectionID(r *http.Request) string {
 	return getToken(r.URL.Path, collectionIndex)
 }
 
-//
-// func takeObjectID(r *http.Request) string {
-// 	var objectIDIndex = 5
-// 	return getToken(r.URL.Path, objectIDIndex)
-// }
+func takeObjectID(r *http.Request) string {
+	var objectIDIndex = 5
+	return getToken(r.URL.Path, objectIDIndex)
+}
 
 // func takeRequestRange(r *http.Request) taxiiRange {
 // 	ctx := r.Context()

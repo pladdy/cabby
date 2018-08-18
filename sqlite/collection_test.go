@@ -18,7 +18,10 @@ func TestCollectionServiceCollection(t *testing.T) {
 		t.Error("Got:", err, "Expected no error")
 	}
 
-	tester.CompareCollection(result, expected, t)
+	passed := tester.CompareCollection(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestCollectionServiceCollectionQueryErr(t *testing.T) {
@@ -55,7 +58,10 @@ func TestCollectionsServiceCollections(t *testing.T) {
 
 	result := results.Collections[0]
 
-	tester.CompareCollection(result, expected, t)
+	passed := tester.CompareCollection(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
 }
 
 func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {

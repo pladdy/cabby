@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/pladdy/cabby2/tester"
 )
 
 func TestGetToken(t *testing.T) {
@@ -169,6 +171,23 @@ func TestLastURLPathToken(t *testing.T) {
 // 		t.Error("Expected validation to be false")
 // 	}
 // }
+
+func TestTakeUser(t *testing.T) {
+	tests := []struct {
+		request *http.Request
+		user    string
+	}{
+		{withAuthentication(httptest.NewRequest("GET", "/foo", nil)), tester.UserEmail},
+		{httptest.NewRequest("GET", "/foo", nil), ""},
+	}
+
+	for _, test := range tests {
+		user := takeUser(test.request)
+		if user != test.user {
+			t.Error("Got:", user, "Expected:", test.user)
+		}
+	}
+}
 
 func TestUserExists(t *testing.T) {
 	tests := []struct {

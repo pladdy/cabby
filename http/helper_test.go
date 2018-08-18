@@ -20,8 +20,10 @@ import (
 
 var (
 	testAPIRootURL     = tester.BaseURL + tester.APIRootPath + "/"
-	testCollectionURL  = tester.BaseURL + tester.APIRootPath + "/" + tester.CollectionID + "/"
-	testCollectionsURL = tester.BaseURL + tester.APIRootPath + "/collections/"
+	testCollectionsURL = testAPIRootURL + "collections/"
+	testCollectionURL  = testCollectionsURL + tester.CollectionID + "/"
+	testObjectsURL     = testCollectionURL + "objects/"
+	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
 	testDiscoveryURL   = tester.BaseURL + "/taxii/"
 )
 

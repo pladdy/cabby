@@ -93,6 +93,27 @@ func createDiscovery(ds *DataStore) {
 	tx.Commit()
 }
 
+func createObject(ds *DataStore) {
+	tx, err := ds.DB.Begin()
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+
+	stmt, err := tx.Prepare(`insert into stix_objects (id, type, created, modified, object, collection_id)
+								           values (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+	defer stmt.Close()
+
+	o := tester.Object
+	_, err = stmt.Exec(o.ID, o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+	tx.Commit()
+}
+
 func createUser(ds *DataStore) {
 	tx, err := ds.DB.Begin()
 	if err != nil {
@@ -154,6 +175,7 @@ func setupSQLite() {
 	createDiscovery(ds)
 	createAPIRoot(ds)
 	createCollection(ds)
+	createObject(ds)
 }
 
 func testDataStore() *DataStore {

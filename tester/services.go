@@ -11,6 +11,7 @@ type DataStore struct {
 	APIRootServiceFn    func() APIRootService
 	CollectionServiceFn func() CollectionService
 	DiscoveryServiceFn  func() DiscoveryService
+	ObjectServiceFn     func() ObjectService
 	UserServiceFn       func() UserService
 }
 
@@ -37,6 +38,11 @@ func (s DataStore) CollectionService() cabby.CollectionService {
 // DiscoveryService mock
 func (s DataStore) DiscoveryService() cabby.DiscoveryService {
 	return s.DiscoveryServiceFn()
+}
+
+// ObjectService mock
+func (s DataStore) ObjectService() cabby.ObjectService {
+	return s.ObjectServiceFn()
 }
 
 // Open mock
@@ -97,6 +103,22 @@ type DiscoveryService struct {
 // Discovery is a mock implementation
 func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 	return s.DiscoveryFn()
+}
+
+// ObjectService is a mock implementation
+type ObjectService struct {
+	ObjectFn  func(collectionID, objectID string) (cabby.Object, error)
+	ObjectsFn func(collectionID string) ([]cabby.Object, error)
+}
+
+// Object is a mock implementation
+func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, error) {
+	return s.ObjectFn(collectionID, objectID)
+}
+
+// Objects is a mock implementation
+func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
+	return s.ObjectsFn(collectionID)
 }
 
 // UserService is a mock implementation
