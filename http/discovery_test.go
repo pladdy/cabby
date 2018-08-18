@@ -94,8 +94,8 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := cabby.Error{Title: "Resource not found",
-		Description: "Discovery not defined", HTTPStatus: http.StatusNotFound}
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "Discovery not defined"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

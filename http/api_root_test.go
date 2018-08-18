@@ -18,24 +18,23 @@ func TestAPIRootHandlerGet(t *testing.T) {
 
 	// call handler
 	h := APIRootHandler{APIRootService: &ds}
-	status, result := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var discovery cabby.APIRoot
-	err := json.Unmarshal([]byte(result), &discovery)
+	var result cabby.APIRoot
+	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	expected := tester.APIRoot
 
-	if discovery.Title != expected.Title {
-		t.Error("Got:", discovery.Title, "Expected:", expected.Title)
-	}
-	if discovery.Description != expected.Description {
-		t.Error("Got:", discovery.Description, "Expected:", expected.Description)
+	passed := tester.CompareAPIRoot(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
@@ -96,8 +95,8 @@ func TestAPIRootHandlerNoAPIRoot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := cabby.Error{Title: "Resource not found",
-		Description: "API Root not found: cabby_test_root", HTTPStatus: http.StatusNotFound}
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "API Root not found"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

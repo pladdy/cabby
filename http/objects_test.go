@@ -151,8 +151,8 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := cabby.Error{Title: "Resource not found",
-		Description: "Object ID doesn't exist in this collection", HTTPStatus: http.StatusNotFound}
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "Object ID doesn't exist in this collection"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
@@ -243,8 +243,8 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := cabby.Error{Title: "Resource not found",
-		Description: "No objects defined in this collection", HTTPStatus: http.StatusNotFound}
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "No objects defined in this collection"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

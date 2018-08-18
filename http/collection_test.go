@@ -94,8 +94,8 @@ func TestCollectionHandlerNoCollection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := cabby.Error{Title: "Resource not found",
-		Description: "Collection ID doesn't exist in this API Root", HTTPStatus: http.StatusNotFound}
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "Collection ID doesn't exist in this API Root"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

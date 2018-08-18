@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"net/http"
 	"strconv"
 
 	cabby "github.com/pladdy/cabby2"
@@ -47,6 +48,8 @@ var (
 	// CollectionsInAPIRoot mock
 	CollectionsInAPIRoot = cabby.CollectionsInAPIRoot{
 		Path: APIRootPath, CollectionIDs: []cabby.ID{Collection.ID}}
+	// ErrorResourceNotFound mock
+	ErrorResourceNotFound = cabby.Error{Title: "Resource Not Found", HTTPStatus: http.StatusNotFound}
 	// Discovery mock; the handler mutates the returned path into a URL
 	Discovery = cabby.Discovery{
 		Title:       "test discovery",

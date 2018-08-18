@@ -24,13 +24,14 @@ func TestHandleUndefinedRequest(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
 	}
 
-	expected := cabby.Error{Title: "Resource not found", Description: "Invalid path: /", HTTPStatus: 404}
-
 	var result cabby.Error
 	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "Invalid path: /"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
