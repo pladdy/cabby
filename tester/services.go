@@ -117,8 +117,14 @@ func (s ManifestService) Manifest(collectionID string) (cabby.Manifest, error) {
 
 // ObjectService is a mock implementation
 type ObjectService struct {
-	ObjectFn  func(collectionID, objectID string) (cabby.Object, error)
-	ObjectsFn func(collectionID string) ([]cabby.Object, error)
+	CreateObjectFn func(object cabby.Object) error
+	ObjectFn       func(collectionID, objectID string) (cabby.Object, error)
+	ObjectsFn      func(collectionID string) ([]cabby.Object, error)
+}
+
+// CreateObject is a mock implementation
+func (s ObjectService) CreateObject(object cabby.Object) error {
+	return s.CreateObjectFn(object)
 }
 
 // Object is a mock implementation

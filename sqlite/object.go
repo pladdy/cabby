@@ -11,7 +11,24 @@ import (
 
 // ObjectService implements a SQLite version of the ObjectService interface
 type ObjectService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
+}
+
+// CreateObject will read from the data store and return the resource
+func (s ObjectService) CreateObject(object cabby.Object) error {
+	resource, action := "Object", "create"
+	start := cabby.LogServiceStart(resource, action)
+	err := s.createObject(object)
+	cabby.LogServiceEnd(resource, action, start)
+	return err
+}
+
+func (s ObjectService) createObject(o cabby.Object) error {
+	sql := `insert into stix_objects (id, type, created, modified, object, collection_id)
+					values (?, ?, ?, ?, ?, ?)`
+
+	return s.DataStore.create(sql, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
 }
 
 // Object will read from the data store and return the resource

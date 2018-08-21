@@ -50,7 +50,7 @@ func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 
 // ObjectService returns a discovery service
 func (s *DataStore) ObjectService() cabby.ObjectService {
-	return ObjectService{DB: s.DB}
+	return ObjectService{DB: s.DB, DataStore: s}
 }
 
 // Open connection to datastore
@@ -66,4 +66,82 @@ func (s *DataStore) Open() (err error) {
 // UserService returns a user service
 func (s *DataStore) UserService() cabby.UserService {
 	return UserService{DB: s.DB}
+}
+
+/* create methods */
+
+const maxWritesPerBatch = 500
+
+func (s *DataStore) batchCreate(query string, toWrite chan interface{}, errs chan error) {
+	defer close(errs)
+
+	tx, stmt, err := s.writeOperation(query)
+	if err != nil {
+		errs <- err
+		return
+	}
+	defer stmt.Close()
+
+	i := 0
+	for item := range toWrite {
+		args := item.([]interface{})
+
+		err := s.execute(stmt, args...)
+		if err != nil {
+			errs <- err
+			continue
+		}
+
+		i++
+		if i >= maxWritesPerBatch {
+			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
+			tx, stmt, err = s.writeOperation(query)
+			if err != nil {
+				errs <- err
+				return
+			}
+			defer stmt.Close()
+			i = 0
+		}
+	}
+	tx.Commit()
+}
+
+func (s *DataStore) create(query string, args ...interface{}) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to begin transaction")
+		return err
+	}
+	defer tx.Commit()
+
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare")
+		return err
+	}
+	defer stmt.Close()
+
+	return s.execute(stmt, args...)
+}
+
+func (s *DataStore) execute(stmt *sql.Stmt, args ...interface{}) error {
+	_, err := stmt.Exec(args...)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "args": args}).Error("Failed to execute")
+	}
+	return err
+}
+
+func (s *DataStore) writeOperation(query string) (tx *sql.Tx, stmt *sql.Stmt, err error) {
+	tx, err = s.DB.Begin()
+	if err != nil {
+		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
+	}
+
+	stmt, err = tx.Prepare(query)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare query")
+	}
+	return
 }

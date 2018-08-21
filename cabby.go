@@ -2,6 +2,7 @@ package cabby
 
 import (
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 
 	"github.com/gofrs/uuid"
@@ -61,6 +62,13 @@ func NewCollection(id ...string) (Collection, error) {
 	return c, err
 }
 
+// CollectionAccess defines read/write access on a collection
+type CollectionAccess struct {
+	ID       ID   `json:"id"`
+	CanRead  bool `json:"can_read"`
+	CanWrite bool `json:"can_write"`
+}
+
 // Collections resource
 type Collections struct {
 	Collections []Collection `json:"collections"`
@@ -113,6 +121,7 @@ type DataStore interface {
 	DiscoveryService() DiscoveryService
 	ObjectService() ObjectService
 	Open() error
+	// StatusService() StatusService
 	UserService() UserService
 }
 
@@ -146,6 +155,12 @@ type ID struct {
 	uuid.UUID
 }
 
+// NewID returns a new ID which is a UUID v4
+func NewID() (ID, error) {
+	id, err := uuid.NewV4()
+	return ID{id}, err
+}
+
 const cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
 
 // IDFromString takes a uuid string and coerces to ID
@@ -162,12 +177,6 @@ func IDUsingString(s string) (ID, error) {
 	}
 
 	id := uuid.NewV5(ns, s)
-	return ID{id}, err
-}
-
-// NewID a V4 UUID and returns it as a ID
-func NewID() (ID, error) {
-	id, err := uuid.NewV4()
 	return ID{id}, err
 }
 
@@ -211,6 +220,7 @@ type Object struct {
 
 // ObjectService provides Object data
 type ObjectService interface {
+	CreateObject(Object) error
 	Object(collectionID, objectID string) (Object, error)
 	Objects(collectionID string) ([]Object, error)
 }
@@ -223,11 +233,44 @@ type Result struct {
 	Items     int64
 }
 
+// Status represents a TAXII status object
+type Status struct {
+	ID               ID       `json:"id"`
+	Status           string   `json:"status"`
+	RequestTimestamp string   `json:"request_timestamp"`
+	TotalCount       int64    `json:"total_count"`
+	SuccessCount     int64    `json:"success_count"`
+	Successes        []string `json:"successes"`
+	FailureCount     int64    `json:"failure_count"`
+	Failures         []string `json:"failures"`
+	PendingCount     int64    `json:"pending_count"`
+	Pendings         []string `json:"pendings"`
+}
+
+// NewStatus returns a status struct
+func NewStatus(objects int) (Status, error) {
+	if objects < 1 {
+		return Status{}, errors.New("Can't post less than 1 object")
+	}
+
+	id, err := NewID()
+	if err != nil {
+		return Status{}, err
+	}
+
+	count := int64(objects)
+	return Status{ID: id, Status: "pending", TotalCount: count, PendingCount: count}, err
+}
+
+// StatusService for status structs
+type StatusService interface {
+}
+
 // User represents a cabby user
 type User struct {
-	Email    string `json:"email"`
-	CanAdmin bool   `json:"can_admin"`
-	// CollectionAccessList map[ID]taxiiCollectionAccess `json:"collection_access_list"`
+	Email                string                  `json:"email"`
+	CanAdmin             bool                    `json:"can_admin"`
+	CollectionAccessList map[ID]CollectionAccess `json:"collection_access_list"`
 }
 
 // UserService provides Users behavior

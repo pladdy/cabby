@@ -6,6 +6,28 @@ import (
 	"github.com/pladdy/cabby2/tester"
 )
 
+func TestObjectServiceCreateObject(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ObjectService{DB: ds.DB, DataStore: ds}
+
+	test := tester.GenerateObject("malware")
+
+	err := s.CreateObject(test)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	result, err := s.Object(test.CollectionID.String(), string(test.ID))
+	if err != nil {
+		t.Error("Got:", err)
+	}
+	passed := tester.CompareObject(result, test)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
 func TestObjectServiceObject(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
