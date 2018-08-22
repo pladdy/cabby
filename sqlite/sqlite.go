@@ -100,7 +100,6 @@ func (s *DataStore) batchCreate(query string, toWrite chan interface{}, errs cha
 				errs <- err
 				return
 			}
-			defer stmt.Close()
 			i = 0
 		}
 	}
@@ -108,18 +107,11 @@ func (s *DataStore) batchCreate(query string, toWrite chan interface{}, errs cha
 }
 
 func (s *DataStore) create(query string, args ...interface{}) error {
-	tx, err := s.DB.Begin()
+	tx, stmt, err := s.writeOperation(query)
 	if err != nil {
-		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to begin transaction")
 		return err
 	}
 	defer tx.Commit()
-
-	stmt, err := tx.Prepare(query)
-	if err != nil {
-		log.WithFields(log.Fields{"err": err, "query": query}).Error("Failed to prepare")
-		return err
-	}
 	defer stmt.Close()
 
 	return s.execute(stmt, args...)
@@ -137,6 +129,7 @@ func (s *DataStore) writeOperation(query string) (tx *sql.Tx, stmt *sql.Stmt, er
 	tx, err = s.DB.Begin()
 	if err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Failed to begin transaction")
+		return
 	}
 
 	stmt, err = tx.Prepare(query)
