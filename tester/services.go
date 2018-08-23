@@ -117,9 +117,10 @@ func (s ManifestService) Manifest(collectionID string) (cabby.Manifest, error) {
 
 // ObjectService is a mock implementation
 type ObjectService struct {
-	CreateObjectFn func(object cabby.Object) error
-	ObjectFn       func(collectionID, objectID string) (cabby.Object, error)
-	ObjectsFn      func(collectionID string) ([]cabby.Object, error)
+	MaxContentLength int64
+	CreateObjectFn   func(object cabby.Object) error
+	ObjectFn         func(collectionID, objectID string) (cabby.Object, error)
+	ObjectsFn        func(collectionID string) ([]cabby.Object, error)
 }
 
 // CreateObject is a mock implementation
@@ -139,8 +140,14 @@ func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
 
 // UserService is a mock implementation
 type UserService struct {
-	UserFn   func(user, password string) (cabby.User, error)
-	ExistsFn func(cabby.User) bool
+	UserFn            func(user, password string) (cabby.User, error)
+	UserCollectionsFn func(user string) (cabby.UserCollectionList, error)
+	ExistsFn          func(cabby.User) bool
+}
+
+// Exists is a mock implementation
+func (s UserService) Exists(u cabby.User) bool {
+	return s.ExistsFn(u)
 }
 
 // User is a mock implementation
@@ -148,7 +155,7 @@ func (s UserService) User(user, password string) (cabby.User, error) {
 	return s.UserFn(user, password)
 }
 
-// Exists is a mock implementation
-func (s UserService) Exists(u cabby.User) bool {
-	return s.ExistsFn(u)
+// UserCollections is a mock implementation
+func (s UserService) UserCollections(user string) (cabby.UserCollectionList, error) {
+	return s.UserCollectionsFn(user)
 }

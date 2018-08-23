@@ -56,6 +56,8 @@ func NewCollection(id ...string) (Collection, error) {
 	// TODO: document why this is here?  when can this happen and why?
 	if id[0] != "collections" {
 		c.ID, err = IDFromString(id[0])
+	} else {
+		c.ID, err = NewID()
 	}
 
 	c.MediaTypes = []string{TaxiiContentType}
@@ -268,13 +270,19 @@ type StatusService interface {
 
 // User represents a cabby user
 type User struct {
+	Email    string `json:"email"`
+	CanAdmin bool   `json:"can_admin"`
+}
+
+// UserCollectionList holds a list of collections a user can access
+type UserCollectionList struct {
 	Email                string                  `json:"email"`
-	CanAdmin             bool                    `json:"can_admin"`
 	CollectionAccessList map[ID]CollectionAccess `json:"collection_access_list"`
 }
 
 // UserService provides Users behavior
 type UserService interface {
+	UserCollections(user string) (UserCollectionList, error)
 	User(user, password string) (User, error)
 	Exists(User) bool
 }

@@ -80,6 +80,8 @@ var (
 	User = cabby.User{
 		Email:    UserEmail,
 		CanAdmin: true}
+	// UserCollectionList mock
+	UserCollectionList = userCollectionList()
 )
 
 func collection() cabby.Collection {
@@ -113,4 +115,11 @@ func object() cabby.Object {
 	    }`)
 
 	return o
+}
+
+func userCollectionList() cabby.UserCollectionList {
+	ucl := cabby.UserCollectionList{Email: UserEmail}
+	id, _ := cabby.IDFromString(CollectionID)
+	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{id: cabby.CollectionAccess{CanRead: true, CanWrite: true}}
+	return ucl
 }

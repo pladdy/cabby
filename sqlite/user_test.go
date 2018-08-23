@@ -7,14 +7,14 @@ import (
 	"github.com/pladdy/cabby2/tester"
 )
 
-func TestUserServiceRead(t *testing.T) {
+func TestUserServiceUser(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := UserService{DB: ds.DB}
 
 	expected := tester.User
 
-	result, err := s.User(expected.Email, tester.UserPassword)
+	result, err := s.User(tester.UserEmail, tester.UserPassword)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -27,7 +27,7 @@ func TestUserServiceRead(t *testing.T) {
 	}
 }
 
-func TestUserServiceReadQueryErr(t *testing.T) {
+func TestUserServiceUserQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := UserService{DB: ds.DB}
@@ -60,5 +60,44 @@ func TestUserServiceExists(t *testing.T) {
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
+	}
+}
+
+func TestUserServiceUserCollections(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := UserService{DB: ds.DB}
+
+	expected := tester.UserCollectionList
+
+	result, err := s.UserCollections(tester.UserEmail)
+	if err != nil {
+		t.Error("Got:", err, "Expected no error")
+	}
+
+	if result.Email != expected.Email {
+		t.Error("Got:", result.Email, "Expected:", expected.Email)
+	}
+
+	for id, ca := range result.CollectionAccessList {
+		if ca.CanRead != expected.CollectionAccessList[id].CanRead {
+			t.Error("Got:", ca.CanRead, "Expected:", expected.CollectionAccessList[id].CanRead)
+		}
+	}
+}
+
+func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := UserService{DB: ds.DB}
+
+	_, err := s.DB.Exec("drop table taxii_user")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.UserCollections(tester.UserEmail)
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
 	}
 }
