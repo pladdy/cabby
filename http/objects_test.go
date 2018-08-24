@@ -13,6 +13,20 @@ import (
 	"github.com/pladdy/cabby2/tester"
 )
 
+func TestBundleFromBytesUnmarshalFail(t *testing.T) {
+	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
+	if err == nil {
+		t.Error("Expected error for bundle:", b)
+	}
+}
+
+func TestBundleFromBytesInvalidBundle(t *testing.T) {
+	b, err := bundleFromBytes([]byte(`{"foo": "bar"}`))
+	if err == nil {
+		t.Error("Expected error for bundle:", b)
+	}
+}
+
 func TestGreaterThan(t *testing.T) {
 	tests := []struct {
 		x, y   int
@@ -242,13 +256,13 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 
 func TestObjectsHandlerPost(t *testing.T) {
 	ds := tester.ObjectService{}
-	ds.CreateObjectFn = func(object cabby.Object) error {
-		return nil
-	}
+	h := ObjectsHandler{ObjectService: &ds, MaxContentLength: int64(2048)}
 
-	// call handler
-	h := ObjectsHandler{ObjectService: &ds}
-	status, _ := handlerTest(h.Post, "POST", testObjectURL, nil)
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundle, _ := ioutil.ReadAll(bundleFile)
+	b := bytes.NewBuffer(bundle)
+
+	status, _ := handlerTest(h.Post, "POST", testObjectURL, b)
 
 	if status != http.StatusAccepted {
 		t.Error("Got:", status, "Expected:", http.StatusAccepted)
@@ -273,9 +287,8 @@ func TestObjectsHandlerPostForbidden(t *testing.T) {
 	ds.CreateObjectFn = func(object cabby.Object) error {
 		return nil
 	}
-
-	// call handler
 	h := ObjectsHandler{ObjectService: &ds}
+
 	status, _ := handlerTestNoAuth(h.Post, "POST", testObjectURL, nil)
 
 	if status != http.StatusForbidden {
@@ -284,16 +297,45 @@ func TestObjectsHandlerPostForbidden(t *testing.T) {
 }
 
 func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
-	ds := tester.ObjectService{MaxContentLength: int64(1)}
+	ds := tester.ObjectService{}
+	h := ObjectsHandler{ObjectService: &ds, MaxContentLength: int64(1)}
 
 	bundleFile, _ := os.Open("testdata/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)
-
 	b := bytes.NewBuffer(bundle)
-	h := ObjectsHandler{ObjectService: &ds}
+
 	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
 
 	if status != http.StatusRequestEntityTooLarge {
 		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
+	}
+}
+
+func TestObjectsHandlerPostInvalidBundle(t *testing.T) {
+	ds := tester.ObjectService{}
+	h := ObjectsHandler{ObjectService: &ds, MaxContentLength: int64(2048)}
+
+	bundle := []byte(`{"foo":"bar"}`)
+	b := bytes.NewBuffer(bundle)
+
+	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+}
+
+func TestObjectsHandlerPostEmptyBundle(t *testing.T) {
+	ds := tester.ObjectService{}
+	h := ObjectsHandler{ObjectService: &ds, MaxContentLength: int64(2048)}
+
+	// make a valid bundle except that the objects are mpty
+	bundle := []byte(`{"type": "bundle", "objects": [], "spec_version": "2.0", "id": "bundle--5d0092c5-5f74-4287-9642-33f4c354e56d"}`)
+	b := bytes.NewBuffer(bundle)
+
+	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
 	}
 }

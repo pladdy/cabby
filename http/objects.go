@@ -1,11 +1,15 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 // ObjectsHandler handles Objects requests
@@ -71,24 +75,24 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// body, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	badRequest(w, err)
-	// 	return
-	// }
-	// defer r.Body.Close()
-	//
-	// bundle, err := bundleFromBytes(body)
-	// if err != nil {
-	// 	badRequest(w, err)
-	// 	return
-	// }
-	//
-	// status, err := NewStatus(len(bundle.Objects))
-	// if err != nil {
-	// 	internalServerError(w, errors.New("Unable to create status resource"))
-	// }
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+	defer r.Body.Close()
 
+	bundle, err := bundleFromBytes(body)
+	if err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	status, err := cabby.NewStatus(len(bundle.Objects))
+	if err != nil {
+		internalServerError(w, errors.New("Unable to create status resource"))
+	}
+	log.Info(status)
 	// err = status.create(ts)
 	// if err != nil {
 	// 	internalServerError(w, errors.New("Unable to store status resource"))
@@ -101,25 +105,25 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 
 /* helpers */
 
-// func bundleFromBytes(b []byte) (s.Bundle, error) {
-// 	var bundle stones.Bundle
-//
-// 	err := json.Unmarshal(b, &bundle)
-// 	if err != nil {
-// 		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
-// 	}
-//
-// 	valid, errs := bundle.Validate()
-// 	if !valid {
-// 		errString := "Invalid bundle:"
-// 		for _, e := range errs {
-// 			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
-// 		}
-// 		err = fmt.Errorf(errString)
-// 	}
-//
-// 	return bundle, err
-// }
+func bundleFromBytes(b []byte) (stones.Bundle, error) {
+	var bundle stones.Bundle
+
+	err := json.Unmarshal(b, &bundle)
+	if err != nil {
+		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
+	}
+
+	valid, errs := bundle.Validate()
+	if !valid {
+		errString := "Invalid bundle:"
+		for _, e := range errs {
+			errString = errString + fmt.Sprintf("\nValidation Error: %v", e)
+		}
+		err = fmt.Errorf(errString)
+	}
+
+	return bundle, err
+}
 
 func greaterThan(r, m int64) bool {
 	if r > m {
