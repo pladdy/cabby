@@ -12,6 +12,7 @@ type DataStore struct {
 	CollectionServiceFn func() CollectionService
 	DiscoveryServiceFn  func() DiscoveryService
 	ObjectServiceFn     func() ObjectService
+	StatusServiceFn     func() StatusService
 	UserServiceFn       func() UserService
 }
 
@@ -38,6 +39,11 @@ func (s DataStore) CollectionService() cabby.CollectionService {
 // DiscoveryService mock
 func (s DataStore) DiscoveryService() cabby.DiscoveryService {
 	return s.DiscoveryServiceFn()
+}
+
+// StatusService mock
+func (s DataStore) StatusService() cabby.StatusService {
+	return s.StatusServiceFn()
 }
 
 // ObjectService mock
@@ -136,6 +142,28 @@ func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, erro
 // Objects is a mock implementation
 func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
 	return s.ObjectsFn(collectionID)
+}
+
+// StatusService is a mock implementation
+type StatusService struct {
+	CreateStatusFn func(status cabby.Status) error
+	StatusFn       func(statusID string) (cabby.Status, error)
+	UpdateStatusFn func(status cabby.Status) error
+}
+
+// CreateStatus is a mock implementation
+func (s StatusService) CreateStatus(status cabby.Status) error {
+	return s.CreateStatusFn(status)
+}
+
+// Status is a mock implementation
+func (s StatusService) Status(statusID string) (cabby.Status, error) {
+	return s.StatusFn(statusID)
+}
+
+// UpdateStatus is a mock implementation
+func (s StatusService) UpdateStatus(status cabby.Status) error {
+	return s.UpdateStatusFn(status)
 }
 
 // UserService is a mock implementation

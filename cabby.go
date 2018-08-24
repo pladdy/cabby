@@ -266,6 +266,9 @@ func NewStatus(objects int) (Status, error) {
 
 // StatusService for status structs
 type StatusService interface {
+	CreateStatus(Status) error
+	Status(statusID string) (Status, error)
+	UpdateStatus(Status) error
 }
 
 // User represents a cabby user

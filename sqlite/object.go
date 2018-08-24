@@ -28,7 +28,7 @@ func (s ObjectService) createObject(o cabby.Object) error {
 	sql := `insert into stix_objects (id, type, created, modified, object, collection_id)
 					values (?, ?, ?, ?, ?, ?)`
 
-	return s.DataStore.create(sql, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
+	return s.DataStore.write(sql, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
 }
 
 // Object will read from the data store and return the resource

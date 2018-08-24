@@ -30,19 +30,19 @@ func TestDataStoreClose(t *testing.T) {
 	s.Close()
 }
 
-func TestSQLiteBatchCreateSmall(t *testing.T) {
+func TestSQLiteBatchWriteSmall(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	toCreate := make(chan interface{}, 10)
+	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
 	sql := `insert into taxii_collection (id, api_root_path, title, description, media_types)
 					values (?, ?, ?, ?, ?)`
 
-	go ds.batchCreate(sql, toCreate, errs)
-	toCreate <- []interface{}{"test", "test api root", "test collection", "this is a test collection", "media type"}
-	close(toCreate)
+	go ds.batchWrite(sql, toWrite, errs)
+	toWrite <- []interface{}{"test", "test api root", "test collection", "this is a test collection", "media type"}
+	close(toWrite)
 
 	for e := range errs {
 		t.Fatal(e)
@@ -59,23 +59,23 @@ func TestSQLiteBatchCreateSmall(t *testing.T) {
 	}
 }
 
-func TestSQLiteBatchCreateExecuteLarge(t *testing.T) {
+func TestSQLiteBatchWriteExecuteLarge(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	toCreate := make(chan interface{}, 10)
+	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
 	sql := `insert into taxii_collection (id, api_root_path, title, description)
 					values (?, ?, ?, ?)`
 
-	go ds.batchCreate(sql, toCreate, errs)
+	go ds.batchWrite(sql, toWrite, errs)
 
-	recordsToCreate := 1000
-	for i := 0; i <= recordsToCreate; i++ {
-		toCreate <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
+	recordsToWrite := 1000
+	for i := 0; i <= recordsToWrite; i++ {
+		toWrite <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
 	}
-	close(toCreate)
+	close(toWrite)
 
 	var lastError error
 	for e := range errs {
@@ -87,16 +87,16 @@ func TestSQLiteBatchCreateExecuteLarge(t *testing.T) {
 	}
 }
 
-func TestSQLiteBatchCreateWriteOperationError(t *testing.T) {
+func TestSQLiteBatchWriteWriteOperationError(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	toCreate := make(chan interface{}, 10)
+	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	go ds.batchCreate("fail", toCreate, errs)
-	toCreate <- []interface{}{"fail"}
-	close(toCreate)
+	go ds.batchWrite("fail", toWrite, errs)
+	toWrite <- []interface{}{"fail"}
+	close(toWrite)
 
 	var lastError error
 	for e := range errs {
@@ -108,26 +108,26 @@ func TestSQLiteBatchCreateWriteOperationError(t *testing.T) {
 	}
 }
 
-func TestSQLiteBatchCreateExecuteError(t *testing.T) {
+func TestSQLiteBatchWriteExecuteError(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	toCreate := make(chan interface{}, 10)
+	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
 	sql := `insert into taxii_collection (id, api_root_path, title, description)
 					values (?, ?, ?, ?)`
 
-	go ds.batchCreate(sql, toCreate, errs)
+	go ds.batchWrite(sql, toWrite, errs)
 
 	for i := 0; i <= maxWritesPerBatch; i++ {
 		if i == maxWritesPerBatch {
 			// a commit is about to happen
 			ds.Close()
 		}
-		toCreate <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
+		toWrite <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
 	}
-	close(toCreate)
+	close(toWrite)
 
 	var lastError error
 	for e := range errs {
@@ -139,16 +139,16 @@ func TestSQLiteBatchCreateExecuteError(t *testing.T) {
 	}
 }
 
-func TestSQLiteBatchCreateCommitError(t *testing.T) {
+func TestSQLiteBatchWriteCommitError(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	toCreate := make(chan interface{}, 10)
+	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	go ds.batchCreate("insert into stix_objects (id, object) values (?, ?)", toCreate, errs)
-	toCreate <- []interface{}{"fail"}
-	close(toCreate)
+	go ds.batchWrite("insert into stix_objects (id, object) values (?, ?)", toWrite, errs)
+	toWrite <- []interface{}{"fail"}
+	close(toWrite)
 
 	var lastError error
 	for e := range errs {
@@ -160,11 +160,11 @@ func TestSQLiteBatchCreateCommitError(t *testing.T) {
 	}
 }
 
-func TestDataStoreCreateError(t *testing.T) {
+func TestDataStoreWriteError(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 
-	err := ds.create("this is not a valid query")
+	err := ds.write("this is not a valid query")
 	if err == nil {
 		t.Error("Expected an error")
 	}

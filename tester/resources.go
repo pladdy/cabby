@@ -76,6 +76,8 @@ var (
 	Object = object()
 	// Objects mock
 	Objects = []cabby.Object{object()}
+	// Status mock
+	Status = cabby.Status{}
 	// User mock
 	User = cabby.User{
 		Email:    UserEmail,
@@ -115,6 +117,12 @@ func object() cabby.Object {
 	    }`)
 
 	return o
+}
+
+func status() cabby.Status {
+	s := cabby.Status{}
+	s.ID, _ = cabby.NewID()
+	return s
 }
 
 func userCollectionList() cabby.UserCollectionList {

@@ -22,6 +22,7 @@ func TestObjectServiceCreateObject(t *testing.T) {
 	if err != nil {
 		t.Error("Got:", err)
 	}
+
 	passed := tester.CompareObject(result, test)
 	if !passed {
 		t.Error("Comparison failed")
@@ -104,7 +105,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 	}
 }
 
-func TestObjectServiceObjectsInvalidRawID(t *testing.T) {
+func TestObjectServiceObjectsInvalidID(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := ObjectService{DB: ds.DB}

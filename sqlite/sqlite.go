@@ -68,11 +68,11 @@ func (s *DataStore) UserService() cabby.UserService {
 	return UserService{DB: s.DB}
 }
 
-/* create methods */
+/* writer methods */
 
 const maxWritesPerBatch = 500
 
-func (s *DataStore) batchCreate(query string, toWrite chan interface{}, errs chan error) {
+func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan error) {
 	defer close(errs)
 
 	tx, stmt, err := s.writeOperation(query)
@@ -106,7 +106,7 @@ func (s *DataStore) batchCreate(query string, toWrite chan interface{}, errs cha
 	tx.Commit()
 }
 
-func (s *DataStore) create(query string, args ...interface{}) error {
+func (s *DataStore) write(query string, args ...interface{}) error {
 	tx, stmt, err := s.writeOperation(query)
 	if err != nil {
 		return err
