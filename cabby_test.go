@@ -17,7 +17,6 @@ func TestNewCollection(t *testing.T) {
 	}{
 		{"invalid", true},
 		{uuid.Must(uuid.NewV4()).String(), false},
-		{"collections", false},
 	}
 
 	for _, test := range tests {
@@ -30,6 +29,12 @@ func TestNewCollection(t *testing.T) {
 		if err == nil && c.ID.String() != test.idString {
 			t.Error("Got:", c.ID.String(), "Expected:", test.idString)
 		}
+	}
+
+	// test if 'collections' is passed; return a uuid
+	_, err := NewCollection("collections")
+	if err != nil {
+		t.Error("Got:", err, "Expected no error")
 	}
 }
 
