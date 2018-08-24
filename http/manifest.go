@@ -27,3 +27,8 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
 }
+
+// Post handles post request
+func (h ManifestHandler) Post(w http.ResponseWriter, r *http.Request) {
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+}

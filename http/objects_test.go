@@ -1,100 +1,86 @@
 package http
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
-func TestObjectsHandlerObject(t *testing.T) {
+func TestGreaterThan(t *testing.T) {
+	tests := []struct {
+		x, y   int
+		result bool
+	}{
+		{1, 2, false},
+		{1, 1, false},
+		{2, 1, true},
+		{0, -1, true},
+	}
+
+	for _, test := range tests {
+		if result := greaterThan(int64(test.x), int64(test.y)); result != test.result {
+			t.Error("Got:", result, "Expected:", test.result)
+		}
+	}
+}
+
+func TestObjectsHandlerGet(t *testing.T) {
 	ds := tester.ObjectService{}
 	ds.ObjectFn = func(collectionID, objectID string) (cabby.Object, error) {
 		return tester.Object, nil
 	}
+	ds.ObjectsFn = func(collectionID string) ([]cabby.Object, error) {
+		return []cabby.Object{tester.Object}, nil
+	}
 
-	// call handler
 	h := ObjectsHandler{ObjectService: &ds}
+	expected := tester.Object
+
+	// call handler for object
 	status, body := handlerTest(h.Get, "GET", testObjectURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var result cabby.Object
-	err := json.Unmarshal([]byte(body), &result)
+	var object cabby.Object
+	err := json.Unmarshal([]byte(body), &object)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := tester.Object
-
-	passed := tester.CompareObject(result, expected)
+	passed := tester.CompareObject(object, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
-}
 
-func TestObjectsHandlerObjects(t *testing.T) {
-	ds := tester.ObjectService{}
-	ds.ObjectsFn = func(collectionID string) ([]cabby.Object, error) {
-		return []cabby.Object{tester.Object}, nil
-	}
-
-	// call handler
-	h := ObjectsHandler{ObjectService: &ds}
-	status, body := handlerTest(h.Get, "GET", testObjectsURL, nil)
+	// call handler for objects
+	status, body = handlerTest(h.Get, "GET", testObjectsURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var result []cabby.Object
-	err := json.Unmarshal([]byte(body), &result)
+	var objects []cabby.Object
+	err = json.Unmarshal([]byte(body), &objects)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := tester.Object
-
-	passed := tester.CompareObject(result[0], expected)
+	passed = tester.CompareObject(objects[0], expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
 }
 
-func TestObjectsHandlerGetObject(t *testing.T) {
-	ds := tester.ObjectService{}
-	ds.ObjectFn = func(collectionID, objectID string) (cabby.Object, error) {
-		return tester.Object, nil
-	}
-
-	// call handler
-	h := ObjectsHandler{ObjectService: &ds}
-	status, body := handlerTest(h.getObject, "GET", testObjectURL, nil)
-
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected:", http.StatusOK)
-	}
-
-	var result cabby.Object
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := tester.Object
-
-	passed := tester.CompareObject(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-}
-
-func TestObjectsGetObjectFailures(t *testing.T) {
+func TestObjectsHandlerGetObjectFailures(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected cabby.Error
@@ -168,14 +154,14 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 
 	// call handler
 	h := ObjectsHandler{ObjectService: &os}
-	status, result := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var discovery []cabby.Object
-	err := json.Unmarshal([]byte(result), &discovery)
+	var result []cabby.Object
+	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,5 +235,65 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+/* Post */
+
+func TestObjectsHandlerPost(t *testing.T) {
+	ds := tester.ObjectService{}
+	ds.CreateObjectFn = func(object cabby.Object) error {
+		return nil
+	}
+
+	// call handler
+	h := ObjectsHandler{ObjectService: &ds}
+	status, _ := handlerTest(h.Post, "POST", testObjectURL, nil)
+
+	if status != http.StatusAccepted {
+		t.Error("Got:", status, "Expected:", http.StatusAccepted)
+	}
+
+	// var result cabby.Object
+	// err := json.Unmarshal([]byte(body), &result)
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	//
+	// expected := tester.Object
+	//
+	// passed := tester.CompareObject(result, expected)
+	// if !passed {
+	// 	t.Error("Comparison failed")
+	// }
+}
+
+func TestObjectsHandlerPostForbidden(t *testing.T) {
+	ds := tester.ObjectService{}
+	ds.CreateObjectFn = func(object cabby.Object) error {
+		return nil
+	}
+
+	// call handler
+	h := ObjectsHandler{ObjectService: &ds}
+	status, _ := handlerTestNoAuth(h.Post, "POST", testObjectURL, nil)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
+	ds := tester.ObjectService{MaxContentLength: int64(1)}
+
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundle, _ := ioutil.ReadAll(bundleFile)
+
+	b := bytes.NewBuffer(bundle)
+	h := ObjectsHandler{ObjectService: &ds}
+	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+
+	if status != http.StatusRequestEntityTooLarge {
+		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
 	}
 }

@@ -37,7 +37,7 @@ func TestCollectionHandlerGet(t *testing.T) {
 	}
 }
 
-func TestCollectionGetFailures(t *testing.T) {
+func TestCollectionHandlerGetFailures(t *testing.T) {
 	tests := []struct {
 		method   string
 		expected cabby.Error
@@ -75,7 +75,7 @@ func TestCollectionGetFailures(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlerNoCollection(t *testing.T) {
+func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	ds := tester.CollectionService{}
 	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return cabby.Collection{}, nil
@@ -100,5 +100,19 @@ func TestCollectionHandlerNoCollection(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestCollectionHandlePost(t *testing.T) {
+	ds := tester.CollectionService{}
+	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
+		return cabby.Collection{}, nil
+	}
+
+	h := CollectionHandler{CollectionService: &ds}
+	status, _ := handlerTest(h.Post, "POST", testCollectionURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
 	}
 }

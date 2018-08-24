@@ -75,7 +75,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 	}
 }
 
-func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
+func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	ds := tester.DiscoveryService{}
 	ds.DiscoveryFn = func() (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil
@@ -100,6 +100,20 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestDiscoveryHandlePost(t *testing.T) {
+	ds := tester.DiscoveryService{}
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return cabby.Discovery{Title: ""}, nil
+	}
+
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
+	status, _ := handlerTest(h.Post, "POST", testDiscoveryURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
 	}
 }
 

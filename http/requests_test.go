@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
@@ -106,17 +107,18 @@ func TestLastURLPathToken(t *testing.T) {
 // 	}
 // }
 
-// func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
-// 	// create a request with a valid context BUT a path with an invalid collection in it
-// 	request := withAuthContext(httptest.NewRequest("GET", "/foo/bar/baz", nil))
-//
-// 	tca := takeCollectionAccess(request)
-// 	empty := taxiiCollectionAccess{}
-//
-// 	if tca != empty {
-// 		t.Error("Got:", tca, "Expected:", empty)
-// 	}
-// }
+func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
+	// create a request with a valid context BUT a path with an invalid collection in it
+	request := withAuthentication(httptest.NewRequest("GET", "/foo/bar/baz", nil))
+
+	ca := takeCollectionAccess(request)
+	empty := cabby.CollectionAccess{}
+
+	if ca != empty {
+		t.Error("Got:", ca, "Expected:", empty)
+	}
+}
+
 //
 // func TestTakeRequestRange(t *testing.T) {
 // 	req := httptest.NewRequest("GET", "/test", nil)

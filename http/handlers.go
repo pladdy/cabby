@@ -18,6 +18,7 @@ func handleUndefinedRoute(w http.ResponseWriter, r *http.Request) {
 // RequestHandler interface for handling requests
 type RequestHandler interface {
 	Get(w http.ResponseWriter, r *http.Request)
+	Post(w http.ResponseWriter, r *http.Request)
 }
 
 // RouteRequest takes a RequestHandler and routes requests to its methods
@@ -28,6 +29,8 @@ func RouteRequest(h RequestHandler) http.HandlerFunc {
 		switch r.Method {
 		case http.MethodGet:
 			h.Get(w, r)
+		case http.MethodPost:
+			h.Post(w, r)
 		default:
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 			return
@@ -57,6 +60,13 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 			internalServerError(w, err)
 			return
 		}
+
+		ucs, err := us.UserCollections(u)
+		if err != nil {
+			internalServerError(w, err)
+			return
+		}
+		user.CollectionAccessList = ucs.CollectionAccessList
 
 		if !ok || !us.Exists(user) {
 			log.WithFields(log.Fields{"user": u}).Warn("User authentication failed!	")

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -27,4 +28,9 @@ func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeContent(w, cabby.TaxiiContentType, resourceToJSON(apiRoot))
 	}
+}
+
+// Post handles post request
+func (h APIRootHandler) Post(w http.ResponseWriter, r *http.Request) {
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

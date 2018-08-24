@@ -17,6 +17,7 @@ func TestNewCollection(t *testing.T) {
 	}{
 		{"invalid", true},
 		{uuid.Must(uuid.NewV4()).String(), false},
+		{"collections", false},
 	}
 
 	for _, test := range tests {

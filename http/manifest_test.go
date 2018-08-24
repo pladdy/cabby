@@ -11,13 +11,13 @@ import (
 )
 
 func TestManifestHandlerGet(t *testing.T) {
-	ds := tester.ManifestService{}
-	ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+	ms := tester.ManifestService{}
+	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
 		return tester.Manifest, nil
 	}
 
 	// call handler
-	h := ManifestHandler{ManifestService: &ds}
+	h := ManifestHandler{ManifestService: &ms}
 	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
 	if status != http.StatusOK {
@@ -50,12 +50,12 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 	for _, test := range tests {
 		expected := test.expected
 
-		ds := tester.ManifestService{}
-		ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+		ms := tester.ManifestService{}
+		ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
 			return cabby.Manifest{}, errors.New(expected.Description)
 		}
 
-		h := ManifestHandler{ManifestService: &ds}
+		h := ManifestHandler{ManifestService: &ms}
 		status, body := handlerTest(h.Get, test.method, testManifestURL, nil)
 
 		if status != expected.HTTPStatus {
@@ -75,13 +75,13 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 	}
 }
 
-func TestManifestHandlerNoManifest(t *testing.T) {
-	ds := tester.ManifestService{}
-	ds.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+func TestManifestHandlerGetNoManifest(t *testing.T) {
+	ms := tester.ManifestService{}
+	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
 		return cabby.Manifest{}, nil
 	}
 
-	h := ManifestHandler{ManifestService: &ds}
+	h := ManifestHandler{ManifestService: &ms}
 	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
 	if status != http.StatusNotFound {
@@ -100,5 +100,19 @@ func TestManifestHandlerNoManifest(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestManifestHandlePost(t *testing.T) {
+	ms := tester.ManifestService{}
+	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+		return cabby.Manifest{}, nil
+	}
+
+	h := ManifestHandler{ManifestService: &ms}
+	status, _ := handlerTest(h.Post, "POST", testManifestURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
 	}
 }

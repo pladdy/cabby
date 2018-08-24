@@ -57,6 +57,14 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 	return nil, errors.New("Failed to get request")
 }
 
+func callHandler(h http.HandlerFunc, req *http.Request) (int, string) {
+	res := httptest.NewRecorder()
+	h(res, req)
+
+	body, _ := ioutil.ReadAll(res.Body)
+	return res.Code, string(body)
+}
+
 func getResponse(req *http.Request, server *httptest.Server) (*http.Response, error) {
 	c := server.Client()
 	return c.Do(req)
@@ -65,24 +73,23 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	var req *http.Request
+	return callHandler(h, withAuthentication(newRequest(method, url, b)))
+}
 
-	if b != nil {
-		req = withAuthentication(httptest.NewRequest(method, url, b))
-	} else {
-		req = withAuthentication(httptest.NewRequest(method, url, nil))
-	}
-
-	res := httptest.NewRecorder()
-	h(res, req)
-
-	body, _ := ioutil.ReadAll(res.Body)
-	return res.Code, string(body)
+func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
+	return callHandler(h, newRequest(method, url, b))
 }
 
 func lastLog(buf bytes.Buffer) string {
 	logs := regexp.MustCompile("\n").Split(strings.TrimSpace(buf.String()), -1)
 	return logs[len(logs)-1]
+}
+
+func newRequest(method, url string, b *bytes.Buffer) *http.Request {
+	if b != nil {
+		return httptest.NewRequest(method, url, b)
+	}
+	return httptest.NewRequest(method, url, nil)
 }
 
 func newServerRequest(method, url string) *http.Request {
@@ -147,5 +154,6 @@ func tlsClient() *http.Client {
 func withAuthentication(r *http.Request) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, tester.UserEmail)
 	ctx = context.WithValue(ctx, canAdmin, true)
+	ctx = context.WithValue(ctx, collectionAccessList, tester.UserCollectionList.CollectionAccessList)
 	return r.WithContext(ctx)
 }

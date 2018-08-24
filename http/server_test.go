@@ -16,12 +16,6 @@ import (
 
 func TestNewCabby(t *testing.T) {
 	// mock up services
-	us := tester.UserService{}
-	us.UserFn = func(user, password string) (cabby.User, error) {
-		return cabby.User{}, nil
-	}
-	us.ExistsFn = func(cabby.User) bool { return true }
-
 	as := tester.APIRootService{}
 	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, nil }
 
@@ -40,6 +34,15 @@ func TestNewCabby(t *testing.T) {
 	os := tester.ObjectService{}
 	os.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
 	os.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
+
+	us := tester.UserService{}
+	us.UserFn = func(user, password string) (cabby.User, error) {
+		return cabby.User{}, nil
+	}
+	us.UserCollectionsFn = func(user string) (cabby.UserCollectionList, error) {
+		return cabby.UserCollectionList{}, nil
+	}
+	us.ExistsFn = func(cabby.User) bool { return true }
 
 	// set up a data store with mocked services
 	md := tester.DataStore{}
@@ -87,13 +90,18 @@ func TestSetupServerHandler(t *testing.T) {
 
 	// mock up service; add a variable to track if User() is called
 	us := tester.UserService{}
-	userCalled := false
 
+	us.ExistsFn = func(cabby.User) bool { return true }
+
+	userCalled := false
 	us.UserFn = func(user, password string) (cabby.User, error) {
 		userCalled = true
 		return cabby.User{}, nil
 	}
-	us.ExistsFn = func(cabby.User) bool { return true }
+
+	us.UserCollectionsFn = func(user string) (cabby.UserCollectionList, error) {
+		return cabby.UserCollectionList{}, nil
+	}
 
 	// set up a data store with mocked services
 	ds := tester.DataStore{}

@@ -269,9 +269,11 @@ type StatusService interface {
 }
 
 // User represents a cabby user
+// should User and UserCollectionList be combined?
 type User struct {
-	Email    string `json:"email"`
-	CanAdmin bool   `json:"can_admin"`
+	Email                string `json:"email"`
+	CanAdmin             bool   `json:"can_admin"`
+	CollectionAccessList map[ID]CollectionAccess
 }
 
 // UserCollectionList holds a list of collections a user can access
