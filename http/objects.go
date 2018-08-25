@@ -90,15 +90,17 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	status, err := cabby.NewStatus(len(bundle.Objects))
 	if err != nil {
 		internalServerError(w, errors.New("Unable to initialize status resource"))
+		return
 	}
 
 	err = h.StatusService.CreateStatus(status)
 	if err != nil {
 		internalServerError(w, errors.New("Unable to store status resource"))
+		return
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	// writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
+	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
 	// go writeBundle(bundle, takeCollectionID(r), ts, status)
 }
 

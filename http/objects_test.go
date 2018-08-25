@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -230,17 +231,24 @@ func TestObjectsHandlerPost(t *testing.T) {
 	bundle, _ := ioutil.ReadAll(bundleFile)
 	b := bytes.NewBuffer(bundle)
 
-	status, _ := handlerTest(h.Post, "POST", testObjectURL, b)
+	status, body := handlerTest(h.Post, "POST", testObjectURL, b)
 
 	if status != http.StatusAccepted {
 		t.Error("Got:", status, "Expected:", http.StatusAccepted)
 	}
 
-	// var result cabby.Status
-	// err := json.Unmarshal([]byte(body), &result)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+	var result cabby.Status
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Status != "pending" {
+		t.Error("Got:", result.Status, "Expected: pending")
+	}
+	if result.PendingCount != 3 {
+		t.Error("Got:", result.PendingCount, "Expected: 3")
+	}
 }
 
 func TestObjectsHandlerPostForbidden(t *testing.T) {
@@ -313,6 +321,8 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
 	}
+
+	fmt.Println(body)
 
 	var result cabby.Error
 	err := json.Unmarshal([]byte(body), &result)

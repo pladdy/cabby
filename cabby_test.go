@@ -134,3 +134,10 @@ func TestIDIsEmpty(t *testing.T) {
 		t.Error("Expected ID to be empty")
 	}
 }
+
+func TestNewStatus(t *testing.T) {
+	_, err := NewStatus(1)
+	if err != nil {
+		t.Error("Got:", err, "Expected: no error")
+	}
+}
