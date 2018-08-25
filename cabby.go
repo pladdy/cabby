@@ -123,7 +123,7 @@ type DataStore interface {
 	DiscoveryService() DiscoveryService
 	ObjectService() ObjectService
 	Open() error
-	// StatusService() StatusService
+	StatusService() StatusService
 	UserService() UserService
 }
 

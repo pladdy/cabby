@@ -11,13 +11,7 @@ import (
 )
 
 func TestCollectionHandlerGet(t *testing.T) {
-	ds := tester.CollectionService{}
-	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
-		return tester.Collection, nil
-	}
-
-	// call handler
-	h := CollectionHandler{CollectionService: &ds}
+	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
 
 	if status != http.StatusOK {
@@ -38,50 +32,40 @@ func TestCollectionHandlerGet(t *testing.T) {
 }
 
 func TestCollectionHandlerGetFailures(t *testing.T) {
-	tests := []struct {
-		method   string
-		expected cabby.Error
-	}{
-		{method: "GET",
-			expected: cabby.Error{
-				Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}},
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
+
+	cs := mockCollectionService()
+	cs.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
+		return cabby.Collection{}, errors.New(expected.Description)
 	}
 
-	for _, test := range tests {
-		expected := test.expected
+	h := CollectionHandler{CollectionService: &cs}
+	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
 
-		ds := tester.CollectionService{}
-		ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
-			return cabby.Collection{}, errors.New(expected.Description)
-		}
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
 
-		h := CollectionHandler{CollectionService: &ds}
-		status, body := handlerTest(h.Get, test.method, testCollectionURL, nil)
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if status != expected.HTTPStatus {
-			t.Error("Got:", status, "Expected:", expected.HTTPStatus)
-		}
-
-		var result cabby.Error
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		passed := tester.CompareError(result, expected)
-		if !passed {
-			t.Error("Comparison failed")
-		}
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
 func TestCollectionHandlerGetNoCollection(t *testing.T) {
-	ds := tester.CollectionService{}
-	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
+	cs := mockCollectionService()
+	cs.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return cabby.Collection{}, nil
 	}
 
-	h := CollectionHandler{CollectionService: &ds}
+	h := CollectionHandler{CollectionService: &cs}
 	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
 
 	if status != http.StatusNotFound {
@@ -104,12 +88,7 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 }
 
 func TestCollectionHandlePost(t *testing.T) {
-	ds := tester.CollectionService{}
-	ds.CollectionFn = func(user, apiRootPath, collectionID string) (cabby.Collection, error) {
-		return cabby.Collection{}, nil
-	}
-
-	h := CollectionHandler{CollectionService: &ds}
+	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, "POST", testCollectionURL, nil)
 
 	if status != http.StatusMethodNotAllowed {

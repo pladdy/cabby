@@ -28,7 +28,7 @@ func NewDataStore(path string) (*DataStore, error) {
 	return &s, err
 }
 
-// APIRootService returns a discovery service
+// APIRootService returns a service for api root resources
 func (s *DataStore) APIRootService() cabby.APIRootService {
 	return APIRootService{DB: s.DB}
 }
@@ -38,17 +38,17 @@ func (s *DataStore) Close() {
 	s.DB.Close()
 }
 
-// CollectionService returns a collections service
+// CollectionService returns a service for collection resources
 func (s *DataStore) CollectionService() cabby.CollectionService {
 	return CollectionService{DB: s.DB}
 }
 
-// DiscoveryService returns a discovery service
+// DiscoveryService returns a service for discovery resources
 func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 	return DiscoveryService{DB: s.DB}
 }
 
-// ObjectService returns a discovery service
+// ObjectService returns a service for object resources
 func (s *DataStore) ObjectService() cabby.ObjectService {
 	return ObjectService{DB: s.DB, DataStore: s}
 }
@@ -63,7 +63,12 @@ func (s *DataStore) Open() (err error) {
 	return
 }
 
-// UserService returns a user service
+// StatusService returns service for status resources
+func (s *DataStore) StatusService() cabby.StatusService {
+	return StatusService{DB: s.DB, DataStore: s}
+}
+
+// UserService returns a service for user resources
 func (s *DataStore) UserService() cabby.UserService {
 	return UserService{DB: s.DB}
 }

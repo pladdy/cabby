@@ -11,13 +11,7 @@ import (
 )
 
 func TestAPIRootHandlerGet(t *testing.T) {
-	as := tester.APIRootService{}
-	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
-		return tester.APIRoot, nil
-	}
-
-	// call handler
-	h := APIRootHandler{APIRootService: &as}
+	h := APIRootHandler{APIRootService: mockAPIRootService()}
 	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
 
 	if status != http.StatusOK {
@@ -39,45 +33,35 @@ func TestAPIRootHandlerGet(t *testing.T) {
 }
 
 func TestAPIRootHandlerGetFailures(t *testing.T) {
-	tests := []struct {
-		method   string
-		expected cabby.Error
-	}{
-		{method: "GET",
-			expected: cabby.Error{
-				Title: "Internal Server Error", Description: "APIRoot failure", HTTPStatus: http.StatusInternalServerError}},
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "APIRoot failure", HTTPStatus: http.StatusInternalServerError}
+
+	as := mockAPIRootService()
+	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
+		return cabby.APIRoot{}, errors.New(expected.Description)
 	}
 
-	for _, test := range tests {
-		expected := test.expected
+	h := APIRootHandler{APIRootService: &as}
+	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
 
-		as := tester.APIRootService{}
-		as.APIRootFn = func(path string) (cabby.APIRoot, error) {
-			return cabby.APIRoot{}, errors.New(expected.Description)
-		}
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
 
-		h := APIRootHandler{APIRootService: &as}
-		status, body := handlerTest(h.Get, test.method, testAPIRootURL, nil)
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if status != expected.HTTPStatus {
-			t.Error("Got:", status, "Expected:", expected.HTTPStatus)
-		}
-
-		var result cabby.Error
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		passed := tester.CompareError(result, expected)
-		if !passed {
-			t.Error("Comparison failed")
-		}
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
 func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
-	as := tester.APIRootService{}
+	as := mockAPIRootService()
 	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
 		return cabby.APIRoot{Title: ""}, nil
 	}
@@ -105,7 +89,7 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 }
 
 func TestAPIRootHandlePost(t *testing.T) {
-	as := tester.APIRootService{}
+	as := mockAPIRootService()
 	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
 		return cabby.APIRoot{Title: ""}, nil
 	}

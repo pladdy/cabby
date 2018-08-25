@@ -157,3 +157,76 @@ func withAuthentication(r *http.Request) *http.Request {
 	ctx = context.WithValue(ctx, collectionAccessList, tester.UserCollectionList.CollectionAccessList)
 	return r.WithContext(ctx)
 }
+
+/* mock services */
+
+// mock services by default return no error and an empty value
+// tests using them can manipulate them further for different test cases
+
+func mockAPIRootService() tester.APIRootService {
+	as := tester.APIRootService{}
+	as.APIRootFn = func(path string) (cabby.APIRoot, error) { return tester.APIRoot, nil }
+	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, nil }
+	return as
+}
+
+func mockCollectionService() tester.CollectionService {
+	cs := tester.CollectionService{}
+	cs.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+		return tester.Collection, nil
+	}
+	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return tester.Collections, nil }
+	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+		return tester.CollectionsInAPIRoot, nil
+	}
+	return cs
+}
+
+func mockDiscoveryService() tester.DiscoveryService {
+	ds := tester.DiscoveryService{}
+	ds.DiscoveryFn = func() (cabby.Discovery, error) { return tester.Discovery, nil }
+	return ds
+}
+
+func mockManifestService() tester.ManifestService {
+	ms := tester.ManifestService{}
+	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) { return tester.Manifest, nil }
+	return ms
+}
+
+func mockObjectService() tester.ObjectService {
+	os := tester.ObjectService{}
+	os.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
+	os.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
+	return os
+}
+
+func mockStatusService() tester.StatusService {
+	ss := tester.StatusService{}
+	ss.CreateStatusFn = func(status cabby.Status) error { return nil }
+	return ss
+}
+
+func mockUserService() tester.UserService {
+	us := tester.UserService{}
+	us.UserFn = func(user, password string) (cabby.User, error) {
+		return cabby.User{}, nil
+	}
+	us.UserCollectionsFn = func(user string) (cabby.UserCollectionList, error) {
+		return cabby.UserCollectionList{}, nil
+	}
+	us.ExistsFn = func(cabby.User) bool { return true }
+	return us
+}
+
+func mockDataStore() tester.DataStore {
+	md := tester.DataStore{}
+	md.APIRootServiceFn = func() tester.APIRootService { return mockAPIRootService() }
+	md.CollectionServiceFn = func() tester.CollectionService { return mockCollectionService() }
+	md.DiscoveryServiceFn = func() tester.DiscoveryService { return mockDiscoveryService() }
+	md.ObjectServiceFn = func() tester.ObjectService { return mockObjectService() }
+	md.StatusServiceFn = func() tester.StatusService { return mockStatusService() }
+	md.UserServiceFn = func() tester.UserService { return mockUserService() }
+
+	return md
+}

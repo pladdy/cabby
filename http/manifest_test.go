@@ -11,13 +11,7 @@ import (
 )
 
 func TestManifestHandlerGet(t *testing.T) {
-	ms := tester.ManifestService{}
-	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
-		return tester.Manifest, nil
-	}
-
-	// call handler
-	h := ManifestHandler{ManifestService: &ms}
+	h := ManifestHandler{ManifestService: mockManifestService()}
 	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
 	if status != http.StatusOK {
@@ -38,45 +32,35 @@ func TestManifestHandlerGet(t *testing.T) {
 }
 
 func TestManifestHandlerGetFailures(t *testing.T) {
-	tests := []struct {
-		method   string
-		expected cabby.Error
-	}{
-		{method: "GET",
-			expected: cabby.Error{
-				Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}},
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}
+
+	ms := mockManifestService()
+	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
+		return cabby.Manifest{}, errors.New(expected.Description)
 	}
 
-	for _, test := range tests {
-		expected := test.expected
+	h := ManifestHandler{ManifestService: &ms}
+	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
 
-		ms := tester.ManifestService{}
-		ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
-			return cabby.Manifest{}, errors.New(expected.Description)
-		}
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
 
-		h := ManifestHandler{ManifestService: &ms}
-		status, body := handlerTest(h.Get, test.method, testManifestURL, nil)
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if status != expected.HTTPStatus {
-			t.Error("Got:", status, "Expected:", expected.HTTPStatus)
-		}
-
-		var result cabby.Error
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		passed := tester.CompareError(result, expected)
-		if !passed {
-			t.Error("Comparison failed")
-		}
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
 func TestManifestHandlerGetNoManifest(t *testing.T) {
-	ms := tester.ManifestService{}
+	ms := mockManifestService()
 	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
 		return cabby.Manifest{}, nil
 	}
@@ -104,12 +88,7 @@ func TestManifestHandlerGetNoManifest(t *testing.T) {
 }
 
 func TestManifestHandlePost(t *testing.T) {
-	ms := tester.ManifestService{}
-	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) {
-		return cabby.Manifest{}, nil
-	}
-
-	h := ManifestHandler{ManifestService: &ms}
+	h := ManifestHandler{ManifestService: mockManifestService()}
 	status, _ := handlerTest(h.Post, "POST", testManifestURL, nil)
 
 	if status != http.StatusMethodNotAllowed {

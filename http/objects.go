@@ -9,13 +9,12 @@ import (
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/stones"
-	log "github.com/sirupsen/logrus"
 )
 
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
-	ObjectService cabby.ObjectService
-	// StatusService    cabby.StatusService
+	ObjectService    cabby.ObjectService
+	StatusService    cabby.StatusService
 	MaxContentLength int64
 }
 
@@ -90,13 +89,13 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 
 	status, err := cabby.NewStatus(len(bundle.Objects))
 	if err != nil {
-		internalServerError(w, errors.New("Unable to create status resource"))
+		internalServerError(w, errors.New("Unable to initialize status resource"))
 	}
-	log.Info(status)
-	// err = status.create(ts)
-	// if err != nil {
-	// 	internalServerError(w, errors.New("Unable to store status resource"))
-	// }
+
+	err = h.StatusService.CreateStatus(status)
+	if err != nil {
+		internalServerError(w, errors.New("Unable to store status resource"))
+	}
 
 	w.WriteHeader(http.StatusAccepted)
 	// writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
