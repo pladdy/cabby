@@ -9,7 +9,7 @@ import (
 func TestStatusServiceCreateStatus(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := StatusService{DB: ds.DB, DataStore: ds}
+	s := ds.StatusService()
 
 	test := tester.Status
 
@@ -32,7 +32,7 @@ func TestStatusServiceCreateStatus(t *testing.T) {
 func TestStatusServiceStatus(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := StatusService{DB: ds.DB}
+	s := ds.StatusService()
 
 	expected := tester.Status
 
@@ -50,9 +50,9 @@ func TestStatusServiceStatus(t *testing.T) {
 func TestStatusServiceStatusQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := StatusService{DB: ds.DB}
+	s := ds.StatusService()
 
-	_, err := s.DB.Exec("drop table taxii_status")
+	_, err := ds.DB.Exec("drop table taxii_status")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -68,32 +68,54 @@ func TestStatusServiceStatusQueryErr(t *testing.T) {
 func TestStatusServiceUpdateStatus(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := StatusService{DB: ds.DB, DataStore: ds}
+	s := ds.StatusService()
 
 	// create a status
-	test := tester.Status
-	err := s.CreateStatus(test)
+	expected := tester.Status
+	err := s.CreateStatus(expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
 	// update the status
-	test.SuccessCount = 1
-	test.PendingCount = 3
-	test.FailureCount = 1
+	expected.TotalCount = 3
+	expected.SuccessCount = 0
+	expected.FailureCount = 1
 
-	err = s.UpdateStatus(test)
+	err = s.UpdateStatus(expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
 	// verify it's updated
-	result, err := s.Status(test.ID.String())
+	expected.PendingCount = 2
+	result, err := s.Status(expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	passed := tester.CompareStatus(result, test)
+	passed := tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
+	// complete the status and check
+	expected.SuccessCount = 2
+	err = s.UpdateStatus(expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	// verify it's updated
+	expected.PendingCount = 0
+	expected.Status = "complete"
+
+	result, err = s.Status(expected.ID.String())
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	passed = tester.CompareStatus(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}

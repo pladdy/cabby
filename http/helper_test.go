@@ -16,6 +16,7 @@ import (
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
+	"github.com/pladdy/stones"
 )
 
 var (
@@ -195,10 +196,13 @@ func mockManifestService() tester.ManifestService {
 }
 
 func mockObjectService() tester.ObjectService {
-	os := tester.ObjectService{}
-	os.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
-	os.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
-	return os
+	osv := tester.ObjectService{}
+	osv.CreateBundleFn = func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		tester.Info.Println("mock Creating Bundle")
+	}
+	osv.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
+	osv.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
+	return osv
 }
 
 func mockStatusService() tester.StatusService {
@@ -224,6 +228,7 @@ func mockDataStore() tester.DataStore {
 	md.APIRootServiceFn = func() tester.APIRootService { return mockAPIRootService() }
 	md.CollectionServiceFn = func() tester.CollectionService { return mockCollectionService() }
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return mockDiscoveryService() }
+	md.ManifestServiceFn = func() tester.ManifestService { return mockManifestService() }
 	md.ObjectServiceFn = func() tester.ObjectService { return mockObjectService() }
 	md.StatusServiceFn = func() tester.StatusService { return mockStatusService() }
 	md.UserServiceFn = func() tester.UserService { return mockUserService() }

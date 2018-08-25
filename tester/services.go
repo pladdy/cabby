@@ -2,6 +2,7 @@ package tester
 
 import (
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/stones"
 )
 
 /* DataStore */
@@ -11,6 +12,7 @@ type DataStore struct {
 	APIRootServiceFn    func() APIRootService
 	CollectionServiceFn func() CollectionService
 	DiscoveryServiceFn  func() DiscoveryService
+	ManifestServiceFn   func() ManifestService
 	ObjectServiceFn     func() ObjectService
 	StatusServiceFn     func() StatusService
 	UserServiceFn       func() UserService
@@ -41,9 +43,9 @@ func (s DataStore) DiscoveryService() cabby.DiscoveryService {
 	return s.DiscoveryServiceFn()
 }
 
-// StatusService mock
-func (s DataStore) StatusService() cabby.StatusService {
-	return s.StatusServiceFn()
+// ManifestService mock
+func (s DataStore) ManifestService() cabby.ManifestService {
+	return s.ManifestServiceFn()
 }
 
 // ObjectService mock
@@ -54,6 +56,11 @@ func (s DataStore) ObjectService() cabby.ObjectService {
 // Open mock
 func (s DataStore) Open() error {
 	return nil
+}
+
+// StatusService mock
+func (s DataStore) StatusService() cabby.StatusService {
+	return s.StatusServiceFn()
 }
 
 // UserService mock
@@ -124,9 +131,15 @@ func (s ManifestService) Manifest(collectionID string) (cabby.Manifest, error) {
 // ObjectService is a mock implementation
 type ObjectService struct {
 	MaxContentLength int64
+	CreateBundleFn   func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
 	CreateObjectFn   func(object cabby.Object) error
 	ObjectFn         func(collectionID, objectID string) (cabby.Object, error)
 	ObjectsFn        func(collectionID string) ([]cabby.Object, error)
+}
+
+// CreateBundle is a mock implementation
+func (s ObjectService) CreateBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	s.CreateBundleFn(b, collectionID, st, ss)
 }
 
 // CreateObject is a mock implementation

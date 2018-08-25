@@ -11,6 +11,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const (
+	maxWritesPerBatch = 500
+)
+
 // DataStore represents a SQLite database
 type DataStore struct {
 	DB   *sql.DB
@@ -48,6 +52,11 @@ func (s *DataStore) DiscoveryService() cabby.DiscoveryService {
 	return DiscoveryService{DB: s.DB}
 }
 
+// ManifestService returns a service for object resources
+func (s *DataStore) ManifestService() cabby.ManifestService {
+	return ManifestService{DB: s.DB}
+}
+
 // ObjectService returns a service for object resources
 func (s *DataStore) ObjectService() cabby.ObjectService {
 	return ObjectService{DB: s.DB, DataStore: s}
@@ -74,8 +83,6 @@ func (s *DataStore) UserService() cabby.UserService {
 }
 
 /* writer methods */
-
-const maxWritesPerBatch = 500
 
 func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan error) {
 	defer close(errs)

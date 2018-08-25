@@ -121,6 +121,7 @@ type DataStore interface {
 	Close()
 	CollectionService() CollectionService
 	DiscoveryService() DiscoveryService
+	ManifestService() ManifestService
 	ObjectService() ObjectService
 	Open() error
 	StatusService() StatusService
@@ -211,6 +212,7 @@ type ManifestService interface {
 }
 
 // Object for STIX 2 object data
+// TODO: this should be in stones; needs validation too
 type Object struct {
 	ID           stones.ID `json:"id"`
 	Type         string    `json:"type"`
@@ -222,6 +224,7 @@ type Object struct {
 
 // ObjectService provides Object data
 type ObjectService interface {
+	CreateBundle(b stones.Bundle, collectionID string, s Status, ss StatusService)
 	CreateObject(Object) error
 	Object(collectionID, objectID string) (Object, error)
 	Objects(collectionID string) ([]Object, error)

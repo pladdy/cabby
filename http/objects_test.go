@@ -12,6 +12,7 @@ import (
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
+	"github.com/pladdy/stones"
 )
 
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
@@ -222,10 +223,13 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 /* Post */
 
 func TestObjectsHandlerPost(t *testing.T) {
-	h := ObjectsHandler{
-		MaxContentLength: int64(2048),
-		ObjectService:    mockObjectService(),
-		StatusService:    mockStatusService()}
+	osv := mockObjectService()
+	osv.CreateBundleFn = func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		tester.Info.Println("mock call of CreateBundle")
+	}
+
+	ssv := mockStatusService()
+	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: osv, StatusService: ssv}
 
 	bundleFile, _ := os.Open("testdata/malware_bundle.json")
 	bundle, _ := ioutil.ReadAll(bundleFile)

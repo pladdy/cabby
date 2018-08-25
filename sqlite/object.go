@@ -2,17 +2,56 @@ package sqlite
 
 import (
 	"database/sql"
+	"encoding/json"
+	"errors"
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
+	"github.com/pladdy/stones"
+)
+
+const (
+	createObjectSQL = `insert into stix_objects (id, type, created, modified, object, collection_id)
+				             values (?, ?, ?, ?, ?, ?)`
+	batchBufferSize = 50
 )
 
 // ObjectService implements a SQLite version of the ObjectService interface
 type ObjectService struct {
 	DB        *sql.DB
 	DataStore *DataStore
+}
+
+// CreateBundle will read from the data store and return the resource
+func (s ObjectService) CreateBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	resource, action := "Bundle", "create"
+	start := cabby.LogServiceStart(resource, action)
+	s.createBundle(b, collectionID, st, ss)
+	cabby.LogServiceEnd(resource, action, start)
+}
+
+func (s ObjectService) createBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	errs := make(chan error, len(b.Objects))
+	toWrite := make(chan interface{}, batchBufferSize)
+
+	go s.DataStore.batchWrite(createObjectSQL, toWrite, errs)
+
+	for _, object := range b.Objects {
+		o, err := bytesToObject(object)
+		if err != nil {
+			errs <- err
+			continue
+		}
+
+		log.WithFields(log.Fields{"id": o.ID}).Info("Sending to data store")
+		toWrite <- []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, collectionID}
+	}
+	close(toWrite)
+
+	updateStatus(st, errs, ss)
 }
 
 // CreateObject will read from the data store and return the resource
@@ -25,10 +64,7 @@ func (s ObjectService) CreateObject(object cabby.Object) error {
 }
 
 func (s ObjectService) createObject(o cabby.Object) error {
-	sql := `insert into stix_objects (id, type, created, modified, object, collection_id)
-					values (?, ?, ?, ?, ?, ?)`
-
-	return s.DataStore.write(sql, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
+	return s.DataStore.write(createObjectSQL, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
 }
 
 // Object will read from the data store and return the resource
@@ -108,4 +144,31 @@ func (s ObjectService) objects(collectionID string) ([]cabby.Object, error) {
 
 	err = rows.Err()
 	return objects, err
+}
+
+/* helpers */
+
+func bytesToObject(b []byte) (cabby.Object, error) {
+	var o cabby.Object
+	err := json.Unmarshal(b, &o)
+	if err != nil {
+		return o, err
+	}
+
+	if o.ID == "" {
+		err = errors.New("Invalid ID")
+	}
+
+	o.Object = b
+	return o, err
+}
+
+func updateStatus(st cabby.Status, errs chan error, ss cabby.StatusService) {
+	failures := int64(0)
+	for _ = range errs {
+		failures++
+	}
+
+	st.FailureCount = failures
+	ss.UpdateStatus(st)
 }

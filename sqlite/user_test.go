@@ -10,7 +10,7 @@ import (
 func TestUserServiceUser(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := UserService{DB: ds.DB}
+	s := ds.UserService()
 
 	expected := tester.User
 
@@ -30,9 +30,9 @@ func TestUserServiceUser(t *testing.T) {
 func TestUserServiceUserQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := UserService{DB: ds.DB}
+	s := ds.UserService()
 
-	_, err := s.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table taxii_user")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,7 +53,7 @@ func TestUserServiceExists(t *testing.T) {
 	}
 
 	ds := testDataStore()
-	s := UserService{DB: ds.DB}
+	s := ds.UserService()
 
 	for _, test := range tests {
 		result := s.Exists(test.user)
@@ -66,7 +66,7 @@ func TestUserServiceExists(t *testing.T) {
 func TestUserServiceUserCollections(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := UserService{DB: ds.DB}
+	s := ds.UserService()
 
 	expected := tester.UserCollectionList
 
@@ -89,9 +89,9 @@ func TestUserServiceUserCollections(t *testing.T) {
 func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := UserService{DB: ds.DB}
+	s := ds.UserService()
 
-	_, err := s.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table taxii_user")
 	if err != nil {
 		t.Fatal(err)
 	}

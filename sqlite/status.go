@@ -77,5 +77,12 @@ func (s StatusService) updateStatus(st cabby.Status) error {
           set status = ?, total_count = ?, success_count = ?, failure_count = ?, pending_count = ?
           where id = ?`
 
+	st.PendingCount = st.TotalCount - st.SuccessCount - st.FailureCount
+
+	if st.PendingCount == 0 {
+		st.SuccessCount = st.TotalCount - st.FailureCount
+		st.Status = "complete"
+	}
+
 	return s.DataStore.write(sql, st.Status, st.TotalCount, st.SuccessCount, st.FailureCount, st.PendingCount, st.ID)
 }

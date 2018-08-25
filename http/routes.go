@@ -41,6 +41,8 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		ObjectService:    ds.ObjectService(),
 		StatusService:    ds.StatusService()}
 
+	mh := ManifestHandler{ManifestService: ds.ManifestService()}
+
 	for _, collectionID := range acs.CollectionIDs {
 		registerRoute(
 			sm,
@@ -53,7 +55,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithAcceptType(RouteRequest(oh), cabby.TaxiiContentType))
+			WithAcceptType(RouteRequest(mh), cabby.TaxiiContentType))
 	}
 	//registerRoute(sm, ar.Path+"/status", withAcceptTaxii(handleTaxiiStatus(ds)))
 }

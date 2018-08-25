@@ -17,7 +17,7 @@ const (
 	// CollectionID for tests
 	CollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
 	// ObjectID for tests
-	ObjectID = "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b"
+	ObjectID = "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc"
 	// Port for testing server
 	Port = 1234
 	// UserEmail for tests

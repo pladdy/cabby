@@ -101,7 +101,7 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
-	// go writeBundle(bundle, takeCollectionID(r), ts, status)
+	go h.ObjectService.CreateBundle(bundle, takeCollectionID(r), status, h.StatusService)
 }
 
 /* helpers */
@@ -132,36 +132,3 @@ func greaterThan(r, m int64) bool {
 	}
 	return false
 }
-
-// func updateStatus(errs chan error, s Status, ts taxiiStorer) {
-// 	failures := int64(0)
-// 	for _ = range errs {
-// 		failures++
-// 	}
-//
-// 	s.FailureCount = failures
-// 	s.SuccessCount = s.TotalCount - failures
-// 	s.PendingCount = s.TotalCount - s.SuccessCount - failures
-//
-// 	s.update(ts, "complete")
-// }
-
-// func writeBundle(b s.Bundle, cid string, ts taxiiStorer, s taxiiStatus) {
-// 	writeErrs := make(chan error, len(b.Objects))
-// 	writes := make(chan interface{}, minBuffer)
-//
-// 	go ts.create("stixObject", writes, writeErrs)
-//
-// 	for _, object := range b.Objects {
-// 		so, err := bytesToStixObject(object)
-// 		if err != nil {
-// 			writeErrs <- err
-// 			continue
-// 		}
-// 		log.WithFields(log.Fields{"stix_id": so.RawID}).Info("Sending to data store")
-// 		writes <- []interface{}{so.RawID, so.Type, so.Created, so.Modified, so.Object, cid}
-// 	}
-//
-// 	close(writes)
-// 	updateStatus(writeErrs, s, ts)
-// }
