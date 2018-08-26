@@ -9,7 +9,7 @@ import (
 func TestAPIRootServiceAPIRoot(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := APIRootService{DB: ds.DB}
+	s := ds.APIRootService()
 
 	expected := tester.APIRoot
 
@@ -27,9 +27,9 @@ func TestAPIRootServiceAPIRoot(t *testing.T) {
 func TestAPIRootServiceAPIRootQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := APIRootService{DB: ds.DB}
+	s := ds.APIRootService()
 
-	_, err := s.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table taxii_api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestAPIRootServiceAPIRootQueryErr(t *testing.T) {
 func TestAPIRootsServiceAPIRoots(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := APIRootService{DB: ds.DB}
+	s := ds.APIRootService()
 
 	expected := tester.APIRoot
 
@@ -65,9 +65,9 @@ func TestAPIRootsServiceAPIRoots(t *testing.T) {
 func TestAPIRootsServiceAPIRootsQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := APIRootService{DB: ds.DB}
+	s := ds.APIRootService()
 
-	_, err := s.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table taxii_api_root")
 	if err != nil {
 		t.Fatal(err)
 	}

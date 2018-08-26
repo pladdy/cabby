@@ -30,6 +30,12 @@ func TestNewCollection(t *testing.T) {
 			t.Error("Got:", c.ID.String(), "Expected:", test.idString)
 		}
 	}
+
+	// test if 'collections' is passed; return a uuid
+	_, err := NewCollection("collections")
+	if err != nil {
+		t.Error("Got:", err, "Expected no error")
+	}
 }
 
 func TestParseConfig(t *testing.T) {
@@ -126,5 +132,12 @@ func TestIDIsEmpty(t *testing.T) {
 	emptyID := ID{}
 	if emptyID.IsEmpty() == false {
 		t.Error("Expected ID to be empty")
+	}
+}
+
+func TestNewStatus(t *testing.T) {
+	_, err := NewStatus(1)
+	if err != nil {
+		t.Error("Got:", err, "Expected: no error")
 	}
 }

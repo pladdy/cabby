@@ -11,13 +11,7 @@ import (
 )
 
 func TestDiscoveryHandlerGet(t *testing.T) {
-	ds := tester.DiscoveryService{}
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
-		return tester.Discovery, nil
-	}
-
-	// call handler
-	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
+	h := DiscoveryHandler{DiscoveryService: mockDiscoveryService(), Port: tester.Port}
 	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
@@ -38,45 +32,35 @@ func TestDiscoveryHandlerGet(t *testing.T) {
 }
 
 func TestDiscoveryHandlerGetFailures(t *testing.T) {
-	tests := []struct {
-		method   string
-		expected cabby.Error
-	}{
-		{method: "GET",
-			expected: cabby.Error{
-				Title: "Internal Server Error", Description: "Discovery failure", HTTPStatus: http.StatusInternalServerError}},
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Discovery failure", HTTPStatus: http.StatusInternalServerError}
+
+	ds := mockDiscoveryService()
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return cabby.Discovery{}, errors.New(expected.Description)
 	}
 
-	for _, test := range tests {
-		expected := test.expected
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
+	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
 
-		ds := tester.DiscoveryService{}
-		ds.DiscoveryFn = func() (cabby.Discovery, error) {
-			return cabby.Discovery{}, errors.New(expected.Description)
-		}
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
 
-		h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-		status, body := handlerTest(h.Get, test.method, testDiscoveryURL, nil)
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if status != expected.HTTPStatus {
-			t.Error("Got:", status, "Expected:", expected.HTTPStatus)
-		}
-
-		var result cabby.Error
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		passed := tester.CompareError(result, expected)
-		if !passed {
-			t.Error("Comparison failed")
-		}
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
-func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
-	ds := tester.DiscoveryService{}
+func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
+	ds := mockDiscoveryService()
 	ds.DiscoveryFn = func() (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil
 	}
@@ -100,6 +84,20 @@ func TestDiscoveryHandlerNoDiscovery(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestDiscoveryHandlePost(t *testing.T) {
+	ds := mockDiscoveryService()
+	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+		return cabby.Discovery{Title: ""}, nil
+	}
+
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
+	status, _ := handlerTest(h.Post, "POST", testDiscoveryURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
 	}
 }
 

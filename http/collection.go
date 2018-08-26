@@ -27,3 +27,8 @@ func (h CollectionHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(collection))
 }
+
+// Post handles post request
+func (h CollectionHandler) Post(w http.ResponseWriter, r *http.Request) {
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+}

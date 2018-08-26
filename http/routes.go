@@ -36,7 +36,12 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
 	}
 
-	oh := ObjectsHandler{ObjectService: ds.ObjectService(), MaxContentLength: apiRoot.MaxContentLength}
+	oh := ObjectsHandler{
+		MaxContentLength: apiRoot.MaxContentLength,
+		ObjectService:    ds.ObjectService(),
+		StatusService:    ds.StatusService()}
+
+	mh := ManifestHandler{ManifestService: ds.ManifestService()}
 
 	for _, collectionID := range acs.CollectionIDs {
 		registerRoute(
@@ -50,7 +55,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithAcceptType(RouteRequest(oh), cabby.TaxiiContentType))
+			WithAcceptType(RouteRequest(mh), cabby.TaxiiContentType))
 	}
 	//registerRoute(sm, ar.Path+"/status", withAcceptTaxii(handleTaxiiStatus(ds)))
 }

@@ -140,7 +140,7 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 	return passed
 }
 
-// CompareObject compares two Collections
+// CompareObject compares two objects
 func CompareObject(result, expected cabby.Object) bool {
 	passed := true
 
@@ -171,6 +171,69 @@ func CompareObject(result, expected cabby.Object) bool {
 	if result.CollectionID.String() != expected.CollectionID.String() {
 		Error.Println("Got:", result.CollectionID.String(), "Expected:", expected.CollectionID.String())
 		passed = false
+	}
+
+	return passed
+}
+
+// CompareStatus compares two objects
+func CompareStatus(result, expected cabby.Status) bool {
+	passed := true
+
+	if result.ID.String() != expected.ID.String() {
+		Error.Println("Got:", result.ID.String(), "Expected:", expected.ID.String())
+		passed = false
+	}
+	if result.Status != expected.Status {
+		Error.Println("Got:", result.Status, "Expected:", expected.Status)
+		passed = false
+	}
+	if result.RequestTimestamp != expected.RequestTimestamp {
+		Error.Println("Got:", result.RequestTimestamp, "Expected:", expected.RequestTimestamp)
+		passed = false
+	}
+	if result.TotalCount != expected.TotalCount {
+		Error.Println("Got:", result.TotalCount, "Expected:", expected.TotalCount)
+		passed = false
+	}
+
+	// successes
+	if result.SuccessCount != expected.SuccessCount {
+		Error.Println("Got:", result.SuccessCount, "Expected:", expected.SuccessCount)
+		passed = false
+	}
+
+	for i := 0; i < len(result.Successes); i++ {
+		if result.Successes[i] != expected.Successes[i] {
+			Error.Println("Got:", result.Successes[i], "Expected:", expected.Successes[i])
+			passed = false
+		}
+	}
+
+	// failures
+	if result.FailureCount != expected.FailureCount {
+		Error.Println("Got:", result.FailureCount, "Expected:", expected.FailureCount)
+		passed = false
+	}
+
+	for i := 0; i < len(result.Failures); i++ {
+		if result.Failures[i] != expected.Failures[i] {
+			Error.Println("Got:", result.Failures[i], "Expected:", expected.Failures[i])
+			passed = false
+		}
+	}
+
+	// pendings
+	if result.PendingCount != expected.PendingCount {
+		Error.Println("Got:", result.PendingCount, "Expected:", expected.PendingCount)
+		passed = false
+	}
+
+	for i := 0; i < len(result.Pendings); i++ {
+		if result.Pendings[i] != expected.Pendings[i] {
+			Error.Println("Got:", result.Pendings[i], "Expected:", expected.Pendings[i])
+			passed = false
+		}
 	}
 
 	return passed

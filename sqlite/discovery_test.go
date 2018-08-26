@@ -9,7 +9,7 @@ import (
 func TestDiscoveryServiceDiscovery(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := DiscoveryService{DB: ds.DB}
+	s := ds.DiscoveryService()
 
 	expected := tester.DiscoveryDataStore
 
@@ -27,9 +27,9 @@ func TestDiscoveryServiceDiscovery(t *testing.T) {
 func TestDiscoveryServiceDiscoveryQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := DiscoveryService{DB: ds.DB}
+	s := ds.DiscoveryService()
 
-	_, err := s.DB.Exec("drop table taxii_discovery")
+	_, err := ds.DB.Exec("drop table taxii_discovery")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -37,6 +37,11 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Post handles post request
+func (h DiscoveryHandler) Post(w http.ResponseWriter, r *http.Request) {
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+}
+
 /* helpers */
 
 func parseURL(rawurl string) *url.URL {

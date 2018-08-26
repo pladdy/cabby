@@ -9,7 +9,7 @@ import (
 func TestCollectionServiceCollection(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
 	expected := tester.Collection
 
@@ -27,9 +27,9 @@ func TestCollectionServiceCollection(t *testing.T) {
 func TestCollectionServiceCollectionQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
-	_, err := s.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +43,7 @@ func TestCollectionServiceCollectionQueryErr(t *testing.T) {
 func TestCollectionsServiceCollections(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
 	expected := tester.Collection
 
@@ -67,9 +67,9 @@ func TestCollectionsServiceCollections(t *testing.T) {
 func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
-	_, err := s.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +83,7 @@ func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 func TestCollectionsServiceCollectionsInAPIRoot(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
 	expected := tester.Collection
 
@@ -110,9 +110,9 @@ func TestCollectionsServiceCollectionsInAPIRoot(t *testing.T) {
 func TestCollectionsServiceCollectionsInAPIRootQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := CollectionService{DB: ds.DB}
+	s := ds.CollectionService()
 
-	_, err := s.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table taxii_collection")
 	if err != nil {
 		t.Fatal(err)
 	}

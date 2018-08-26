@@ -17,7 +17,7 @@ const (
 	// CollectionID for tests
 	CollectionID = "82407036-edf9-4c75-9a56-e72697c53e99"
 	// ObjectID for tests
-	ObjectID = "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b"
+	ObjectID = "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc"
 	// Port for testing server
 	Port = 1234
 	// UserEmail for tests
@@ -76,10 +76,14 @@ var (
 	Object = object()
 	// Objects mock
 	Objects = []cabby.Object{object()}
+	// Status mock
+	Status = cabby.Status{}
 	// User mock
 	User = cabby.User{
 		Email:    UserEmail,
 		CanAdmin: true}
+	// UserCollectionList mock
+	UserCollectionList = userCollectionList()
 )
 
 func collection() cabby.Collection {
@@ -113,4 +117,17 @@ func object() cabby.Object {
 	    }`)
 
 	return o
+}
+
+func status() cabby.Status {
+	s := cabby.Status{}
+	s.ID, _ = cabby.NewID()
+	return s
+}
+
+func userCollectionList() cabby.UserCollectionList {
+	ucl := cabby.UserCollectionList{Email: UserEmail}
+	id, _ := cabby.IDFromString(CollectionID)
+	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{id: cabby.CollectionAccess{CanRead: true, CanWrite: true}}
+	return ucl
 }

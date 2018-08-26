@@ -7,18 +7,19 @@ import (
 	"strings"
 
 	cabby "github.com/pladdy/cabby2"
+	log "github.com/sirupsen/logrus"
 )
 
 // per context docuentation, use a key type for context keys
 type key int
 
 const (
-	userName           key = 0
-	userCollectionList key = 1
-	requestRange       key = 2
-	canAdmin           key = 3
-	jsonContentType        = "application/json"
-	sixMonthsOfSeconds     = "63072000"
+	userName             key = 0
+	collectionAccessList key = 1
+	requestRange         key = 2
+	canAdmin             key = 3
+	jsonContentType          = "application/json"
+	sixMonthsOfSeconds       = "63072000"
 )
 
 func getToken(s string, i int) string {
@@ -56,23 +57,33 @@ func lastURLPathToken(u string) string {
 // 	return ca
 // }
 
-// func takeCollectionAccess(r *http.Request) taxiiCollectionAccess {
-// 	// get collection access map from context
-// 	ca, ok := r.Context().Value(userCollectionList).(map[taxiiID]taxiiCollectionAccess)
-// 	if !ok {
-// 		return taxiiCollectionAccess{}
-// 	}
-//
-// 	tid, err := taxiiIDFromString(takeCollectionID(r))
-// 	if err != nil {
-// 		return taxiiCollectionAccess{}
-// 	}
-// 	return ca[tid]
-// }
-
 func takeAPIRoot(r *http.Request) string {
 	var apiRootIndex = 1
 	return getToken(r.URL.Path, apiRootIndex)
+}
+
+func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
+	// get collection access map from context
+	ca, ok := r.Context().Value(collectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
+	if !ok {
+		log.WithFields(log.Fields{
+			"user":         takeUser(r),
+			"collectionID": takeCollectionID(r),
+		}).Warn("Failed to get collection access from context")
+		return cabby.CollectionAccess{}
+	}
+
+	id, err := cabby.IDFromString(takeCollectionID(r))
+	if err != nil {
+		log.WithFields(log.Fields{
+			"user":         takeUser(r),
+			"collectionID": takeCollectionID(r),
+			"error":        err,
+		}).Warn("Failed to convert collection id from string")
+		return cabby.CollectionAccess{}
+	}
+
+	return ca[id]
 }
 
 func takeCollectionID(r *http.Request) string {
@@ -176,7 +187,7 @@ func userExists(r *http.Request) bool {
 func withUser(r *http.Request, u cabby.User) *http.Request {
 	ctx := context.WithValue(context.Background(), userName, u.Email)
 	ctx = context.WithValue(ctx, canAdmin, u.CanAdmin)
-	//ctx = context.WithValue(ctx, userCollectionList, tu.CollectionAccessList)
+	ctx = context.WithValue(ctx, collectionAccessList, u.CollectionAccessList)
 	return r.WithContext(ctx)
 }
 
