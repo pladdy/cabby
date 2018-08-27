@@ -75,13 +75,20 @@ func TestObjectsHandlerGet(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var objects []cabby.Object
-	err = json.Unmarshal([]byte(body), &objects)
+	// parse the bundle
+	var bundle stones.Bundle
+	err = json.Unmarshal([]byte(body), &bundle)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	passed = tester.CompareObject(objects[0], expected)
+	// parse the first object
+	err = json.Unmarshal(bundle.Objects[0], &object)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed = tester.CompareObject(object, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
@@ -151,15 +158,14 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var result []cabby.Object
-	err := json.Unmarshal([]byte(body), &result)
+	var bundle stones.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := tester.Objects
 
-	if len(expected) <= 0 {
-		t.Error("Got:", len(expected), "Expected: > 0")
+	if len(bundle.Objects) <= 0 {
+		t.Error("Got:", len(bundle.Objects), "Expected: > 0")
 	}
 }
 
@@ -334,5 +340,12 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestObjectsToBundleError(t *testing.T) {
+	_, err := objectsToBundle([]cabby.Object{})
+	if err == nil {
+		t.Error("Expected error")
 	}
 }

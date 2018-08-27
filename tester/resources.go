@@ -111,7 +111,7 @@ func object() cabby.Object {
 	o.CollectionID, _ = cabby.IDFromString(CollectionID)
 	o.Object = []byte(`{
 	      "type": "malware",
-	      "id": "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b",
+	      "id": "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc",
 	      "created": "2016-04-06T20:07:09.000Z",
 	      "modified": "2016-04-06T20:07:09.000Z",
 	      "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",

@@ -9,6 +9,7 @@ import (
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 // ObjectsHandler handles Objects requests
@@ -43,7 +44,13 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(objects))
+	bundle, err := objectsToBundle(objects)
+	if err != nil {
+		internalServerError(w, errors.New("Unable to create bundle"))
+		return
+	}
+
+	writeContent(w, cabby.TaxiiContentType, resourceToJSON(bundle))
 }
 
 func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
@@ -131,4 +138,21 @@ func greaterThan(r, m int64) bool {
 		return true
 	}
 	return false
+}
+
+func objectsToBundle(objects []cabby.Object) (stones.Bundle, error) {
+	bundle, err := stones.NewBundle()
+	if err != nil {
+		return bundle, err
+	}
+
+	for _, o := range objects {
+		bundle.Objects = append(bundle.Objects, o.Object)
+	}
+
+	if len(bundle.Objects) == 0 {
+		log.Warn("Can't return an empty bundle, returning error to caller")
+		return bundle, errors.New("No data returned: empty bundle")
+	}
+	return bundle, err
 }

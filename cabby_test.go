@@ -141,3 +141,10 @@ func TestNewStatus(t *testing.T) {
 		t.Error("Got:", err, "Expected: no error")
 	}
 }
+
+func TestNewStatusError(t *testing.T) {
+	_, err := NewStatus(0)
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
