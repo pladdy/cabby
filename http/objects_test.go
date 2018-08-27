@@ -342,3 +342,10 @@ func TestObjectsPostStatusFail(t *testing.T) {
 		t.Error("Comparison failed")
 	}
 }
+
+func TestObjectsToBundleError(t *testing.T) {
+	_, err := objectsToBundle([]cabby.Object{})
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
