@@ -49,6 +49,11 @@ func lastURLPathToken(u string) string {
 // 	return ""
 // }
 
+func takeAPIRoot(r *http.Request) string {
+	var apiRootIndex = 1
+	return getToken(r.URL.Path, apiRootIndex)
+}
+
 // func takeCanAdmin(r *http.Request) bool {
 // 	ca, ok := r.Context().Value(canAdmin).(bool)
 // 	if !ok {
@@ -56,11 +61,6 @@ func lastURLPathToken(u string) string {
 // 	}
 // 	return ca
 // }
-
-func takeAPIRoot(r *http.Request) string {
-	var apiRootIndex = 1
-	return getToken(r.URL.Path, apiRootIndex)
-}
 
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 	// get collection access map from context
@@ -106,11 +106,11 @@ func takeObjectID(r *http.Request) string {
 // 	return tr
 // }
 
-// func takeStatusID(r *http.Request) string {
-// 	var statusIndex = 3
-// 	return getToken(r.URL.Path, statusIndex)
-// }
-//
+func takeStatusID(r *http.Request) string {
+	var statusIndex = 3
+	return getToken(r.URL.Path, statusIndex)
+}
+
 // func takeStixID(r *http.Request) string {
 // 	si := r.URL.Query()["match[id]"]
 //
@@ -128,7 +128,7 @@ func takeObjectID(r *http.Request) string {
 // 	}
 // 	return []string{}
 // }
-//
+
 func takeUser(r *http.Request) string {
 	user, ok := r.Context().Value(userName).(string)
 	if !ok {
@@ -137,7 +137,6 @@ func takeUser(r *http.Request) string {
 	return user
 }
 
-//
 // func takeVersion(r *http.Request) string {
 // 	v := r.URL.Query()["match[version]"]
 //

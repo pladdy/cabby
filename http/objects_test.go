@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -325,8 +324,6 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
 	}
-
-	fmt.Println(body)
 
 	var result cabby.Error
 	err := json.Unmarshal([]byte(body), &result)

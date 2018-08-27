@@ -3,26 +3,52 @@ package http
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
-func TestErrorStatus(t *testing.T) {
-	res := httptest.NewRecorder()
+func TestStatusHandlerGet(t *testing.T) {
+	h := StatusHandler{StatusService: mockStatusService()}
+	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
 
-	expected := cabby.Error{Title: "A test",
-		Description: "fake error", HTTPStatus: http.StatusInternalServerError}
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
+	}
 
-	errorStatus(res, expected.Title, errors.New(expected.Description), expected.HTTPStatus)
-	body, _ := ioutil.ReadAll(res.Body)
+	var result cabby.Status
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := tester.Status
+
+	passed := tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestStatusHandlerGetFailures(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Status failure", HTTPStatus: http.StatusInternalServerError}
+
+	ms := mockStatusService()
+	ms.StatusFn = func(statusID string) (cabby.Status, error) {
+		return cabby.Status{}, errors.New(expected.Description)
+	}
+
+	h := StatusHandler{StatusService: &ms}
+	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
 
 	var result cabby.Error
-	err := json.Unmarshal(body, &result)
+	err := json.Unmarshal([]byte(body), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -33,8 +59,39 @@ func TestErrorStatus(t *testing.T) {
 	}
 }
 
-func TestRecoverFromPanic(t *testing.T) {
-	w := httptest.NewRecorder()
-	defer recoverFromPanic(w)
-	panic("test")
+func TestStatusHandlerGetNoStatus(t *testing.T) {
+	ms := mockStatusService()
+	ms.StatusFn = func(statusID string) (cabby.Status, error) {
+		return cabby.Status{}, nil
+	}
+
+	h := StatusHandler{StatusService: &ms}
+	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "No status available for this id"
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestStatusHandlePost(t *testing.T) {
+	h := StatusHandler{StatusService: mockStatusService()}
+	status, _ := handlerTest(h.Post, "POST", testStatusURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
 }

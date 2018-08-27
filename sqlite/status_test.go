@@ -34,7 +34,12 @@ func TestStatusServiceStatus(t *testing.T) {
 	ds := testDataStore()
 	s := ds.StatusService()
 
+	// create a status
 	expected := tester.Status
+	err := s.CreateStatus(expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
 
 	result, err := s.Status(expected.ID.String())
 	if err != nil {

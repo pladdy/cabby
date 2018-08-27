@@ -20,6 +20,8 @@ const (
 	ObjectID = "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc"
 	// Port for testing server
 	Port = 1234
+	// StatusID for status tests
+	StatusID = "5abf4004-4f7f-459a-2eea-9c14af7b58abc"
 	// UserEmail for tests
 	UserEmail = "test@cabby.com"
 	// UserPassword for tests
@@ -77,7 +79,7 @@ var (
 	// Objects mock
 	Objects = []cabby.Object{object()}
 	// Status mock
-	Status = cabby.Status{}
+	Status = status()
 	// User mock
 	User = cabby.User{
 		Email:    UserEmail,
@@ -120,8 +122,8 @@ func object() cabby.Object {
 }
 
 func status() cabby.Status {
-	s := cabby.Status{}
-	s.ID, _ = cabby.NewID()
+	s := cabby.Status{TotalCount: 3, PendingCount: 3}
+	s.ID, _ = cabby.IDFromString(StatusID)
 	return s
 }
 
