@@ -2,73 +2,33 @@ package http
 
 import (
 	"errors"
-	"fmt"
-	"io"
 	"net/http"
-	"runtime/debug"
 
 	cabby "github.com/pladdy/cabby2"
-	log "github.com/sirupsen/logrus"
 )
 
-func errorStatus(w http.ResponseWriter, title string, err error, status int) {
-	errString := fmt.Sprintf("%v", err)
-
-	te := cabby.Error{Title: title, Description: errString, HTTPStatus: status}
-
-	log.WithFields(log.Fields{
-		"error":       err,
-		"title":       title,
-		"http status": status,
-	}).Error("Returning error in response")
-
-	w.Header().Set("Content-Type", cabby.TaxiiContentType)
-	w.WriteHeader(status)
-	io.WriteString(w, resourceToJSON(te))
+// StatusHandler holds a cabby StatusService
+type StatusHandler struct {
+	StatusService cabby.StatusService
 }
 
-func badRequest(w http.ResponseWriter, err error) {
-	errorStatus(w, "Bad Request", err, http.StatusBadRequest)
-}
-
-func forbidden(w http.ResponseWriter, err error) {
-	errorStatus(w, "Forbidden", err, http.StatusForbidden)
-}
-
-func internalServerError(w http.ResponseWriter, err error) {
-	errorStatus(w, "Internal Server Error", err, http.StatusInternalServerError)
-}
-
-func methodNotAllowed(w http.ResponseWriter, err error) {
-	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
-}
-
-func resourceNotFound(w http.ResponseWriter, err error) {
-	errorStatus(w, "Resource Not Found", err, http.StatusNotFound)
-}
-
-func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
-	err := fmt.Errorf("content length is %v, content length can't be bigger than %v", rc, mc)
-	errorStatus(w, "Request Too large", err, http.StatusRequestEntityTooLarge)
-}
-
-func rangeNotSatisfiable(w http.ResponseWriter, err error) {
-	errorStatus(w, "Requested Range Not Satisfiable", err, http.StatusRequestedRangeNotSatisfiable)
-}
-
-func unauthorized(w http.ResponseWriter, err error) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
-	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
-}
-
-func unsupportedMediaType(w http.ResponseWriter, err error) {
-	errorStatus(w, "Unsupported Media Type", err, http.StatusUnsupportedMediaType)
-}
-
-func recoverFromPanic(w http.ResponseWriter) {
-	if r := recover(); r != nil {
-		log.Error("Panic!  Printing out Stack...")
-		debug.PrintStack()
-		resourceNotFound(w, errors.New("Resource not found"))
+// Get serves a status resource
+func (h StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
+	status, err := h.StatusService.Status(takeStatusID(r))
+	if err != nil {
+		internalServerError(w, err)
+		return
 	}
+
+	if status.TotalCount <= 0 {
+		resourceNotFound(w, errors.New("No status available for this id"))
+		return
+	}
+
+	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
+}
+
+// Post handles post request
+func (h StatusHandler) Post(w http.ResponseWriter, r *http.Request) {
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

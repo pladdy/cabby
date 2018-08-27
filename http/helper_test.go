@@ -26,6 +26,7 @@ var (
 	testManifestURL    = testCollectionURL + "manifest/"
 	testObjectsURL     = testCollectionURL + "objects/"
 	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
+	testStatusURL      = testAPIRootURL + "status/" + tester.StatusID + "/"
 	testDiscoveryURL   = tester.BaseURL + "/taxii/"
 )
 
@@ -208,6 +209,8 @@ func mockObjectService() tester.ObjectService {
 func mockStatusService() tester.StatusService {
 	ss := tester.StatusService{}
 	ss.CreateStatusFn = func(status cabby.Status) error { return nil }
+	ss.StatusFn = func(statusID string) (cabby.Status, error) { return tester.Status, nil }
+	ss.UpdateStatusFn = func(status cabby.Status) error { return nil }
 	return ss
 }
 
