@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
+
 	// StixContentType20 represents a stix 2.0 content type
 	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
 	// StixContentType represents a stix 2 content type
@@ -166,8 +168,6 @@ func NewID() (ID, error) {
 	return ID{id}, err
 }
 
-const cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
-
 // IDFromString takes a uuid string and coerces to ID
 func IDFromString(s string) (ID, error) {
 	id, err := uuid.FromString(s)
@@ -274,11 +274,6 @@ func (r *Range) String() string {
 	}
 
 	return s
-}
-
-// RangeInjector is implemented in the data store for resources that can be paginated
-type RangeInjector interface {
-	WithPagination(query string) string
 }
 
 // Valid returns whether the range is valid or not
