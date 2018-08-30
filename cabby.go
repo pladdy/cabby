@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"strconv"
+	"strings"
 
 	"github.com/gofrs/uuid"
 	"github.com/pladdy/stones"
@@ -11,6 +13,8 @@ import (
 )
 
 const (
+	cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
+
 	// StixContentType20 represents a stix 2.0 content type
 	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
 	// StixContentType represents a stix 2 content type
@@ -85,7 +89,7 @@ type CollectionsInAPIRoot struct {
 // CollectionService interface for interacting with data store
 type CollectionService interface {
 	Collection(user, apiRoot, collectionID string) (Collection, error)
-	Collections(user, apiRoot string) (Collections, error)
+	Collections(user, apiRoot string, cr *Range) (Collections, error)
 	CollectionsInAPIRoot(apiRoot string) (CollectionsInAPIRoot, error)
 }
 
@@ -164,8 +168,6 @@ func NewID() (ID, error) {
 	return ID{id}, err
 }
 
-const cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
-
 // IDFromString takes a uuid string and coerces to ID
 func IDFromString(s string) (ID, error) {
 	id, err := uuid.FromString(s)
@@ -230,12 +232,61 @@ type ObjectService interface {
 	Objects(collectionID string) ([]Object, error)
 }
 
-// Result struct for data returned from backend
-type Result struct {
-	Data      interface{}
-	ItemStart int64
-	ItemEnd   int64
-	Items     int64
+// Range is used for paginated requests to represent the requested data range
+type Range struct {
+	First int64
+	Last  int64
+	Total int64
+}
+
+// NewRange returns a Range given a string from the 'Range' HTTP header string
+// the Range HTTP Header is specified by the request with the syntax 'items X-Y'
+func NewRange(items string) (r Range, err error) {
+	r = Range{First: -1, Last: -1}
+
+	if items == "" {
+		return r, err
+	}
+
+	itemDelimiter := "-"
+	raw := strings.TrimSpace(items)
+	tokens := strings.Split(raw, itemDelimiter)
+
+	if len(tokens) == 2 {
+		r.First, err = strconv.ParseInt(tokens[0], 10, 64)
+		r.Last, err = strconv.ParseInt(tokens[1], 10, 64)
+	}
+
+	if r.Valid() {
+		return r, err
+	}
+	return r, errors.New("Invalid range specified")
+}
+
+func (r *Range) String() string {
+	s := "items " +
+		strconv.FormatInt(r.First, 10) +
+		"-" +
+		strconv.FormatInt(r.Last, 10)
+
+	if r.Total > 0 {
+		s += "/" + strconv.FormatInt(r.Total, 10)
+	}
+
+	return s
+}
+
+// Valid returns whether the range is valid or not
+func (r *Range) Valid() bool {
+	if r.First < 0 || r.Last < 0 {
+		return false
+	}
+
+	if r.First > r.Last {
+		return false
+	}
+
+	return true
 }
 
 // Status represents a TAXII status object

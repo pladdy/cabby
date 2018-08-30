@@ -37,7 +37,7 @@ func createAPIRoot(ds *DataStore) {
 	tx.Commit()
 }
 
-func createCollection(ds *DataStore) {
+func createCollection(ds *DataStore, id string) {
 	c := tester.Collection
 
 	tx, err := ds.DB.Begin()
@@ -53,7 +53,7 @@ func createCollection(ds *DataStore) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ","))
+	_, err = stmt.Exec(id, c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ","))
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func createCollection(ds *DataStore) {
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(tester.UserEmail, c.ID.String(), c.CanRead, c.CanWrite)
+	_, err = stmt.Exec(tester.UserEmail, id, c.CanRead, c.CanWrite)
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func setupSQLite() {
 	createUser(ds)
 	createDiscovery(ds)
 	createAPIRoot(ds)
-	createCollection(ds)
+	createCollection(ds, tester.Collection.ID.String())
 	createObject(ds)
 }
 

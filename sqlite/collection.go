@@ -39,6 +39,7 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 	if err != nil {
 		return c, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var mediaTypes string
@@ -54,19 +55,19 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 }
 
 // Collections will read from the data store and return the resource
-func (s CollectionService) Collections(user, apiRootPath string) (cabby.Collections, error) {
+func (s CollectionService) Collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 	resource, action := "Collections", "read"
 	start := cabby.LogServiceStart(resource, action)
-	result, err := s.collections(user, apiRootPath)
+	result, err := s.collections(user, apiRootPath, cr)
 	cabby.LogServiceEnd(resource, action, start)
 	return result, err
 }
 
-func (s CollectionService) collections(user, apiRootPath string) (cabby.Collections, error) {
+func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 	sql := `with data as (
-					  select rowid, id, title, description, can_read, can_write, media_types, 1 count
+					  select id, title, description, can_read, can_write, media_types, 1 count
 					  from (
-						  select c.rowid, c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
+						  select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
 						  from
 							  taxii_collection c
 							  inner join taxii_user_collection uc
@@ -78,25 +79,32 @@ func (s CollectionService) collections(user, apiRootPath string) (cabby.Collecti
 					  )
 				  )
 				  select
-					  -- pagination omitted for now
-					  id, title, description, can_read, can_write, media_types --,
-					  -- (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+					  id, title, description, can_read, can_write, media_types, (select sum(count) from data) total
 				  from data`
-	// add $paginate here
+
+	var args []interface{}
+
+	if cr.Valid() {
+		sql = WithPagination(sql)
+		args = []interface{}{user, apiRootPath, (cr.Last - cr.First) + 1, cr.First}
+	} else {
+		args = []interface{}{user, apiRootPath}
+	}
 
 	cs := cabby.Collections{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, apiRootPath)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
 		return cs, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var c cabby.Collection
 		var mediaTypes string
 
-		if err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.CanRead, &c.CanWrite, &mediaTypes); err != nil {
+		if err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.CanRead, &c.CanWrite, &mediaTypes, &cr.Total); err != nil {
 			return cs, err
 		}
 		c.MediaTypes = strings.Split(mediaTypes, ",")
@@ -129,6 +137,7 @@ func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.Colle
 	if err != nil {
 		return ac, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var id cabby.ID

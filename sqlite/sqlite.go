@@ -150,3 +150,8 @@ func (s *DataStore) writeOperation(query string) (tx *sql.Tx, stmt *sql.Stmt, er
 	}
 	return
 }
+
+// WithPagination for SQLite uses limit/offset to paginate
+func WithPagination(query string) string {
+	return query + "\nlimit ? offset ?"
+}

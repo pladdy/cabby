@@ -123,14 +123,8 @@ func TestSetupServerLogging(t *testing.T) {
 		log.SetOutput(os.Stderr)
 	}()
 
-	// set up test
-	ds := tester.DataStore{}
-	ds.UserServiceFn = func() tester.UserService {
-		return tester.UserService{}
-	}
-
 	handler := http.NewServeMux()
-	_ = setupServer(ds, handler, cabby.Config{Port: 1234})
+	_ = setupServer(mockDataStore(), handler, cabby.Config{Port: 1234})
 
 	type expectedLog struct {
 		Time  string
@@ -152,14 +146,8 @@ func TestSetupServerLogging(t *testing.T) {
 }
 
 func TestSetupServerSettings(t *testing.T) {
-	// set up test
-	ds := tester.DataStore{}
-	ds.UserServiceFn = func() tester.UserService {
-		return tester.UserService{}
-	}
-
 	handler := http.NewServeMux()
-	server := setupServer(ds, handler, cabby.Config{Port: 1234})
+	server := setupServer(mockDataStore(), handler, cabby.Config{Port: 1234})
 
 	// set server settings
 	expectedAddr := ":1234"

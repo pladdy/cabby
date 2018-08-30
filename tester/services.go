@@ -89,7 +89,7 @@ func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
 // CollectionService is a mock implementation
 type CollectionService struct {
 	CollectionFn           func(user, collectionID, apiRootPath string) (cabby.Collection, error)
-	CollectionsFn          func(user, apiRootPath string) (cabby.Collections, error)
+	CollectionsFn          func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
 	CollectionsInAPIRootFn func(apiRootPath string) (cabby.CollectionsInAPIRoot, error)
 }
 
@@ -99,8 +99,8 @@ func (s CollectionService) Collection(user, collectionID, apiRootPath string) (c
 }
 
 // Collections is a mock implementation
-func (s CollectionService) Collections(user, apiRootPath string) (cabby.Collections, error) {
-	return s.CollectionsFn(user, apiRootPath)
+func (s CollectionService) Collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	return s.CollectionsFn(user, apiRootPath, cr)
 }
 
 // CollectionsInAPIRoot is a mock implementation
