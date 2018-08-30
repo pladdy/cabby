@@ -38,6 +38,67 @@ func TestNewCollection(t *testing.T) {
 	}
 }
 
+func TestNewRange(t *testing.T) {
+	invalidRange := Range{First: -1, Last: -1}
+
+	tests := []struct {
+		input       string
+		resultRange Range
+		isError     bool
+	}{
+		{"items 0-10", Range{First: 0, Last: 10}, false},
+		{"items 0 10", invalidRange, true},
+		{"items 10", invalidRange, true},
+		{"", invalidRange, false},
+	}
+
+	for _, test := range tests {
+		result, err := NewRange(test.input)
+		if result != test.resultRange {
+			t.Error("Got:", result, "Expected:", test.resultRange)
+		}
+
+		if err != nil && test.isError == false {
+			t.Error("Got:", err, "Expected: no error")
+		}
+	}
+}
+
+func TestRangeString(t *testing.T) {
+	tests := []struct {
+		testRange Range
+		expected  string
+	}{
+		{Range{First: 0, Last: 0}, "items 0-0"},
+		{Range{First: 0, Last: 0, Total: 50}, "items 0-0/50"},
+	}
+
+	for _, test := range tests {
+		result := test.testRange.String()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestRangeValid(t *testing.T) {
+	tests := []struct {
+		testRange Range
+		expected  bool
+	}{
+		{Range{First: 1, Last: 0}, false},
+		{Range{First: 0, Last: 0}, true},
+		{Range{First: 0, Last: -1}, false},
+	}
+
+	for _, test := range tests {
+		result := test.testRange.Valid()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
 func TestParseConfig(t *testing.T) {
 	cs := Configs{}.Parse("config/cabby.example.json")
 

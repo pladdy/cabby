@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"strconv"
+	"strings"
 
 	"github.com/gofrs/uuid"
 	"github.com/pladdy/stones"
@@ -85,7 +87,7 @@ type CollectionsInAPIRoot struct {
 // CollectionService interface for interacting with data store
 type CollectionService interface {
 	Collection(user, apiRoot, collectionID string) (Collection, error)
-	Collections(user, apiRoot string) (Collections, error)
+	Collections(user, apiRoot string, cr *Range) (Collections, error)
 	CollectionsInAPIRoot(apiRoot string) (CollectionsInAPIRoot, error)
 }
 
@@ -230,12 +232,66 @@ type ObjectService interface {
 	Objects(collectionID string) ([]Object, error)
 }
 
-// Result struct for data returned from backend
-type Result struct {
-	Data      interface{}
-	ItemStart int64
-	ItemEnd   int64
-	Items     int64
+// Range is used for paginated requests to represent the requested data range
+type Range struct {
+	First int64
+	Last  int64
+	Total int64
+}
+
+// NewRange returns a Range given a string from the 'Range' HTTP header string
+// the Range HTTP Header is specified by the request with the syntax 'items X-Y'
+func NewRange(items string) (r Range, err error) {
+	r = Range{First: -1, Last: -1}
+
+	if items == "" {
+		return r, err
+	}
+
+	itemDelimiter := "-"
+	raw := strings.TrimSpace(items)
+	tokens := strings.Split(raw, itemDelimiter)
+
+	if len(tokens) == 2 {
+		r.First, err = strconv.ParseInt(tokens[0], 10, 64)
+		r.Last, err = strconv.ParseInt(tokens[1], 10, 64)
+	}
+
+	if r.Valid() {
+		return r, err
+	}
+	return r, errors.New("Invalid range specified")
+}
+
+func (r *Range) String() string {
+	s := "items " +
+		strconv.FormatInt(r.First, 10) +
+		"-" +
+		strconv.FormatInt(r.Last, 10)
+
+	if r.Total > 0 {
+		s += "/" + strconv.FormatInt(r.Total, 10)
+	}
+
+	return s
+}
+
+// RangeInjector is implemented in the data store for resources that can be paginated
+type RangeInjector interface {
+	WithPagination(query string) string
+}
+
+// Valid returns whether the range is valid or not
+func (r *Range) Valid() bool {
+	if r.First < 0 || r.Last < 0 {
+		return false
+	}
+
+	if r.First > r.Last {
+		return false
+	}
+
+	return true
 }
 
 // Status represents a TAXII status object

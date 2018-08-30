@@ -30,6 +30,15 @@ func TestDataStoreClose(t *testing.T) {
 	s.Close()
 }
 
+func TestRangeInjectorWithPagination(t *testing.T) {
+	result := WithPagination("select 1")
+	expected := "select 1\nlimit ? offset ?"
+
+	if result != expected {
+		t.Error("Got:", result, "Expected:", expected)
+	}
+}
+
 func TestSQLiteBatchWriteSmall(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()

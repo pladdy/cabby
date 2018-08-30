@@ -32,7 +32,7 @@ while getopts ":c:hp:u:a" opt; do
       usage
       ;;
     p)
-      PASS=$(printf "$OPTARG" | sha256sum | cut -d '-' -f 1 | xargs)
+      PASS=$(printf "$OPTARG" | shasum -a 256 | cut -d '-' -f 1 | xargs)
       ;;
     u)
       CABBY_USER="$OPTARG"
@@ -63,21 +63,21 @@ if [ -z $PASS ]; then
   exit 1
 fi
 
-DB_PATH=$(jq .$CABBY_ENV.data_store.path $CONFIG_PATH | sed 's/"//g')
-DB_DIR=$(dirname $DB_PATH)
+DB_PATH="$(jq .$CABBY_ENV.data_store.path $CONFIG_PATH | sed 's/\"//g')"
+DB_DIR="$(dirname $DB_PATH)"
 
 mkdir -p "$DB_DIR"
 sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
 
 # set up user
 echo "Creating a user"
-sqlite3 $DB_PATH "insert into taxii_user (email) values('${CABBY_USER}')"
+sqlite3 $DB_PATH "insert into taxii_user (email) values('$CABBY_USER')"
 if [ $USER_ADMIN -eq 1 ]; then
   echo "  Making user admin"
-  sqlite3 $DB_PATH "update taxii_user set can_admin = 1 where email = '${CABBY_USER}'"
+  sqlite3 $DB_PATH "update taxii_user set can_admin = 1 where email = '$CABBY_USER'"
 fi
 
-sqlite3 $DB_PATH "insert into taxii_user_pass (email, pass) values('${CABBY_USER}', '${PASS}')"
+sqlite3 $DB_PATH "insert into taxii_user_pass (email, pass) values('$CABBY_USER', '$PASS')"
 
 # set up discovery
 sqlite3 $DB_PATH "
@@ -95,34 +95,37 @@ API_ROOT=cabby_test_root
 sqlite3 $DB_PATH "
 insert into taxii_api_root (id, api_root_path, title, description, versions, max_content_length) values (
   'testId',
-  '${API_ROOT}',
+  '$API_ROOT',
   'a title',
   'a description',
   'application/vnd.oasis.stix+json; version=2.0',
   8388608 /* 8 MB */
 )"
 
-# set up collection
-echo "Creating a collection"
-COLLECTION_ID=352abc04-a474-4e22-9f4d-944ca508e68c
+# set up collections
+echo "Creating a collections"
+COLLECTION_IDS="352abc04-a474-4e22-9f4d-944ca508e68c 40aabc04-a474-4e02-cf4d-a44ca901e68c"
 
-sqlite3 $DB_PATH "
-insert into taxii_collection (id, api_root_path, title, description, media_types) values (
-  '${COLLECTION_ID}',
-  '${API_ROOT}',
-  'a test collection',
-  'a test collection description',
-  ''
-)"
+for id in $COLLECTION_IDS; do
+  echo "  Creating collection $id"
+  sqlite3 $DB_PATH "
+  insert into taxii_collection (id, api_root_path, title, description, media_types) values (
+    '$id',
+    '$API_ROOT',
+    'a test collection',
+    'a test collection description',
+    ''
+  )"
 
-echo "Associate user to collection"
-sqlite3 $DB_PATH "
-insert into taxii_user_collection (email, collection_id, can_write, can_read) values (
-  '${CABBY_USER}',
-  '${COLLECTION_ID}',
-  1,
-  1
-)"
+  echo "  Associate user to collection $id"
+  sqlite3 $DB_PATH "
+  insert into taxii_user_collection (email, collection_id, can_write, can_read) values (
+    '$CABBY_USER',
+    '$id',
+    1,
+    1
+  )"
+done
 
 if [ "$CABBY_ENV" == "production" ]; then
   echo "CABBY_ENVIRONMENT is production, changing ownership of $DB_PATH to cabby"

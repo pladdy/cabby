@@ -177,7 +177,9 @@ func mockCollectionService() tester.CollectionService {
 	cs.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
 		return tester.Collection, nil
 	}
-	cs.CollectionsFn = func(user, apiRootPath string) (cabby.Collections, error) { return tester.Collections, nil }
+	cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+		return tester.Collections, nil
+	}
 	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 		return tester.CollectionsInAPIRoot, nil
 	}

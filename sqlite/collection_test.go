@@ -3,6 +3,7 @@ package sqlite
 import (
 	"testing"
 
+	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
@@ -45,22 +46,36 @@ func TestCollectionsServiceCollections(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	expected := tester.Collection
-
-	results, err := s.Collections(tester.UserEmail, tester.APIRootPath)
-	if err != nil {
-		t.Error("Got:", err, "Expected no error")
+	// create more collections to ensure not paged by default
+	for i := 0; i < 10; i++ {
+		id, _ := cabby.NewID()
+		createCollection(ds, id.String())
 	}
 
-	if len(results.Collections) <= 0 {
-		t.Error("Got:", len(results.Collections), "Expected: > 0 Collections")
+	totalCollections := 11
+
+	tests := []struct {
+		cabbyRange          cabby.Range
+		expectedCollections int
+	}{
+		// setupSQLite creates 1 collection, 10 created above (11 total)
+		{cabby.Range{First: -1, Last: -1}, 11},
+		{cabby.Range{First: 0, Last: 5}, 6},
 	}
 
-	result := results.Collections[0]
+	for _, test := range tests {
+		results, err := s.Collections(tester.UserEmail, tester.APIRootPath, &test.cabbyRange)
+		if err != nil {
+			t.Error("Got:", err, "Expected no error")
+		}
 
-	passed := tester.CompareCollection(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
+		if len(results.Collections) != test.expectedCollections {
+			t.Error("Got:", len(results.Collections), "Expected:", test.expectedCollections)
+		}
+
+		if int(test.cabbyRange.Total) != totalCollections {
+			t.Error("Got:", test.cabbyRange.Total, "Expected:", totalCollections)
+		}
 	}
 }
 
@@ -74,7 +89,7 @@ func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Collections(tester.UserEmail, tester.APIRootPath)
+	_, err = s.Collections(tester.UserEmail, tester.APIRootPath, &cabby.Range{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

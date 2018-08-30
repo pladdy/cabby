@@ -14,7 +14,13 @@ type CollectionsHandler struct {
 
 // Get handles a get request
 func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
-	collections, err := h.CollectionService.Collections(takeUser(r), takeAPIRoot(r))
+	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	if err != nil {
+		rangeNotSatisfiable(w, err)
+		return
+	}
+
+	collections, err := h.CollectionService.Collections(takeUser(r), takeAPIRoot(r), &cr)
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -25,7 +31,12 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
+	if cr.Valid() {
+		w.Header().Set("Content-Range", cr.String())
+		writePartialContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
+	} else {
+		writeContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
+	}
 }
 
 // Post handles post request
