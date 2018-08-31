@@ -66,8 +66,8 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 
 		body, _ := ioutil.ReadAll(res.Body)
 
-		var collections cabby.Collections
-		err := json.Unmarshal([]byte(body), &collections)
+		var result cabby.Collections
+		err := json.Unmarshal([]byte(body), &result)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -76,8 +76,8 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 			t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
 		}
 
-		if len(collections.Collections) != test.expected {
-			t.Error("Got:", len(collections.Collections), "Expected:", test.expected)
+		if len(result.Collections) != test.expected {
+			t.Error("Got:", len(result.Collections), "Expected:", test.expected)
 		}
 
 		ra := cabby.Range{First: int64(test.first), Last: int64(test.last), Total: int64(test.expected)}

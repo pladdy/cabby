@@ -194,7 +194,7 @@ func mockDiscoveryService() tester.DiscoveryService {
 
 func mockManifestService() tester.ManifestService {
 	ms := tester.ManifestService{}
-	ms.ManifestFn = func(collectionID string) (cabby.Manifest, error) { return tester.Manifest, nil }
+	ms.ManifestFn = func(collectionID string, cr *cabby.Range) (cabby.Manifest, error) { return tester.Manifest, nil }
 	return ms
 }
 
@@ -204,7 +204,7 @@ func mockObjectService() tester.ObjectService {
 		tester.Info.Println("mock Creating Bundle")
 	}
 	osv.ObjectFn = func(collectionID, stixID string) (cabby.Object, error) { return tester.Object, nil }
-	osv.ObjectsFn = func(collectionID string) ([]cabby.Object, error) { return tester.Objects, nil }
+	osv.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) { return tester.Objects, nil }
 	return osv
 }
 

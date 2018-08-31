@@ -120,12 +120,12 @@ func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 
 // ManifestService is a mock implementation
 type ManifestService struct {
-	ManifestFn func(collectionID string) (cabby.Manifest, error)
+	ManifestFn func(collectionID string, cr *cabby.Range) (cabby.Manifest, error)
 }
 
 // Manifest is a mock implementation
-func (s ManifestService) Manifest(collectionID string) (cabby.Manifest, error) {
-	return s.ManifestFn(collectionID)
+func (s ManifestService) Manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+	return s.ManifestFn(collectionID, cr)
 }
 
 // ObjectService is a mock implementation
@@ -134,7 +134,7 @@ type ObjectService struct {
 	CreateBundleFn   func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
 	CreateObjectFn   func(object cabby.Object) error
 	ObjectFn         func(collectionID, objectID string) (cabby.Object, error)
-	ObjectsFn        func(collectionID string) ([]cabby.Object, error)
+	ObjectsFn        func(collectionID string, cr *cabby.Range) ([]cabby.Object, error)
 }
 
 // CreateBundle is a mock implementation
@@ -153,8 +153,8 @@ func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, erro
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
-	return s.ObjectsFn(collectionID)
+func (s ObjectService) Objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
+	return s.ObjectsFn(collectionID, cr)
 }
 
 // StatusService is a mock implementation

@@ -33,7 +33,13 @@ func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
-	objects, err := h.ObjectService.Objects(takeCollectionID(r))
+	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	if err != nil {
+		rangeNotSatisfiable(w, err)
+		return
+	}
+
+	objects, err := h.ObjectService.Objects(takeCollectionID(r), &cr)
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -50,7 +56,12 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(bundle))
+	if cr.Valid() {
+		w.Header().Set("Content-Range", cr.String())
+		writePartialContent(w, cabby.StixContentType, resourceToJSON(bundle))
+	} else {
+		writeContent(w, cabby.StixContentType, resourceToJSON(bundle))
+	}
 }
 
 func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {

@@ -14,7 +14,13 @@ type ManifestHandler struct {
 
 // Get serves a manifest resource
 func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
-	manifest, err := h.ManifestService.Manifest(takeCollectionID(r))
+	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	if err != nil {
+		rangeNotSatisfiable(w, err)
+		return
+	}
+
+	manifest, err := h.ManifestService.Manifest(takeCollectionID(r), &cr)
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -25,7 +31,12 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
+	if cr.Valid() {
+		w.Header().Set("Content-Range", cr.String())
+		writePartialContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
+	} else {
+		writeContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
+	}
 }
 
 // Post handles post request

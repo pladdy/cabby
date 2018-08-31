@@ -103,20 +103,36 @@ func TestObjectsServiceObjects(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ObjectService()
 
-	expected := tester.Object
-
-	results, err := s.Objects(expected.CollectionID.String())
-	if err != nil {
-		t.Error("Got:", err, "Expected no error")
+	// create more objects to ensure not paged by default
+	for i := 0; i < 10; i++ {
+		id, _ := cabby.NewID()
+		createObject(ds, id.String())
 	}
 
-	if len(results) <= 0 {
-		t.Error("Got:", len(results), "Expected: > 0")
+	totalObjects := 11
+
+	tests := []struct {
+		cabbyRange      cabby.Range
+		expectedObjects int
+	}{
+		// setupSQLite() creates 1 object, 10 created above (11 total)
+		{cabby.Range{First: -1, Last: -1}, 11},
+		{cabby.Range{First: 0, Last: 5}, 6},
 	}
 
-	passed := tester.CompareObject(results[0], expected)
-	if !passed {
-		t.Error("Comparison failed")
+	for _, test := range tests {
+		results, err := s.Objects(tester.Object.CollectionID.String(), &test.cabbyRange)
+		if err != nil {
+			t.Error("Got:", err, "Expected no error")
+		}
+
+		if len(results) != test.expectedObjects {
+			t.Error("Got:", len(results), "Expected:", test.expectedObjects)
+		}
+
+		if int(test.cabbyRange.Total) != totalObjects {
+			t.Error("Got:", test.cabbyRange.Total, "Expected:", totalObjects)
+		}
 	}
 }
 
@@ -132,7 +148,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Objects(expected.CollectionID.String())
+	_, err = s.Objects(expected.CollectionID.String(), &cabby.Range{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -149,7 +165,7 @@ func TestObjectServiceObjectsInvalidID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Objects("fail")
+	_, err = s.Objects("fail", &cabby.Range{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -211,8 +227,8 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 	st := tester.Status
 	osv.CreateBundle(bundle, tester.CollectionID, st, ssv)
 
-	// check objects were saved
-	result, _ := osv.Objects(tester.CollectionID)
+	// check objects were saved; use an invalid range to get all
+	result, _ := osv.Objects(tester.CollectionID, &cabby.Range{First: -1, Last: -1})
 	expected := 2
 	if len(result) != expected {
 		t.Error("Got:", len(result), "Expected:", expected)
