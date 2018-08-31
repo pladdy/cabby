@@ -7,10 +7,10 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
-	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -100,16 +100,15 @@ func (s ObjectService) object(collectionID, objectID string) (cabby.Object, erro
 }
 
 // Objects will read from the data store and return the resource
-func (s ObjectService) Objects(collectionID string) ([]cabby.Object, error) {
+func (s ObjectService) Objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
 	resource, action := "Objects", "read"
 	start := cabby.LogServiceStart(resource, action)
-	result, err := s.objects(collectionID)
+	result, err := s.objects(collectionID, cr)
 	cabby.LogServiceEnd(resource, action, start)
 	return result, err
 }
 
-func (s ObjectService) objects(collectionID string) ([]cabby.Object, error) {
-	// filtering and pagination omitted below
+func (s ObjectService) objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
 	sql := `with data as (
 						select rowid, id raw_id, type, created, modified, object, collection_id, 1 count
 						from stix_objects_data
@@ -120,22 +119,29 @@ func (s ObjectService) objects(collectionID string) ([]cabby.Object, error) {
 							$types
 							$version */
 					)
-					select raw_id, type, created, modified, object, collection_id
-					-- , (select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+					select raw_id, type, created, modified, object, collection_id, (select sum(count) from data) total
 					from data`
-	// add $paginate here
+
+	var args []interface{}
+
+	if cr.Valid() {
+		sql = WithPagination(sql)
+		args = []interface{}{collectionID, (cr.Last - cr.First) + 1, cr.First}
+	} else {
+		args = []interface{}{collectionID}
+	}
 
 	objects := []cabby.Object{}
 	var err error
 
-	rows, err := s.DB.Query(sql, collectionID)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
 		return objects, err
 	}
 
 	for rows.Next() {
 		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &cr.Total); err != nil {
 			return objects, err
 		}
 

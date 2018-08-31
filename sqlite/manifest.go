@@ -16,15 +16,15 @@ type ManifestService struct {
 }
 
 // Manifest will read from the data store and return the resource
-func (s ManifestService) Manifest(collectionID string) (cabby.Manifest, error) {
+func (s ManifestService) Manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
 	resource, action := "Manifest", "read"
 	start := cabby.LogServiceStart(resource, action)
-	result, err := s.manifest(collectionID)
+	result, err := s.manifest(collectionID, cr)
 	cabby.LogServiceEnd(resource, action, start)
 	return result, err
 }
 
-func (s ManifestService) manifest(collectionID string) (cabby.Manifest, error) {
+func (s ManifestService) manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
 	sql := `with data as (
 						select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count
 						-- media_types omitted...should that be in this table?
@@ -37,14 +37,21 @@ func (s ManifestService) manifest(collectionID string) (cabby.Manifest, error) {
 							$version */
 						group by rowid, id
 					)
-					select id, date_added, versions
-					--(select min(rowid) from data), (select max(rowid) from data), (select sum(count) from data)
+					select id, date_added, versions, (select sum(count) from data) total
 					from data`
-	//$paginate`
+
+	var args []interface{}
+
+	if cr.Valid() {
+		sql = WithPagination(sql)
+		args = []interface{}{collectionID, (cr.Last - cr.First) + 1, cr.First}
+	} else {
+		args = []interface{}{collectionID}
+	}
 
 	m := cabby.Manifest{}
 
-	rows, err := s.DB.Query(sql, collectionID)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
 		return m, err
 	}
@@ -53,7 +60,7 @@ func (s ManifestService) manifest(collectionID string) (cabby.Manifest, error) {
 		me := cabby.ManifestEntry{}
 		var versions string
 
-		if err := rows.Scan(&me.ID, &me.DateAdded, &versions); err != nil {
+		if err := rows.Scan(&me.ID, &me.DateAdded, &versions, &cr.Total); err != nil {
 			return m, err
 		}
 

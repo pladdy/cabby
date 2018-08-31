@@ -93,7 +93,7 @@ func createDiscovery(ds *DataStore) {
 	tx.Commit()
 }
 
-func createObject(ds *DataStore) {
+func createObject(ds *DataStore, id string) {
 	tx, err := ds.DB.Begin()
 	if err != nil {
 		tester.Error.Fatal(err)
@@ -107,7 +107,7 @@ func createObject(ds *DataStore) {
 	defer stmt.Close()
 
 	o := tester.Object
-	_, err = stmt.Exec(o.ID, o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
+	_, err = stmt.Exec(id, o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
 	if err != nil {
 		tester.Error.Fatal(err)
 	}
@@ -175,7 +175,7 @@ func setupSQLite() {
 	createDiscovery(ds)
 	createAPIRoot(ds)
 	createCollection(ds, tester.Collection.ID.String())
-	createObject(ds)
+	createObject(ds, string(tester.Object.ID))
 }
 
 func testDataStore() *DataStore {

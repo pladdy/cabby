@@ -6,7 +6,9 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"strconv"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
@@ -169,12 +171,91 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 	}
 }
 
+func TestObjectsHandlerGetObjectsRange(t *testing.T) {
+	tests := []struct {
+		first    int
+		last     int
+		expected int
+	}{
+		{0, 0, 1},
+		{0, 9, 10},
+	}
+
+	for _, test := range tests {
+		// set up mock service
+		obs := mockObjectService()
+		obs.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
+			objects := []cabby.Object{}
+			for i := 0; i < test.expected; i++ {
+				objects = append(objects, cabby.Object{})
+			}
+
+			cr.Total = int64(test.expected)
+			return objects, nil
+		}
+		h := ObjectsHandler{ObjectService: obs}
+
+		// set up request
+		req := withAuthentication(newRequest("GET", testObjectsURL, nil))
+		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
+
+		res := httptest.NewRecorder()
+		h.Get(res, req)
+
+		body, _ := ioutil.ReadAll(res.Body)
+
+		var result stones.Bundle
+		err := json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.Code != http.StatusPartialContent {
+			t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
+		}
+
+		if len(result.Objects) != test.expected {
+			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
+		}
+
+		ra := cabby.Range{First: int64(test.first), Last: int64(test.last), Total: int64(test.expected)}
+		if res.Header().Get("Content-Range") != ra.String() {
+			t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", ra.String())
+		}
+	}
+}
+
+func TestObjectsHandlerGetInvalidRange(t *testing.T) {
+	tests := []struct {
+		rangeString    string
+		expectedStatus int
+	}{
+		{"items invalid", http.StatusRequestedRangeNotSatisfiable},
+		{"items 0-0", http.StatusPartialContent},
+	}
+
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+
+	for _, test := range tests {
+		// set up request
+		req := withAuthentication(newRequest("GET", testObjectsURL, nil))
+		req.Header.Set("Range", test.rangeString)
+
+		res := httptest.NewRecorder()
+		h.Get(res, req)
+
+		if res.Code != test.expectedStatus {
+			t.Error("Got:", res.Code, "Expected:", test.expectedStatus)
+		}
+	}
+}
+
 func TestObjectsGetObjectsFailure(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string) ([]cabby.Object, error) {
+	s.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
 		return []cabby.Object{}, errors.New(expected.Description)
 	}
 
@@ -199,7 +280,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string) ([]cabby.Object, error) {
+	s.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
 		return []cabby.Object{}, nil
 	}
 

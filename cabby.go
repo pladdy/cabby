@@ -210,7 +210,7 @@ type ManifestEntry struct {
 
 // ManifestService provides manifest data
 type ManifestService interface {
-	Manifest(collectionID string) (Manifest, error)
+	Manifest(collectionID string, cr *Range) (Manifest, error)
 }
 
 // Object for STIX 2 object data
@@ -229,7 +229,7 @@ type ObjectService interface {
 	CreateBundle(b stones.Bundle, collectionID string, s Status, ss StatusService)
 	CreateObject(Object) error
 	Object(collectionID, objectID string) (Object, error)
-	Objects(collectionID string) ([]Object, error)
+	Objects(collectionID string, cr *Range) ([]Object, error)
 }
 
 // Range is used for paginated requests to represent the requested data range

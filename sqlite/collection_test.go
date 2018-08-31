@@ -58,7 +58,7 @@ func TestCollectionsServiceCollections(t *testing.T) {
 		cabbyRange          cabby.Range
 		expectedCollections int
 	}{
-		// setupSQLite creates 1 collection, 10 created above (11 total)
+		// setupSQLite() creates 1 collection, 10 created above (11 total)
 		{cabby.Range{First: -1, Last: -1}, 11},
 		{cabby.Range{First: 0, Last: 5}, 6},
 	}
