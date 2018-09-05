@@ -193,7 +193,7 @@ func (f *Filter) QueryString() (q string, args []interface{}) {
 
 /* filtering helpers */
 
-func applyFiltering(sql string, f cabby.Filter, args []interface{}) (newSQL string, newArgs []interface{}) {
+func applyFiltering(sql string, f cabby.Filter, args []interface{}) (string, []interface{}) {
 	filter := Filter{f}
 	qs, filterArgs := filter.QueryString()
 
@@ -272,8 +272,7 @@ func filterVersion(rawVersion string) (filter string, args []interface{}) {
 		}
 	}
 
-	filter = "(" + strings.Join(ors, " or ") + ")"
-	return
+	return "(" + strings.Join(ors, " or ") + ")", args
 }
 
 // Range implementation for SQLite

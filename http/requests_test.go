@@ -128,7 +128,7 @@ func TestTakeMatchVersions(t *testing.T) {
 
 func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
 	// create a request with a valid context BUT a path with an invalid collection in it
-	request := withAuthentication(httptest.NewRequest("GET", "/foo/bar/baz", nil))
+	request := withUser(httptest.NewRequest("GET", "/foo/bar/baz", nil), tester.User)
 
 	ca := takeCollectionAccess(request)
 	empty := cabby.CollectionAccess{}
@@ -163,7 +163,7 @@ func TestTakeUser(t *testing.T) {
 		request *http.Request
 		user    string
 	}{
-		{withAuthentication(httptest.NewRequest("GET", "/foo", nil)), tester.UserEmail},
+		{withUser(httptest.NewRequest("GET", "/foo", nil), tester.User), tester.UserEmail},
 		{httptest.NewRequest("GET", "/foo", nil), ""},
 	}
 
@@ -180,7 +180,7 @@ func TestUserExists(t *testing.T) {
 		request  *http.Request
 		expected bool
 	}{
-		{withAuthentication(httptest.NewRequest("GET", "/", nil)), true},
+		{withUser(httptest.NewRequest("GET", "/", nil), tester.User), true},
 		{httptest.NewRequest("GET", "/", nil), false},
 	}
 

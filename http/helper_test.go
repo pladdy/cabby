@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"errors"
 	"io"
@@ -75,7 +74,8 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	return callHandler(h, withAuthentication(newRequest(method, url, b)))
+	//return callHandler(h, withAuthentication(newRequest(method, url, b)))
+	return callHandler(h, withUser(newRequest(method, url, b), tester.User))
 }
 
 func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
@@ -119,6 +119,18 @@ func testHandlerFunc(testName string) http.Handler {
 	})
 }
 
+func testErrorLog(result requestLog, t *testing.T) {
+	if len(result.Time) <= 0 {
+		t.Error("Got:", result.Time, "Expected: a time")
+	}
+	if result.Level != "error" {
+		t.Error("Got:", result.Level, "Expected: info")
+	}
+	if len(result.Msg) <= 0 {
+		t.Error("Got:", result.Msg, "Expected: a message")
+	}
+}
+
 func testRequestLog(result requestLog, t *testing.T) {
 	if len(result.Time) <= 0 {
 		t.Error("Got:", result.Time, "Expected: a time")
@@ -150,14 +162,6 @@ func tlsClient() *http.Client {
 	}
 	tr := &http.Transport{TLSClientConfig: tlsConfig}
 	return &http.Client{Transport: tr}
-}
-
-// create a context for the testUser and give it read/write access to the test collection
-func withAuthentication(r *http.Request) *http.Request {
-	ctx := context.WithValue(context.Background(), userName, tester.UserEmail)
-	ctx = context.WithValue(ctx, canAdmin, true)
-	ctx = context.WithValue(ctx, collectionAccessList, tester.UserCollectionList.CollectionAccessList)
-	return r.WithContext(ctx)
 }
 
 /* mock services */

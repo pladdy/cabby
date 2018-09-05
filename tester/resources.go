@@ -82,8 +82,10 @@ var (
 	Status = status()
 	// User mock
 	User = cabby.User{
-		Email:    UserEmail,
-		CanAdmin: true}
+		Email:                UserEmail,
+		CanAdmin:             true,
+		CollectionAccessList: userCollectionList().CollectionAccessList,
+	}
 	// UserCollectionList mock
 	UserCollectionList = userCollectionList()
 )

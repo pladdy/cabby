@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
@@ -15,12 +16,14 @@ import (
 type key int
 
 const (
-	userName             key = 0
-	collectionAccessList key = 1
-	requestRange         key = 2
-	canAdmin             key = 3
-	jsonContentType          = "application/json"
-	sixMonthsOfSeconds       = "63072000"
+	keyCanAdmin             key = 0
+	keyCollectionAccessList key = 1
+	keyRequestRange         key = 2
+	keyTransactionID        key = 3
+	keyUserName             key = 4
+	defaultVersion              = "last"
+	jsonContentType             = "application/json"
+	sixMonthsOfSeconds          = "63072000"
 )
 
 func getToken(s string, i int) string {
@@ -42,7 +45,11 @@ func newFilter(r *http.Request) (f cabby.Filter) {
 	f.AddedAfter = takeAddedAfter(r)
 	f.IDs = takeMatchIDs(r)
 	f.Types = takeMatchTypes(r)
+
 	f.Versions = takeMatchVersions(r)
+	if f.Versions == "" {
+		f.Versions = defaultVersion
+	}
 	return
 }
 
@@ -73,7 +80,7 @@ func takeAPIRoot(r *http.Request) string {
 
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 	// get collection access map from context
-	ca, ok := r.Context().Value(collectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
+	ca, ok := r.Context().Value(keyCollectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
 	if !ok {
 		log.WithFields(log.Fields{
 			"user":         takeUser(r),
@@ -132,7 +139,7 @@ func takeMatchVersions(r *http.Request) string {
 }
 
 func takeUser(r *http.Request) string {
-	user, ok := r.Context().Value(userName).(string)
+	user, ok := r.Context().Value(keyUserName).(string)
 	if !ok {
 		return ""
 	}
@@ -151,7 +158,7 @@ func trimSlashes(s string) string {
 }
 
 func userExists(r *http.Request) bool {
-	_, ok := r.Context().Value(userName).(string)
+	_, ok := r.Context().Value(keyUserName).(string)
 	return ok
 }
 
@@ -168,10 +175,16 @@ func userExists(r *http.Request) bool {
 // 	return true
 // }
 
+func withTransactionID(r *http.Request, transactionID uuid.UUID) *http.Request {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, keyTransactionID, transactionID)
+	return r.WithContext(ctx)
+}
+
 func withUser(r *http.Request, u cabby.User) *http.Request {
-	ctx := context.WithValue(context.Background(), userName, u.Email)
-	ctx = context.WithValue(ctx, canAdmin, u.CanAdmin)
-	ctx = context.WithValue(ctx, collectionAccessList, u.CollectionAccessList)
+	ctx := context.WithValue(context.Background(), keyUserName, u.Email)
+	ctx = context.WithValue(ctx, keyCanAdmin, u.CanAdmin)
+	ctx = context.WithValue(ctx, keyCollectionAccessList, u.CollectionAccessList)
 	return r.WithContext(ctx)
 }
 

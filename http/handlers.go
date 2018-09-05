@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
@@ -82,12 +83,15 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 func withRequestLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		milliSecondOfNanoSeconds := int64(1000000)
+		transactionID := uuid.Must(uuid.NewV4())
+		r = withTransactionID(r, transactionID)
 
 		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{
-			"method":   r.Method,
-			"start_ts": start.UnixNano() / milliSecondOfNanoSeconds,
-			"url":      r.URL.String(),
+			"method":         r.Method,
+			"start_ms":       start.UnixNano() / milliSecondOfNanoSeconds,
+			"transaction_id": transactionID,
+			"url":            r.URL.String(),
 		}).Info("Request received")
 
 		h.ServeHTTP(w, r)
@@ -96,11 +100,12 @@ func withRequestLogging(h http.Handler) http.Handler {
 		elapsed := time.Since(start)
 
 		log.WithFields(log.Fields{
-			"elapsed_ts": float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
-			"method":     r.Method,
-			"end_ts":     end.UnixNano() / milliSecondOfNanoSeconds,
-			"url":        r.URL.String(),
-		}).Info("Request returned")
+			"elapsed_ts":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
+			"method":         r.Method,
+			"end_ms":         end.UnixNano() / milliSecondOfNanoSeconds,
+			"transaction_id": transactionID,
+			"url":            r.URL.String(),
+		}).Info("Request served")
 	})
 }
 
