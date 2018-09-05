@@ -323,7 +323,6 @@ func TestUpdateStatus(t *testing.T) {
 	ss := ds.StatusService()
 
 	// assumptions:
-	//   - a status is already created for a user
 	//   - a user posted a bundle of 3 objects
 	expected := tester.Status
 	expected.ID, _ = cabby.NewID()
@@ -335,18 +334,29 @@ func TestUpdateStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// check the pending status
+	result, _ := ss.Status(expected.ID.String())
+	passed := tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
 	// assume one object failed to write
 	errs := make(chan error, 10)
 	errs <- errors.New("an error")
 	close(errs)
+
+	// updating implies complete
 	updateStatus(expected, errs, ss)
 
-	expected.PendingCount = 2
 	expected.FailureCount = 1
+	expected.PendingCount = 0
+	expected.SuccessCount = 2
+	expected.Status = "complete"
 
 	// query the status to confirm it's accurate
-	result, _ := ss.Status(expected.ID.String())
-	passed := tester.CompareStatus(result, expected)
+	result, _ = ss.Status(expected.ID.String())
+	passed = tester.CompareStatus(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}

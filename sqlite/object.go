@@ -181,5 +181,6 @@ func updateStatus(st cabby.Status, errs chan error, ss cabby.StatusService) {
 	}
 
 	st.FailureCount = failures
+	st.SuccessCount = st.TotalCount - failures
 	ss.UpdateStatus(st)
 }
