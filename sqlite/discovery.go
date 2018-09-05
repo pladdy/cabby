@@ -5,6 +5,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -38,8 +39,10 @@ func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 
 	rows, err := s.DB.Query(sql)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return d, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var apiRoot string
