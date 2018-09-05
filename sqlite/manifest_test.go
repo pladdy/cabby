@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"strings"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
@@ -14,7 +15,7 @@ func TestManifestServiceManifest(t *testing.T) {
 
 	expected := tester.ManifestEntry
 
-	result, err := s.Manifest(tester.CollectionID, &cabby.Range{})
+	result, err := s.Manifest(tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -22,6 +23,42 @@ func TestManifestServiceManifest(t *testing.T) {
 	passed := tester.CompareManifestEntry(result.Objects[0], expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestManifestServiceManifestFilter(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ManifestService()
+
+	// create more objects to ensure not paged by default
+	ids := []cabby.ID{}
+	for i := 0; i < 10; i++ {
+		id, _ := cabby.NewID()
+		ids = append(ids, id)
+		createObject(ds, id.String())
+	}
+
+	tests := []struct {
+		filter          cabby.Filter
+		expectedEntries int
+	}{
+		{cabby.Filter{}, 11},
+		{cabby.Filter{Types: "foo"}, 0},
+		{cabby.Filter{Types: "foo,malware"}, 11},
+		{cabby.Filter{IDs: ids[0].String()}, 1},
+		{cabby.Filter{IDs: strings.Join([]string{ids[0].String(), ids[4].String(), ids[8].String()}, ",")}, 3},
+	}
+
+	for _, test := range tests {
+		results, err := s.Manifest(tester.Object.CollectionID.String(), &cabby.Range{First: -1, Last: -1}, test.filter)
+		if err != nil {
+			t.Error("Got:", err, "Expected no error")
+		}
+
+		if len(results.Objects) != test.expectedEntries {
+			t.Error("Got:", len(results.Objects), "Expected:", test.expectedEntries)
+		}
 	}
 }
 
@@ -48,7 +85,7 @@ func TestManifestServiceManifestRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(tester.Object.CollectionID.String(), &test.cabbyRange)
+		results, err := s.Manifest(tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -73,7 +110,7 @@ func TestManifestServiceManifestQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Manifest(tester.CollectionID, &cabby.Range{})
+	_, err = s.Manifest(tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -84,7 +121,7 @@ func TestManifestServiceManifestNoAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ManifestService()
 
-	_, err := s.Manifest(tester.CollectionID, &cabby.Range{})
+	_, err := s.Manifest(tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}

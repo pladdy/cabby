@@ -68,83 +68,88 @@ func (s ObjectService) createObject(o cabby.Object) error {
 }
 
 // Object will read from the data store and return the resource
-func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, error) {
+func (s ObjectService) Object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
 	resource, action := "Object", "read"
 	start := cabby.LogServiceStart(resource, action)
-	result, err := s.object(collectionID, objectID)
+	result, err := s.object(collectionID, objectID, f)
 	cabby.LogServiceEnd(resource, action, start)
 	return result, err
 }
 
-func (s ObjectService) object(collectionID, objectID string) (cabby.Object, error) {
-	sql := `select id raw_id, type, created, modified, object, collection_id
-	        from stix_objects_data where collection_id = ? and id = ?`
-	// add $version into query
+func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	sql := `select id, type, created, modified, object, collection_id
+	        from stix_objects_data
+					where
+					  collection_id = ?
+						and id = ?
+						and $filter`
 
-	o := cabby.Object{}
-	var err error
-
-	rows, err := s.DB.Query(sql, collectionID, objectID)
-	if err != nil {
-		return o, err
-	}
-
-	for rows.Next() {
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
-			return o, err
-		}
-	}
-
-	err = rows.Err()
-	return o, err
-}
-
-// Objects will read from the data store and return the resource
-func (s ObjectService) Objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
-	resource, action := "Objects", "read"
-	start := cabby.LogServiceStart(resource, action)
-	result, err := s.objects(collectionID, cr)
-	cabby.LogServiceEnd(resource, action, start)
-	return result, err
-}
-
-func (s ObjectService) objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
-	sql := `with data as (
-						select rowid, id raw_id, type, created, modified, object, collection_id, 1 count
-						from stix_objects_data
-						where
-							collection_id = ?
-							/* $addedAfter
-							$id
-							$types
-							$version */
-					)
-					select raw_id, type, created, modified, object, collection_id, (select sum(count) from data) total
-					from data`
-
-	var args []interface{}
-
-	if cr.Valid() {
-		sql = WithPagination(sql)
-		args = []interface{}{collectionID, (cr.Last - cr.First) + 1, cr.First}
-	} else {
-		args = []interface{}{collectionID}
-	}
+	args := []interface{}{collectionID, objectID}
+	sql, args = applyFiltering(sql, f, args)
 
 	objects := []cabby.Object{}
 	var err error
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return objects, err
 	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var o cabby.Object
+		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+			return objects, err
+		}
+		objects = append(objects, o)
+	}
+
+	err = rows.Err()
+	return objects, err
+}
+
+// Objects will read from the data store and return the resource
+func (s ObjectService) Objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	resource, action := "Objects", "read"
+	start := cabby.LogServiceStart(resource, action)
+	result, err := s.objects(collectionID, cr, f)
+	cabby.LogServiceEnd(resource, action, start)
+	return result, err
+}
+
+func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	sql := `with data as (
+						select rowid, id, type, created, modified, object, collection_id, 1 count
+						from stix_objects_data
+						where
+							collection_id = ?
+							and $filter
+					)
+					select id, type, created, modified, object, collection_id, (select sum(count) from data) total
+					from data
+					$paginate`
+
+	args := []interface{}{collectionID}
+
+	sql, args = applyFiltering(sql, f, args)
+	sql, args = applyPaging(sql, cr, args)
+
+	objects := []cabby.Object{}
+	var err error
+
+	rows, err := s.DB.Query(sql, args...)
+	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		return objects, err
+	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var o cabby.Object
 		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &cr.Total); err != nil {
 			return objects, err
 		}
-
 		objects = append(objects, o)
 	}
 

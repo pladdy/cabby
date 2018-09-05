@@ -6,6 +6,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -16,45 +17,41 @@ type ManifestService struct {
 }
 
 // Manifest will read from the data store and return the resource
-func (s ManifestService) Manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+func (s ManifestService) Manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	resource, action := "Manifest", "read"
 	start := cabby.LogServiceStart(resource, action)
-	result, err := s.manifest(collectionID, cr)
+	result, err := s.manifest(collectionID, cr, f)
 	cabby.LogServiceEnd(resource, action, start)
 	return result, err
 }
 
-func (s ManifestService) manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	sql := `with data as (
 						select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count
 						-- media_types omitted...should that be in this table?
 						from stix_objects_data
 						where
 							collection_id = ?
-							/* $addedAfter
-							$id
-							$types
-							$version */
+							and $filter
 						group by rowid, id
 					)
 					select id, date_added, versions, (select sum(count) from data) total
-					from data`
+					from data
+					$paginate`
 
-	var args []interface{}
+	args := []interface{}{collectionID}
 
-	if cr.Valid() {
-		sql = WithPagination(sql)
-		args = []interface{}{collectionID, (cr.Last - cr.First) + 1, cr.First}
-	} else {
-		args = []interface{}{collectionID}
-	}
+	sql, args = applyFiltering(sql, f, args)
+	sql, args = applyPaging(sql, cr, args)
 
 	m := cabby.Manifest{}
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return m, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		me := cabby.ManifestEntry{}
