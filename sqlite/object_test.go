@@ -90,10 +90,12 @@ func TestObjectServiceObjectFilter(t *testing.T) {
 	// create an object with multiple versions
 	id, _ := cabby.NewID()
 	objectID := "malware--" + id.String()
+	versions := []string{}
 
 	for i := 0; i < 5; i++ {
 		t := time.Now().UTC()
 		createObjectVersion(ds, objectID, t.Format(time.RFC3339Nano))
+		versions = append(versions, t.Format(time.RFC3339Nano))
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -109,6 +111,7 @@ func TestObjectServiceObjectFilter(t *testing.T) {
 		{cabby.Filter{Versions: "all"}, 5},
 		{cabby.Filter{Versions: "first"}, 1},
 		{cabby.Filter{Versions: "last"}, 1},
+		{cabby.Filter{Versions: versions[2]}, 1},
 	}
 
 	// use for collectionID
@@ -157,15 +160,29 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		createObject(ds, id.String())
 	}
 
+	// create an object with multiple versions
+	id, _ := cabby.NewID()
+	objectID := "malware--" + id.String()
+	versions := []string{}
+
+	for i := 0; i < 5; i++ {
+		t := time.Now().UTC()
+		createObjectVersion(ds, objectID, t.Format(time.RFC3339Nano))
+		versions = append(versions, t.Format(time.RFC3339Nano))
+		time.Sleep(100 * time.Millisecond)
+	}
+
 	tests := []struct {
 		filter          cabby.Filter
 		expectedObjects int
 	}{
-		{cabby.Filter{}, 11},
+		{cabby.Filter{}, 16},
 		{cabby.Filter{Types: "foo"}, 0},
-		{cabby.Filter{Types: "foo,malware"}, 11},
+		{cabby.Filter{Types: "foo,malware"}, 16},
 		{cabby.Filter{IDs: ids[0].String()}, 1},
 		{cabby.Filter{IDs: strings.Join([]string{ids[0].String(), ids[4].String(), ids[8].String()}, ",")}, 3},
+		{cabby.Filter{Versions: versions[2]}, 1},
+		{cabby.Filter{AddedAfter: versions[0]}, 5},
 	}
 
 	for _, test := range tests {

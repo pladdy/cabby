@@ -211,8 +211,8 @@ func applyFiltering(sql string, f cabby.Filter, args []interface{}) (newSQL stri
 func filterAddedAfter(addedAfter string) (string, []interface{}) {
 	filter := `(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', created_at))
 					     + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', created_at))) * 1000 >
-				   	 (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '?'))
-				  		 + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '?'))) * 1000`
+				   	 (strftime('%s', strftime('%Y-%m-%d %H:%M:%f', ?))
+				  		 + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', ?))) * 1000`
 	return filter, []interface{}{addedAfter, addedAfter}
 }
 
@@ -249,12 +249,10 @@ func filterRemoveTrailingAnd(sql string) string {
 func filterVersion(rawVersion string) (filter string, args []interface{}) {
 	versionFilterSQL := `(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', modified))
 		+ strftime('%f', strftime('%Y-%m-%d %H:%M:%f', modified))) * 1000 =
-	(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', '?'))
-		+ strftime('%f', strftime('%Y-%m-%d %H:%M:%f', '?'))) * 1000`
+	(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', ?))
+		+ strftime('%f', strftime('%Y-%m-%d %H:%M:%f', ?))) * 1000`
 
 	versions := strings.Split(rawVersion, ",")
-
-	filter = "("
 	var ors []string
 
 	for _, v := range versions {
@@ -274,7 +272,7 @@ func filterVersion(rawVersion string) (filter string, args []interface{}) {
 		}
 	}
 
-	filter = filter + strings.Join(ors, " or ") + ")"
+	filter = "(" + strings.Join(ors, " or ") + ")"
 	return
 }
 
