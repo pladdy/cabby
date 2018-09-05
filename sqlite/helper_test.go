@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/pladdy/cabby2/tester"
 )
@@ -108,6 +109,29 @@ func createObject(ds *DataStore, id string) {
 
 	o := tester.Object
 	_, err = stmt.Exec(id, o.Type, o.Created, o.Modified, string(o.Object), o.CollectionID.String())
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+	tx.Commit()
+}
+
+func createObjectVersion(ds *DataStore, id, version string) {
+	tx, err := ds.DB.Begin()
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+
+	stmt, err := tx.Prepare(`insert into stix_objects (id, type, created, modified, object, collection_id)
+								           values (?, ?, ?, ?, ?, ?)`)
+	if err != nil {
+		tester.Error.Fatal(err)
+	}
+	defer stmt.Close()
+
+	o := tester.Object
+	t := time.Now().UTC()
+
+	_, err = stmt.Exec(id, o.Type, t.Format(time.RFC3339Nano), version, string(o.Object), o.CollectionID.String())
 	if err != nil {
 		tester.Error.Fatal(err)
 	}

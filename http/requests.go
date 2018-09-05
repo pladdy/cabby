@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/gofrs/uuid"
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
@@ -14,12 +16,14 @@ import (
 type key int
 
 const (
-	userName             key = 0
-	collectionAccessList key = 1
-	requestRange         key = 2
-	canAdmin             key = 3
-	jsonContentType          = "application/json"
-	sixMonthsOfSeconds       = "63072000"
+	keyCanAdmin             key = 0
+	keyCollectionAccessList key = 1
+	keyRequestRange         key = 2
+	keyTransactionID        key = 3
+	keyUserName             key = 4
+	defaultVersion              = "last"
+	jsonContentType             = "application/json"
+	sixMonthsOfSeconds          = "63072000"
 )
 
 func getToken(s string, i int) string {
@@ -37,17 +41,29 @@ func lastURLPathToken(u string) string {
 	return tokens[len(tokens)-1]
 }
 
-// func takeAddedAfter(r *http.Request) string {
-// 	af := r.URL.Query()["added_after"]
-//
-// 	if len(af) > 0 {
-// 		t, err := time.Parse(time.RFC3339Nano, af[0])
-// 		if err == nil {
-// 			return t.Format(time.RFC3339Nano)
-// 		}
-// 	}
-// 	return ""
-// }
+func newFilter(r *http.Request) (f cabby.Filter) {
+	f.AddedAfter = takeAddedAfter(r)
+	f.IDs = takeMatchIDs(r)
+	f.Types = takeMatchTypes(r)
+
+	f.Versions = takeMatchVersions(r)
+	if f.Versions == "" {
+		f.Versions = defaultVersion
+	}
+	return
+}
+
+func takeAddedAfter(r *http.Request) string {
+	af := r.URL.Query()["added_after"]
+
+	if len(af) > 0 {
+		t, err := time.Parse(time.RFC3339Nano, af[0])
+		if err == nil {
+			return t.Format(time.RFC3339Nano)
+		}
+	}
+	return ""
+}
 
 func takeAPIRoot(r *http.Request) string {
 	var apiRootIndex = 1
@@ -64,7 +80,7 @@ func takeAPIRoot(r *http.Request) string {
 
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 	// get collection access map from context
-	ca, ok := r.Context().Value(collectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
+	ca, ok := r.Context().Value(keyCollectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
 	if !ok {
 		log.WithFields(log.Fields{
 			"user":         takeUser(r),
@@ -96,55 +112,39 @@ func takeObjectID(r *http.Request) string {
 	return getToken(r.URL.Path, objectIDIndex)
 }
 
-// func takeRequestRange(r *http.Request) taxiiRange {
-// 	ctx := r.Context()
-//
-// 	tr, ok := ctx.Value(requestRange).(taxiiRange)
-// 	if !ok {
-// 		return taxiiRange{}
-// 	}
-// 	return tr
-// }
-
 func takeStatusID(r *http.Request) string {
 	var statusIndex = 3
 	return getToken(r.URL.Path, statusIndex)
 }
 
-// func takeStixID(r *http.Request) string {
-// 	si := r.URL.Query()["match[id]"]
-//
-// 	if len(si) > 0 {
-// 		return si[0]
-// 	}
-// 	return ""
-// }
-//
-// func takeStixTypes(r *http.Request) []string {
-// 	st := r.URL.Query()["match[type]"]
-//
-// 	if len(st) > 0 {
-// 		return strings.Split(st[0], ",")
-// 	}
-// 	return []string{}
-// }
+func takeMatchFilters(r *http.Request, filter string) string {
+	filters := r.URL.Query()[filter]
+
+	if len(filters) > 0 {
+		return strings.Join(filters, ",")
+	}
+	return ""
+}
+
+func takeMatchIDs(r *http.Request) string {
+	return takeMatchFilters(r, "match[id]")
+}
+
+func takeMatchTypes(r *http.Request) string {
+	return takeMatchFilters(r, "match[type]")
+}
+
+func takeMatchVersions(r *http.Request) string {
+	return takeMatchFilters(r, "match[version]")
+}
 
 func takeUser(r *http.Request) string {
-	user, ok := r.Context().Value(userName).(string)
+	user, ok := r.Context().Value(keyUserName).(string)
 	if !ok {
 		return ""
 	}
 	return user
 }
-
-// func takeVersion(r *http.Request) string {
-// 	v := r.URL.Query()["match[version]"]
-//
-// 	if len(v) > 0 {
-// 		return v[0]
-// 	}
-// 	return ""
-// }
 
 func trimSlashes(s string) string {
 	re := regexp.MustCompile("^/")
@@ -158,11 +158,8 @@ func trimSlashes(s string) string {
 }
 
 func userExists(r *http.Request) bool {
-	_, ok := r.Context().Value(userName).(string)
-	if !ok {
-		return false
-	}
-	return true
+	_, ok := r.Context().Value(keyUserName).(string)
+	return ok
 }
 
 // func userAuthorized(w http.ResponseWriter, r *http.Request) bool {
@@ -178,15 +175,16 @@ func userExists(r *http.Request) bool {
 // 	return true
 // }
 
-// func withTaxiiRange(r *http.Request, tr taxiiRange) *http.Request {
-// 	ctx := context.WithValue(r.Context(), requestRange, tr)
-// 	return r.WithContext(ctx)
-// }
+func withTransactionID(r *http.Request, transactionID uuid.UUID) *http.Request {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, keyTransactionID, transactionID)
+	return r.WithContext(ctx)
+}
 
 func withUser(r *http.Request, u cabby.User) *http.Request {
-	ctx := context.WithValue(context.Background(), userName, u.Email)
-	ctx = context.WithValue(ctx, canAdmin, u.CanAdmin)
-	ctx = context.WithValue(ctx, collectionAccessList, u.CollectionAccessList)
+	ctx := context.WithValue(context.Background(), keyUserName, u.Email)
+	ctx = context.WithValue(ctx, keyCanAdmin, u.CanAdmin)
+	ctx = context.WithValue(ctx, keyCollectionAccessList, u.CollectionAccessList)
 	return r.WithContext(ctx)
 }
 

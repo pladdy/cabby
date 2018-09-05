@@ -7,6 +7,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -45,8 +46,10 @@ func (s UserService) user(user, password string) (cabby.User, error) {
 
 	rows, err := s.DB.Query(sql, user, hash(password))
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return u, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&u.Email, &u.CanAdmin); err != nil {
@@ -79,8 +82,10 @@ func (s UserService) userCollections(user string) (cabby.UserCollectionList, err
 
 	rows, err := s.DB.Query(sql, user)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return ucl, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var ca cabby.CollectionAccess

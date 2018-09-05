@@ -5,6 +5,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -49,8 +50,10 @@ func (s StatusService) status(statusID string) (cabby.Status, error) {
 
 	rows, err := s.DB.Query(sql, statusID)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return st, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(

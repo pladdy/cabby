@@ -6,6 +6,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -33,8 +34,10 @@ func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 
 	rows, err := s.DB.Query(sql, path)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return a, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var versions string

@@ -47,7 +47,7 @@ func TestManifestHandlerGetRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		ms := mockManifestService()
-		ms.ManifestFn = func(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+		ms.ManifestFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 			manifest := cabby.Manifest{}
 			for i := 0; i < test.expected; i++ {
 				manifest.Objects = append(manifest.Objects, cabby.ManifestEntry{})
@@ -59,7 +59,7 @@ func TestManifestHandlerGetRange(t *testing.T) {
 		h := ManifestHandler{ManifestService: ms}
 
 		// set up request
-		req := withAuthentication(newRequest("GET", testManifestURL, nil))
+		req := withUser(newRequest("GET", testManifestURL, nil), tester.User)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -101,7 +101,7 @@ func TestManifestHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := withAuthentication(newRequest("GET", testManifestURL, nil))
+		req := withUser(newRequest("GET", testManifestURL, nil), tester.User)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -118,7 +118,7 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}
 
 	ms := mockManifestService()
-	ms.ManifestFn = func(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+	ms.ManifestFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 		return cabby.Manifest{}, errors.New(expected.Description)
 	}
 
@@ -143,7 +143,7 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 
 func TestManifestHandlerGetNoManifest(t *testing.T) {
 	ms := mockManifestService()
-	ms.ManifestFn = func(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
+	ms.ManifestFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 		return cabby.Manifest{}, nil
 	}
 

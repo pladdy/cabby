@@ -6,6 +6,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -37,6 +38,7 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 
 	rows, err := s.DB.Query(sql, user, apiRootPath, collectionID)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return c, err
 	}
 	defer rows.Close()
@@ -80,22 +82,17 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 				  )
 				  select
 					  id, title, description, can_read, can_write, media_types, (select sum(count) from data) total
-				  from data`
+				  from data
+					$paginate`
 
-	var args []interface{}
-
-	if cr.Valid() {
-		sql = WithPagination(sql)
-		args = []interface{}{user, apiRootPath, (cr.Last - cr.First) + 1, cr.First}
-	} else {
-		args = []interface{}{user, apiRootPath}
-	}
-
+	args := []interface{}{user, apiRootPath}
+	sql, args = applyPaging(sql, cr, args)
 	cs := cabby.Collections{}
 	var err error
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
+		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
 		return cs, err
 	}
 	defer rows.Close()
