@@ -141,7 +141,7 @@ func TestSetupServerLogging(t *testing.T) {
 	}
 
 	if result.Port != "1234" {
-		t.Error("Got:", result.Port, "Expected:", "1234")
+		t.Error("Got:", result.Port, "Expected:", "1234", "Log:", result)
 	}
 }
 
