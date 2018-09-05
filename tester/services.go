@@ -120,12 +120,12 @@ func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
 
 // ManifestService is a mock implementation
 type ManifestService struct {
-	ManifestFn func(collectionID string, cr *cabby.Range) (cabby.Manifest, error)
+	ManifestFn func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error)
 }
 
 // Manifest is a mock implementation
-func (s ManifestService) Manifest(collectionID string, cr *cabby.Range) (cabby.Manifest, error) {
-	return s.ManifestFn(collectionID, cr)
+func (s ManifestService) Manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	return s.ManifestFn(collectionID, cr, f)
 }
 
 // ObjectService is a mock implementation
@@ -133,8 +133,8 @@ type ObjectService struct {
 	MaxContentLength int64
 	CreateBundleFn   func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
 	CreateObjectFn   func(object cabby.Object) error
-	ObjectFn         func(collectionID, objectID string) (cabby.Object, error)
-	ObjectsFn        func(collectionID string, cr *cabby.Range) ([]cabby.Object, error)
+	ObjectFn         func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error)
+	ObjectsFn        func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error)
 }
 
 // CreateBundle is a mock implementation
@@ -148,13 +148,13 @@ func (s ObjectService) CreateObject(object cabby.Object) error {
 }
 
 // Object is a mock implementation
-func (s ObjectService) Object(collectionID, objectID string) (cabby.Object, error) {
-	return s.ObjectFn(collectionID, objectID)
+func (s ObjectService) Object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	return s.ObjectFn(collectionID, objectID, f)
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
-	return s.ObjectsFn(collectionID, cr)
+func (s ObjectService) Objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	return s.ObjectsFn(collectionID, cr, f)
 }
 
 // StatusService is a mock implementation

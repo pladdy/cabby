@@ -157,6 +157,14 @@ type Error struct {
 	Details         map[string]string `json:"details,omitempty"`
 }
 
+// Filter for filtering results based on URL parameters
+type Filter struct {
+	AddedAfter string
+	IDs        string
+	Types      string
+	Versions   string
+}
+
 // ID for taxii resources
 type ID struct {
 	uuid.UUID
@@ -210,11 +218,11 @@ type ManifestEntry struct {
 
 // ManifestService provides manifest data
 type ManifestService interface {
-	Manifest(collectionID string, cr *Range) (Manifest, error)
+	Manifest(collectionID string, cr *Range, f Filter) (Manifest, error)
 }
 
 // Object for STIX 2 object data
-// TODO: this should be in stones; needs validation too
+// TODO: this should be in stones; needs validation too (in stones)
 type Object struct {
 	ID           stones.ID `json:"id"`
 	Type         string    `json:"type"`
@@ -228,8 +236,8 @@ type Object struct {
 type ObjectService interface {
 	CreateBundle(b stones.Bundle, collectionID string, s Status, ss StatusService)
 	CreateObject(Object) error
-	Object(collectionID, objectID string) (Object, error)
-	Objects(collectionID string, cr *Range) ([]Object, error)
+	Object(collectionID, objectID string, f Filter) ([]Object, error)
+	Objects(collectionID string, cr *Range, f Filter) ([]Object, error)
 }
 
 // Range is used for paginated requests to represent the requested data range

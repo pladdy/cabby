@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -50,7 +51,6 @@ func TestGreaterThan(t *testing.T) {
 
 func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	expected := tester.Object
 
 	// call handler for object
 	status, body := handlerTest(h.Get, "GET", testObjectURL, nil)
@@ -59,11 +59,24 @@ func TestObjectsHandlerGet(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var object cabby.Object
-	err := json.Unmarshal([]byte(body), &object)
+	expected := tester.Object
+	// objects are returned as bundles; collection ids are not defined in the bundle
+	expected.CollectionID = cabby.ID{}
+	expected.Object = nil
+
+	// parse the bundle for an object
+	var bundle stones.Bundle
+	err := json.Unmarshal([]byte(body), &bundle)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	var object cabby.Object
+	err = json.Unmarshal(bundle.Objects[0], &object)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(object)
 
 	passed := tester.CompareObject(object, expected)
 	if !passed {
@@ -77,8 +90,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	// parse the bundle
-	var bundle stones.Bundle
+	// parse the bundle for objects
 	err = json.Unmarshal([]byte(body), &bundle)
 	if err != nil {
 		t.Fatal(err)
@@ -101,8 +113,8 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectFn = func(collectionID, objectID string) (cabby.Object, error) {
-		return cabby.Object{}, errors.New(expected.Description)
+	s.ObjectFn = func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+		return []cabby.Object{}, errors.New(expected.Description)
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -126,8 +138,8 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectFn = func(collectionID, objectID string) (cabby.Object, error) {
-		return cabby.Object{}, nil
+	s.ObjectFn = func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+		return []cabby.Object{}, nil
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -144,7 +156,7 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	}
 
 	expected := tester.ErrorResourceNotFound
-	expected.Description = "Object ID doesn't exist in this collection"
+	expected.Description = "No objects defined in this collection"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
@@ -184,7 +196,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		obs := mockObjectService()
-		obs.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
+		obs.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 			objects := []cabby.Object{}
 			for i := 0; i < test.expected; i++ {
 				objects = append(objects, cabby.Object{})
@@ -255,7 +267,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
+	s.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, errors.New(expected.Description)
 	}
 
@@ -280,7 +292,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string, cr *cabby.Range) ([]cabby.Object, error) {
+	s.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, nil
 	}
 

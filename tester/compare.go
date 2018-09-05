@@ -197,20 +197,15 @@ func CompareStatus(result, expected cabby.Status) bool {
 		passed = false
 	}
 
-	// successes
-	if result.SuccessCount != expected.SuccessCount {
-		Error.Println("Got:", result.SuccessCount, "Expected:", expected.SuccessCount)
-		passed = false
-	}
+	passed = compareFailures(result, expected, passed)
+	passed = comparePendings(result, expected, passed)
+	passed = compareSuccesses(result, expected, passed)
+	return passed
+}
 
-	for i := 0; i < len(result.Successes); i++ {
-		if result.Successes[i] != expected.Successes[i] {
-			Error.Println("Got:", result.Successes[i], "Expected:", expected.Successes[i])
-			passed = false
-		}
-	}
+/* compareStatus helpers */
 
-	// failures
+func compareFailures(result, expected cabby.Status, passed bool) bool {
 	if result.FailureCount != expected.FailureCount {
 		Error.Println("Got:", result.FailureCount, "Expected:", expected.FailureCount)
 		passed = false
@@ -223,7 +218,10 @@ func CompareStatus(result, expected cabby.Status) bool {
 		}
 	}
 
-	// pendings
+	return passed
+}
+
+func comparePendings(result, expected cabby.Status, passed bool) bool {
 	if result.PendingCount != expected.PendingCount {
 		Error.Println("Got:", result.PendingCount, "Expected:", expected.PendingCount)
 		passed = false
@@ -236,5 +234,20 @@ func CompareStatus(result, expected cabby.Status) bool {
 		}
 	}
 
+	return passed
+}
+
+func compareSuccesses(result, expected cabby.Status, passed bool) bool {
+	if result.SuccessCount != expected.SuccessCount {
+		Error.Println("Got:", result.SuccessCount, "Expected:", expected.SuccessCount)
+		passed = false
+	}
+
+	for i := 0; i < len(result.Successes); i++ {
+		if result.Successes[i] != expected.Successes[i] {
+			Error.Println("Got:", result.Successes[i], "Expected:", expected.Successes[i])
+			passed = false
+		}
+	}
 	return passed
 }
