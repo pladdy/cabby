@@ -18,7 +18,7 @@ type DiscoveryHandler struct {
 
 // Get serves a discovery resource
 func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
-	discovery, err := h.DiscoveryService.Discovery()
+	discovery, err := h.DiscoveryService.Discovery(r.Context())
 	if err != nil {
 		internalServerError(w, err)
 		return

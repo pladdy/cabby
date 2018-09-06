@@ -37,7 +37,7 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	objects, err := h.ObjectService.Objects(takeCollectionID(r), &cr, newFilter(r))
+	objects, err := h.ObjectService.Objects(r.Context(), takeCollectionID(r), &cr, newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -63,7 +63,7 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
-	objects, err := h.ObjectService.Object(takeCollectionID(r), takeObjectID(r), newFilter(r))
+	objects, err := h.ObjectService.Object(r.Context(), takeCollectionID(r), takeObjectID(r), newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
 		return
@@ -116,7 +116,7 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.StatusService.CreateStatus(status)
+	err = h.StatusService.CreateStatus(r.Context(), status)
 	if err != nil {
 		internalServerError(w, errors.New("Unable to store status resource"))
 		return
@@ -124,7 +124,7 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
-	go h.ObjectService.CreateBundle(bundle, takeCollectionID(r), status, h.StatusService)
+	go h.ObjectService.CreateBundle(r.Context(), bundle, takeCollectionID(r), status, h.StatusService)
 }
 
 /* helpers */

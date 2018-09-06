@@ -56,24 +56,24 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
 
-		user, err := us.User(u, p)
+		user, err := us.User(r.Context(), u, p)
 		if err != nil {
 			internalServerError(w, err)
 			return
 		}
 
-		ucs, err := us.UserCollections(u)
+		if !ok || !user.Defined() {
+			log.WithFields(log.Fields{"user": u}).Warn("User authentication failed!	")
+			unauthorized(w, errors.New("Invalid user/pass combination"))
+			return
+		}
+
+		ucs, err := us.UserCollections(r.Context(), u)
 		if err != nil {
 			internalServerError(w, err)
 			return
 		}
 		user.CollectionAccessList = ucs.CollectionAccessList
-
-		if !ok || !us.Exists(user) {
-			log.WithFields(log.Fields{"user": u}).Warn("User authentication failed!	")
-			unauthorized(w, errors.New("Invalid user/pass combination"))
-			return
-		}
 
 		log.WithFields(log.Fields{"user": u}).Info("User authenticated")
 		h.ServeHTTP(withHSTS(w), withUser(r, user))

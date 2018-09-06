@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -114,41 +115,36 @@ func TestWithAcceptType(t *testing.T) {
 
 func TestWithBasicAuth(t *testing.T) {
 	tests := []struct {
-		existsFn          func(cabby.User) bool
 		expectedStatus    int
-		userFn            func(user, password string) (cabby.User, error)
-		userCollectionsFn func(user string) (cabby.UserCollectionList, error)
+		userFn            func(ctx context.Context, user, password string) (cabby.User, error)
+		userCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
 	}{
-		{existsFn: func(cabby.User) bool { return true },
-			expectedStatus: http.StatusOK,
-			userFn: func(user, password string) (cabby.User, error) {
+		{expectedStatus: http.StatusOK,
+			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
 				return cabby.User{Email: tester.UserEmail}, nil
 			},
-			userCollectionsFn: func(user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
-		{existsFn: func(cabby.User) bool { return true },
-			expectedStatus: http.StatusInternalServerError,
-			userFn: func(user, password string) (cabby.User, error) {
+		{expectedStatus: http.StatusInternalServerError,
+			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
 				return cabby.User{}, errors.New("service error")
 			},
-			userCollectionsFn: func(user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
-		{existsFn: func(cabby.User) bool { return true },
-			expectedStatus: http.StatusInternalServerError,
-			userFn: func(user, password string) (cabby.User, error) {
+		{expectedStatus: http.StatusUnauthorized,
+			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
 				return cabby.User{}, nil
 			},
-			userCollectionsFn: func(user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, errors.New("service error")
 			}},
-		{existsFn: func(cabby.User) bool { return false },
-			expectedStatus: http.StatusUnauthorized,
-			userFn: func(user, password string) (cabby.User, error) {
+		{expectedStatus: http.StatusUnauthorized,
+			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
 				return cabby.User{}, nil
 			},
-			userCollectionsFn: func(user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
 	}
@@ -157,7 +153,6 @@ func TestWithBasicAuth(t *testing.T) {
 		// set up service
 		us := tester.UserService{}
 		us.UserFn = test.userFn
-		us.ExistsFn = test.existsFn
 		us.UserCollectionsFn = test.userCollectionsFn
 
 		// set up handler

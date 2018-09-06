@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -31,7 +32,9 @@ func TestRegisterAPIRoutesFail(t *testing.T) {
 	// mock out services and have api roots fail
 	ds := mockDataStore()
 	as := tester.APIRootService{}
-	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, errors.New("foo") }
+	as.APIRootsFn = func(ctx context.Context) ([]cabby.APIRoot, error) {
+		return []cabby.APIRoot{tester.APIRoot}, errors.New("foo")
+	}
 	ds.APIRootServiceFn = func() tester.APIRootService { return as }
 
 	registerAPIRoots(ds, sm)

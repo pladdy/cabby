@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -46,7 +47,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		cs := mockCollectionService()
-		cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+		cs.CollectionsFn = func(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 			collections := cabby.Collections{}
 			for i := 0; i < test.expected; i++ {
 				collections.Collections = append(collections.Collections, cabby.Collection{})
@@ -117,7 +118,7 @@ func TestCollectionsHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	cs := mockCollectionService()
-	cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 		return cabby.Collections{}, errors.New(expected.Description)
 	}
 
@@ -142,7 +143,7 @@ func TestCollectionsHandlerGetFailures(t *testing.T) {
 
 func TestCollectionsHandlerGetNoCollections(t *testing.T) {
 	cs := mockCollectionService()
-	cs.CollectionsFn = func(user, apiRoot string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, user, apiRoot string, cr *cabby.Range) (cabby.Collections, error) {
 		return cabby.Collections{}, nil
 	}
 

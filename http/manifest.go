@@ -20,7 +20,7 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	manifest, err := h.ManifestService.Manifest(takeCollectionID(r), &cr, newFilter(r))
+	manifest, err := h.ManifestService.Manifest(r.Context(), takeCollectionID(r), &cr, newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
 		return

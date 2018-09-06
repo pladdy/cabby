@@ -2,9 +2,9 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -76,7 +76,6 @@ func TestObjectsHandlerGet(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(object)
 
 	passed := tester.CompareObject(object, expected)
 	if !passed {
@@ -113,7 +112,7 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectFn = func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, errors.New(expected.Description)
 	}
 
@@ -138,7 +137,7 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectFn = func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, nil
 	}
 
@@ -196,7 +195,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		obs := mockObjectService()
-		obs.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+		obs.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 			objects := []cabby.Object{}
 			for i := 0; i < test.expected; i++ {
 				objects = append(objects, cabby.Object{})
@@ -267,7 +266,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, errors.New(expected.Description)
 	}
 
@@ -292,7 +291,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 		return []cabby.Object{}, nil
 	}
 
@@ -322,7 +321,7 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 
 func TestObjectsHandlerPost(t *testing.T) {
 	osv := mockObjectService()
-	osv.CreateBundleFn = func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
+	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
 		tester.Info.Println("mock call of CreateBundle")
 	}
 
@@ -405,7 +404,7 @@ func TestObjectsHandlerPostEmptyBundle(t *testing.T) {
 
 func TestObjectsPostStatusFail(t *testing.T) {
 	s := mockStatusService()
-	s.CreateStatusFn = func(status cabby.Status) error { return errors.New("fail") }
+	s.CreateStatusFn = func(ctx context.Context, status cabby.Status) error { return errors.New("fail") }
 
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService(), StatusService: &s}
 

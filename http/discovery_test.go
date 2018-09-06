@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -36,7 +37,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Discovery failure", HTTPStatus: http.StatusInternalServerError}
 
 	ds := mockDiscoveryService()
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
 		return cabby.Discovery{}, errors.New(expected.Description)
 	}
 
@@ -61,7 +62,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 
 func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	ds := mockDiscoveryService()
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil
 	}
 
@@ -89,7 +90,7 @@ func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 
 func TestDiscoveryHandlePost(t *testing.T) {
 	ds := mockDiscoveryService()
-	ds.DiscoveryFn = func() (cabby.Discovery, error) {
+	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil
 	}
 
