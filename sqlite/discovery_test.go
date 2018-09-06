@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pladdy/cabby2/tester"
@@ -13,7 +14,7 @@ func TestDiscoveryServiceDiscovery(t *testing.T) {
 
 	expected := tester.DiscoveryDataStore
 
-	result, err := s.Discovery()
+	result, err := s.Discovery(context.Background())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -34,7 +35,7 @@ func TestDiscoveryServiceDiscoveryQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Discovery()
+	_, err = s.Discovery(context.Background())
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -45,7 +46,7 @@ func TestDiscoveryServiceDiscoveryNoAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := DiscoveryService{DB: ds.DB}
 
-	_, err := s.Discovery()
+	_, err := s.Discovery(context.Background())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}

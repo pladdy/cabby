@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pladdy/cabby2/tester"
@@ -13,7 +14,7 @@ func TestAPIRootServiceAPIRoot(t *testing.T) {
 
 	expected := tester.APIRoot
 
-	result, err := s.APIRoot(expected.Path)
+	result, err := s.APIRoot(context.Background(), expected.Path)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -34,7 +35,7 @@ func TestAPIRootServiceAPIRootQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.APIRoot(tester.APIRootPath)
+	_, err = s.APIRoot(context.Background(), tester.APIRootPath)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -47,7 +48,7 @@ func TestAPIRootsServiceAPIRoots(t *testing.T) {
 
 	expected := tester.APIRoot
 
-	result, err := s.APIRoots()
+	result, err := s.APIRoots(context.Background())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -72,7 +73,7 @@ func TestAPIRootsServiceAPIRootsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.APIRoots()
+	_, err = s.APIRoots(context.Background())
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

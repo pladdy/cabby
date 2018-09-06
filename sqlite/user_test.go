@@ -1,9 +1,9 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
-	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/tester"
 )
 
@@ -14,7 +14,7 @@ func TestUserServiceUser(t *testing.T) {
 
 	expected := tester.User
 
-	result, err := s.User(tester.UserEmail, tester.UserPassword)
+	result, err := s.User(context.Background(), tester.UserEmail, tester.UserPassword)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -37,29 +37,9 @@ func TestUserServiceUserQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.User(tester.UserEmail, tester.UserPassword)
+	_, err = s.User(context.Background(), tester.UserEmail, tester.UserPassword)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
-	}
-}
-
-func TestUserServiceExists(t *testing.T) {
-	tests := []struct {
-		user     cabby.User
-		expected bool
-	}{
-		{user: cabby.User{Email: tester.UserEmail}, expected: true},
-		{user: cabby.User{}, expected: false},
-	}
-
-	ds := testDataStore()
-	s := ds.UserService()
-
-	for _, test := range tests {
-		result := s.Exists(test.user)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
 	}
 }
 
@@ -70,7 +50,7 @@ func TestUserServiceUserCollections(t *testing.T) {
 
 	expected := tester.UserCollectionList
 
-	result, err := s.UserCollections(tester.UserEmail)
+	result, err := s.UserCollections(context.Background(), tester.UserEmail)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -96,7 +76,7 @@ func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.UserCollections(tester.UserEmail)
+	_, err = s.UserCollections(context.Background(), tester.UserEmail)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

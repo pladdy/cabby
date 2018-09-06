@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
@@ -17,11 +18,11 @@ type CollectionService struct {
 }
 
 // Collection will read from the data store and return the resource
-func (s CollectionService) Collection(user, apiRootPath, collectionID string) (cabby.Collection, error) {
+func (s CollectionService) Collection(ctx context.Context, user, apiRootPath, collectionID string) (cabby.Collection, error) {
 	resource, action := "Collection", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.collection(user, apiRootPath, collectionID)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -57,11 +58,11 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 }
 
 // Collections will read from the data store and return the resource
-func (s CollectionService) Collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+func (s CollectionService) Collections(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 	resource, action := "Collections", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.collections(user, apiRootPath, cr)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -113,11 +114,11 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 }
 
 // CollectionsInAPIRoot return collections in a given api root
-func (s CollectionService) CollectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 	resource, action := "APIRootCollections", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.collectionsInAPIRoot(apiRootPath)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
