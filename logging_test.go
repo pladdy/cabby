@@ -2,6 +2,7 @@ package cabby
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"testing"
@@ -24,7 +25,7 @@ func TestLogServiceEnd(t *testing.T) {
 
 	resource := t.Name()
 	action := "test"
-	LogServiceEnd(resource, action, time.Now().In(time.UTC))
+	LogServiceEnd(context.Background(), resource, action, time.Now().In(time.UTC))
 
 	type expectedLog struct {
 		Action    string
@@ -80,7 +81,7 @@ func TestLogServiceStart(t *testing.T) {
 
 	resource := t.Name()
 	action := "test"
-	_ = LogServiceStart(resource, action)
+	_ = LogServiceStart(context.Background(), resource, action)
 
 	type expectedLog struct {
 		Action   string

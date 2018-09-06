@@ -1,6 +1,7 @@
 package cabby
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -36,8 +37,8 @@ type APIRoot struct {
 
 // APIRootService for interacting with APIRoots
 type APIRootService interface {
-	APIRoot(path string) (APIRoot, error)
-	APIRoots() ([]APIRoot, error)
+	APIRoot(ctx context.Context, path string) (APIRoot, error)
+	APIRoots(ctx context.Context) ([]APIRoot, error)
 }
 
 // Collection resource
@@ -88,9 +89,9 @@ type CollectionsInAPIRoot struct {
 
 // CollectionService interface for interacting with data store
 type CollectionService interface {
-	Collection(user, apiRoot, collectionID string) (Collection, error)
-	Collections(user, apiRoot string, cr *Range) (Collections, error)
-	CollectionsInAPIRoot(apiRoot string) (CollectionsInAPIRoot, error)
+	Collection(ctx context.Context, user, apiRoot, collectionID string) (Collection, error)
+	Collections(ctx context.Context, user, apiRoot string, cr *Range) (Collections, error)
+	CollectionsInAPIRoot(ctx context.Context, apiRoot string) (CollectionsInAPIRoot, error)
 }
 
 // Config for a server
@@ -143,7 +144,7 @@ type Discovery struct {
 
 // DiscoveryService interface for interacting with Discovery resources
 type DiscoveryService interface {
-	Discovery() (Discovery, error)
+	Discovery(ctx context.Context) (Discovery, error)
 }
 
 // Error struct for TAXII 2 errors
@@ -218,7 +219,7 @@ type ManifestEntry struct {
 
 // ManifestService provides manifest data
 type ManifestService interface {
-	Manifest(collectionID string, cr *Range, f Filter) (Manifest, error)
+	Manifest(ctx context.Context, collectionID string, cr *Range, f Filter) (Manifest, error)
 }
 
 // Object for STIX 2 object data
@@ -234,10 +235,10 @@ type Object struct {
 
 // ObjectService provides Object data
 type ObjectService interface {
-	CreateBundle(b stones.Bundle, collectionID string, s Status, ss StatusService)
-	CreateObject(Object) error
-	Object(collectionID, objectID string, f Filter) ([]Object, error)
-	Objects(collectionID string, cr *Range, f Filter) ([]Object, error)
+	CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, s Status, ss StatusService)
+	CreateObject(ctx context.Context, o Object) error
+	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]Object, error)
+	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]Object, error)
 }
 
 // Range is used for paginated requests to represent the requested data range
@@ -328,9 +329,9 @@ func NewStatus(objects int) (Status, error) {
 
 // StatusService for status structs
 type StatusService interface {
-	CreateStatus(Status) error
-	Status(statusID string) (Status, error)
-	UpdateStatus(Status) error
+	CreateStatus(ctx context.Context, s Status) error
+	Status(ctx context.Context, statusID string) (Status, error)
+	UpdateStatus(ctx context.Context, s Status) error
 }
 
 // User represents a cabby user
@@ -341,6 +342,14 @@ type User struct {
 	CollectionAccessList map[ID]CollectionAccess
 }
 
+// Defined returns a bool indicating if a user is defined
+func (u *User) Defined() bool {
+	if u.Email == "" {
+		return false
+	}
+	return true
+}
+
 // UserCollectionList holds a list of collections a user can access
 type UserCollectionList struct {
 	Email                string                  `json:"email"`
@@ -349,7 +358,6 @@ type UserCollectionList struct {
 
 // UserService provides Users behavior
 type UserService interface {
-	UserCollections(user string) (UserCollectionList, error)
-	User(user, password string) (User, error)
-	Exists(User) bool
+	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
+	User(ctx context.Context, user, password string) (User, error)
 }

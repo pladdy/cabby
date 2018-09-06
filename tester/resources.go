@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -50,6 +51,8 @@ var (
 	// CollectionsInAPIRoot mock
 	CollectionsInAPIRoot = cabby.CollectionsInAPIRoot{
 		Path: APIRootPath, CollectionIDs: []cabby.ID{Collection.ID}}
+	// Context mock
+	Context = newContext()
 	// ErrorResourceNotFound mock
 	ErrorResourceNotFound = cabby.Error{Title: "Resource Not Found", HTTPStatus: http.StatusNotFound}
 	// Discovery mock; the handler mutates the returned path into a URL
@@ -100,6 +103,10 @@ func collection() cabby.Collection {
 
 	c.ID, _ = cabby.IDFromString(CollectionID)
 	return c
+}
+
+func newContext() context.Context {
+	return context.Background()
 }
 
 func object() cabby.Object {

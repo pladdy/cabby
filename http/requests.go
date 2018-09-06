@@ -70,14 +70,6 @@ func takeAPIRoot(r *http.Request) string {
 	return getToken(r.URL.Path, apiRootIndex)
 }
 
-// func takeCanAdmin(r *http.Request) bool {
-// 	ca, ok := r.Context().Value(canAdmin).(bool)
-// 	if !ok {
-// 		return false
-// 	}
-// 	return ca
-// }
-
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 	// get collection access map from context
 	ca, ok := r.Context().Value(keyCollectionAccessList).(map[cabby.ID]cabby.CollectionAccess)
