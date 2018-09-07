@@ -142,18 +142,3 @@ func withTransactionID(r *http.Request) *http.Request {
 // 	}
 // 	return true
 // }
-
-// func validateUser(ts taxiiStorer, u, p string) (taxiiUser, bool) {
-// 	tu, err := newTaxiiUser(ts, u, p)
-// 	if err != nil {
-// 		log.Error(err)
-// 		return tu, false
-// 	}
-//
-// 	if !tu.valid() {
-// 		log.WithFields(log.Fields{"user": u}).Error("Invalid user")
-// 		return tu, false
-// 	}
-//
-// 	return tu, true
-// }

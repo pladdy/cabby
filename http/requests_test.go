@@ -136,23 +136,3 @@ func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
 		t.Error("Got:", ca, "Expected:", empty)
 	}
 }
-
-// func TestValidateUserFail(t *testing.T) {
-// 	setupSQLite()
-//
-// 	s := getSQLiteDB()
-// 	defer s.disconnect()
-//
-// 	_, err := s.db.Exec("drop table taxii_user")
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-//
-// 	ts := getStorer()
-// 	defer ts.disconnect()
-//
-// 	_, isValid := validateUser(ts, "fail", "fail")
-// 	if isValid {
-// 		t.Error("Expected validation to be false")
-// 	}
-// }
