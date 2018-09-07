@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -48,12 +49,12 @@ func TestObjectServiceCreateObject(t *testing.T) {
 
 	test := tester.GenerateObject("malware")
 
-	err := s.CreateObject(test)
+	err := s.CreateObject(context.Background(), test)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	results, err := s.Object(test.CollectionID.String(), string(test.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), test.CollectionID.String(), string(test.ID), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -71,7 +72,7 @@ func TestObjectServiceObject(t *testing.T) {
 
 	expected := tester.Object
 
-	results, err := s.Object(expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -118,7 +119,7 @@ func TestObjectServiceObjectFilter(t *testing.T) {
 	expected := tester.Object
 
 	for _, test := range tests {
-		results, err := s.Object(expected.CollectionID.String(), objectID, test.filter)
+		results, err := s.Object(context.Background(), expected.CollectionID.String(), objectID, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error", "Filter:", test.filter)
 		}
@@ -141,7 +142,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Object(expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	_, err = s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -186,7 +187,7 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Objects(tester.Object.CollectionID.String(), &cabby.Range{First: -1, Last: -1}, test.filter)
+		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: -1, Last: -1}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -220,7 +221,7 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Objects(tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -247,7 +248,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Objects(expected.CollectionID.String(), &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), expected.CollectionID.String(), &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -264,7 +265,7 @@ func TestObjectServiceObjectsInvalidID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Objects("fail", &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -286,14 +287,14 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 	}
 
 	st := tester.Status
-	osv.CreateBundle(bundle, tester.CollectionID, st, ssv)
+	osv.CreateBundle(context.Background(), bundle, tester.CollectionID, st, ssv)
 
 	// check objects were saved
 	for _, object := range bundle.Objects {
 		expected, _ := bytesToObject(object)
 		expected.CollectionID = tester.Collection.ID
 
-		results, _ := osv.Object(tester.CollectionID, string(expected.ID), cabby.Filter{})
+		results, _ := osv.Object(context.Background(), tester.CollectionID, string(expected.ID), cabby.Filter{})
 
 		passed := tester.CompareObject(results[0], expected)
 		if !passed {
@@ -324,10 +325,10 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 	}
 
 	st := tester.Status
-	osv.CreateBundle(bundle, tester.CollectionID, st, ssv)
+	osv.CreateBundle(context.Background(), bundle, tester.CollectionID, st, ssv)
 
 	// check objects were saved; use an invalid range to get all
-	result, _ := osv.Objects(tester.CollectionID, &cabby.Range{First: -1, Last: -1}, cabby.Filter{})
+	result, _ := osv.Objects(context.Background(), tester.CollectionID, &cabby.Range{First: -1, Last: -1}, cabby.Filter{})
 	expected := 2
 	if len(result) != expected {
 		t.Error("Got:", len(result), "Expected:", expected)
@@ -346,13 +347,13 @@ func TestUpdateStatus(t *testing.T) {
 	expected.Status = "pending"
 	expected.TotalCount = 3
 
-	err := ss.CreateStatus(expected)
+	err := ss.CreateStatus(context.Background(), expected)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// check the pending status
-	result, _ := ss.Status(expected.ID.String())
+	result, _ := ss.Status(context.Background(), expected.ID.String())
 	passed := tester.CompareStatus(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
@@ -364,7 +365,7 @@ func TestUpdateStatus(t *testing.T) {
 	close(errs)
 
 	// updating implies complete
-	updateStatus(expected, errs, ss)
+	updateStatus(context.Background(), expected, errs, ss)
 
 	expected.FailureCount = 1
 	expected.PendingCount = 0
@@ -372,7 +373,7 @@ func TestUpdateStatus(t *testing.T) {
 	expected.Status = "complete"
 
 	// query the status to confirm it's accurate
-	result, _ = ss.Status(expected.ID.String())
+	result, _ = ss.Status(context.Background(), expected.ID.String())
 	passed = tester.CompareStatus(result, expected)
 	if !passed {
 		t.Error("Comparison failed")

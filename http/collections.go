@@ -20,7 +20,7 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	collections, err := h.CollectionService.Collections(takeUser(r), takeAPIRoot(r), &cr)
+	collections, err := h.CollectionService.Collections(r.Context(), takeAPIRoot(r), &cr)
 	if err != nil {
 		internalServerError(w, err)
 		return

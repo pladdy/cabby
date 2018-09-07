@@ -14,7 +14,7 @@ type StatusHandler struct {
 
 // Get serves a status resource
 func (h StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
-	status, err := h.StatusService.Status(takeStatusID(r))
+	status, err := h.StatusService.Status(r.Context(), takeStatusID(r))
 	if err != nil {
 		internalServerError(w, err)
 		return

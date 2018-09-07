@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -26,14 +27,14 @@ type ObjectService struct {
 }
 
 // CreateBundle will read from the data store and return the resource
-func (s ObjectService) CreateBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
 	resource, action := "Bundle", "create"
-	start := cabby.LogServiceStart(resource, action)
-	s.createBundle(b, collectionID, st, ss)
-	cabby.LogServiceEnd(resource, action, start)
+	start := cabby.LogServiceStart(ctx, resource, action)
+	s.createBundle(ctx, b, collectionID, st, ss)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 }
 
-func (s ObjectService) createBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
 	errs := make(chan error, len(b.Objects))
 	toWrite := make(chan interface{}, batchBufferSize)
 
@@ -51,15 +52,15 @@ func (s ObjectService) createBundle(b stones.Bundle, collectionID string, st cab
 	}
 	close(toWrite)
 
-	updateStatus(st, errs, ss)
+	updateStatus(ctx, st, errs, ss)
 }
 
 // CreateObject will read from the data store and return the resource
-func (s ObjectService) CreateObject(object cabby.Object) error {
+func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) error {
 	resource, action := "Object", "create"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	err := s.createObject(object)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return err
 }
 
@@ -68,11 +69,11 @@ func (s ObjectService) createObject(o cabby.Object) error {
 }
 
 // Object will read from the data store and return the resource
-func (s ObjectService) Object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
 	resource, action := "Object", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.object(collectionID, objectID, f)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -110,11 +111,11 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 }
 
 // Objects will read from the data store and return the resource
-func (s ObjectService) Objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 	resource, action := "Objects", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.objects(collectionID, cr, f)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -174,7 +175,7 @@ func bytesToObject(b []byte) (cabby.Object, error) {
 	return o, err
 }
 
-func updateStatus(st cabby.Status, errs chan error, ss cabby.StatusService) {
+func updateStatus(ctx context.Context, st cabby.Status, errs chan error, ss cabby.StatusService) {
 	failures := int64(0)
 	for _ = range errs {
 		failures++
@@ -182,5 +183,5 @@ func updateStatus(st cabby.Status, errs chan error, ss cabby.StatusService) {
 
 	st.FailureCount = failures
 	st.SuccessCount = st.TotalCount - failures
-	ss.UpdateStatus(st)
+	ss.UpdateStatus(ctx, st)
 }

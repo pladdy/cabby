@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"errors"
 	"io"
@@ -74,8 +75,8 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	//return callHandler(h, withAuthentication(newRequest(method, url, b)))
-	return callHandler(h, withUser(newRequest(method, url, b), tester.User))
+	req := newRequest(method, url, b)
+	return callHandler(h, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 }
 
 func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
@@ -124,7 +125,7 @@ func testErrorLog(result requestLog, t *testing.T) {
 		t.Error("Got:", result.Time, "Expected: a time")
 	}
 	if result.Level != "error" {
-		t.Error("Got:", result.Level, "Expected: info")
+		t.Error("Got:", result.Level, "Expected: error")
 	}
 	if len(result.Msg) <= 0 {
 		t.Error("Got:", result.Msg, "Expected: a message")
@@ -171,20 +172,20 @@ func tlsClient() *http.Client {
 
 func mockAPIRootService() tester.APIRootService {
 	as := tester.APIRootService{}
-	as.APIRootFn = func(path string) (cabby.APIRoot, error) { return tester.APIRoot, nil }
-	as.APIRootsFn = func() ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, nil }
+	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) { return tester.APIRoot, nil }
+	as.APIRootsFn = func(ctx context.Context) ([]cabby.APIRoot, error) { return []cabby.APIRoot{tester.APIRoot}, nil }
 	return as
 }
 
 func mockCollectionService() tester.CollectionService {
 	cs := tester.CollectionService{}
-	cs.CollectionFn = func(user, collectionID, apiRootPath string) (cabby.Collection, error) {
+	cs.CollectionFn = func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error) {
 		return tester.Collection, nil
 	}
-	cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 		return tester.Collections, nil
 	}
-	cs.CollectionsInAPIRootFn = func(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+	cs.CollectionsInAPIRootFn = func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 		return tester.CollectionsInAPIRoot, nil
 	}
 	return cs
@@ -192,13 +193,13 @@ func mockCollectionService() tester.CollectionService {
 
 func mockDiscoveryService() tester.DiscoveryService {
 	ds := tester.DiscoveryService{}
-	ds.DiscoveryFn = func() (cabby.Discovery, error) { return tester.Discovery, nil }
+	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) { return tester.Discovery, nil }
 	return ds
 }
 
 func mockManifestService() tester.ManifestService {
 	ms := tester.ManifestService{}
-	ms.ManifestFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	ms.ManifestFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 		return tester.Manifest, nil
 	}
 	return ms
@@ -206,13 +207,13 @@ func mockManifestService() tester.ManifestService {
 
 func mockObjectService() tester.ObjectService {
 	osv := tester.ObjectService{}
-	osv.CreateBundleFn = func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
+	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
 		tester.Info.Println("mock Creating Bundle")
 	}
-	osv.ObjectFn = func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	osv.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
 		return tester.Objects, nil
 	}
-	osv.ObjectsFn = func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	osv.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 		return tester.Objects, nil
 	}
 	return osv
@@ -220,21 +221,20 @@ func mockObjectService() tester.ObjectService {
 
 func mockStatusService() tester.StatusService {
 	ss := tester.StatusService{}
-	ss.CreateStatusFn = func(status cabby.Status) error { return nil }
-	ss.StatusFn = func(statusID string) (cabby.Status, error) { return tester.Status, nil }
-	ss.UpdateStatusFn = func(status cabby.Status) error { return nil }
+	ss.CreateStatusFn = func(ctx context.Context, status cabby.Status) error { return nil }
+	ss.StatusFn = func(ctx context.Context, statusID string) (cabby.Status, error) { return tester.Status, nil }
+	ss.UpdateStatusFn = func(ctx context.Context, status cabby.Status) error { return nil }
 	return ss
 }
 
 func mockUserService() tester.UserService {
 	us := tester.UserService{}
-	us.UserFn = func(user, password string) (cabby.User, error) {
-		return cabby.User{}, nil
+	us.UserFn = func(ctx context.Context, user, password string) (cabby.User, error) {
+		return cabby.User{Email: tester.UserEmail}, nil
 	}
-	us.UserCollectionsFn = func(user string) (cabby.UserCollectionList, error) {
+	us.UserCollectionsFn = func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 		return cabby.UserCollectionList{}, nil
 	}
-	us.ExistsFn = func(cabby.User) bool { return true }
 	return us
 }
 

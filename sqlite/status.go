@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 
 	// import sqlite dependency
@@ -17,11 +18,11 @@ type StatusService struct {
 }
 
 // CreateStatus will read from the data store and return the resource
-func (s StatusService) CreateStatus(status cabby.Status) error {
+func (s StatusService) CreateStatus(ctx context.Context, status cabby.Status) error {
 	resource, action := "Status", "create"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	err := s.createStatus(status)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return err
 }
 
@@ -33,11 +34,11 @@ func (s StatusService) createStatus(st cabby.Status) error {
 }
 
 // Status will read from the data store and return the resource
-func (s StatusService) Status(statusID string) (cabby.Status, error) {
+func (s StatusService) Status(ctx context.Context, statusID string) (cabby.Status, error) {
 	resource, action := "Status", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.status(statusID)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -67,11 +68,11 @@ func (s StatusService) status(statusID string) (cabby.Status, error) {
 }
 
 // UpdateStatus will read from the data store and return the resource
-func (s StatusService) UpdateStatus(status cabby.Status) error {
+func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) error {
 	resource, action := "Status", "update"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	err := s.updateStatus(status)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return err
 }
 

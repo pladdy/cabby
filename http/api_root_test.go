@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -37,7 +38,7 @@ func TestAPIRootHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "APIRoot failure", HTTPStatus: http.StatusInternalServerError}
 
 	as := mockAPIRootService()
-	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
+	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
 		return cabby.APIRoot{}, errors.New(expected.Description)
 	}
 
@@ -62,7 +63,7 @@ func TestAPIRootHandlerGetFailures(t *testing.T) {
 
 func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	as := mockAPIRootService()
-	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
+	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
 		return cabby.APIRoot{Title: ""}, nil
 	}
 
@@ -90,7 +91,7 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 
 func TestAPIRootHandlePost(t *testing.T) {
 	as := mockAPIRootService()
-	as.APIRootFn = func(path string) (cabby.APIRoot, error) {
+	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
 		return cabby.APIRoot{Title: ""}, nil
 	}
 

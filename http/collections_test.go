@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -46,7 +47,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		cs := mockCollectionService()
-		cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+		cs.CollectionsFn = func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 			collections := cabby.Collections{}
 			for i := 0; i < test.expected; i++ {
 				collections.Collections = append(collections.Collections, cabby.Collection{})
@@ -58,7 +59,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 		h := CollectionsHandler{CollectionService: cs}
 
 		// set up request
-		req := withUser(newRequest("GET", testCollectionsURL, nil), tester.User)
+		req := newRequest("GET", testCollectionsURL, nil)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -100,7 +101,7 @@ func TestCollectionsHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := withUser(newRequest("GET", testCollectionsURL, nil), tester.User)
+		req := newRequest("GET", testCollectionsURL, nil)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -117,7 +118,7 @@ func TestCollectionsHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	cs := mockCollectionService()
-	cs.CollectionsFn = func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 		return cabby.Collections{}, errors.New(expected.Description)
 	}
 
@@ -142,7 +143,7 @@ func TestCollectionsHandlerGetFailures(t *testing.T) {
 
 func TestCollectionsHandlerGetNoCollections(t *testing.T) {
 	cs := mockCollectionService()
-	cs.CollectionsFn = func(user, apiRoot string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, apiRoot string, cr *cabby.Range) (cabby.Collections, error) {
 		return cabby.Collections{}, nil
 	}
 

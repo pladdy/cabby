@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -36,7 +37,7 @@ func TestStatusHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Status failure", HTTPStatus: http.StatusInternalServerError}
 
 	ms := mockStatusService()
-	ms.StatusFn = func(statusID string) (cabby.Status, error) {
+	ms.StatusFn = func(ctx context.Context, statusID string) (cabby.Status, error) {
 		return cabby.Status{}, errors.New(expected.Description)
 	}
 
@@ -61,7 +62,7 @@ func TestStatusHandlerGetFailures(t *testing.T) {
 
 func TestStatusHandlerGetNoStatus(t *testing.T) {
 	ms := mockStatusService()
-	ms.StatusFn = func(statusID string) (cabby.Status, error) {
+	ms.StatusFn = func(ctx context.Context, statusID string) (cabby.Status, error) {
 		return cabby.Status{}, nil
 	}
 

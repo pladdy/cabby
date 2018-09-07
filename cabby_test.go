@@ -209,3 +209,20 @@ func TestNewStatusError(t *testing.T) {
 		t.Error("Expected error")
 	}
 }
+
+func TestUserDefined(t *testing.T) {
+	tests := []struct {
+		user     User
+		expected bool
+	}{
+		{user: User{Email: "foo"}, expected: true},
+		{user: User{}, expected: false},
+	}
+
+	for _, test := range tests {
+		result := test.user.Defined()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
