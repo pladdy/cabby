@@ -18,10 +18,10 @@ type CollectionService struct {
 }
 
 // Collection will read from the data store and return the resource
-func (s CollectionService) Collection(ctx context.Context, user, apiRootPath, collectionID string) (cabby.Collection, error) {
+func (s CollectionService) Collection(ctx context.Context, apiRootPath, collectionID string) (cabby.Collection, error) {
 	resource, action := "Collection", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.collection(user, apiRootPath, collectionID)
+	result, err := s.collection(cabby.TakeUser(ctx).Email, apiRootPath, collectionID)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
@@ -58,10 +58,10 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 }
 
 // Collections will read from the data store and return the resource
-func (s CollectionService) Collections(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+func (s CollectionService) Collections(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 	resource, action := "Collections", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.collections(user, apiRootPath, cr)
+	result, err := s.collections(cabby.TakeUser(ctx).Email, apiRootPath, cr)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }

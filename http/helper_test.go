@@ -179,10 +179,10 @@ func mockAPIRootService() tester.APIRootService {
 
 func mockCollectionService() tester.CollectionService {
 	cs := tester.CollectionService{}
-	cs.CollectionFn = func(ctx context.Context, user, collectionID, apiRootPath string) (cabby.Collection, error) {
+	cs.CollectionFn = func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error) {
 		return tester.Collection, nil
 	}
-	cs.CollectionsFn = func(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
 		return tester.Collections, nil
 	}
 	cs.CollectionsInAPIRootFn = func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
@@ -229,10 +229,10 @@ func mockStatusService() tester.StatusService {
 
 func mockUserService() tester.UserService {
 	us := tester.UserService{}
-	us.UserFn = func(ctx context.Context, user, password string) (cabby.User, error) {
+	us.UserFn = func(ctx context.Context, password string) (cabby.User, error) {
 		return cabby.User{Email: tester.UserEmail}, nil
 	}
-	us.UserCollectionsFn = func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+	us.UserCollectionsFn = func(ctx context.Context) (cabby.UserCollectionList, error) {
 		return cabby.UserCollectionList{}, nil
 	}
 	return us

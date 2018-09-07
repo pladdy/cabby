@@ -106,7 +106,9 @@ func collection() cabby.Collection {
 }
 
 func newContext() context.Context {
-	return context.Background()
+	ctx := context.Background()
+	ctx = cabby.WithUser(ctx, User)
+	return ctx
 }
 
 func object() cabby.Object {

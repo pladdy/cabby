@@ -19,10 +19,10 @@ type UserService struct {
 }
 
 // User will read from the data store and populate the result with a resource
-func (s UserService) User(ctx context.Context, user, password string) (cabby.User, error) {
+func (s UserService) User(ctx context.Context, password string) (cabby.User, error) {
 	resource, action := "User", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.user(user, password)
+	result, err := s.user(cabby.TakeUser(ctx).Email, password)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
@@ -55,10 +55,10 @@ func (s UserService) user(user, password string) (cabby.User, error) {
 }
 
 // UserCollections will read from the data store and populate the result with a resource
-func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+func (s UserService) UserCollections(ctx context.Context) (cabby.UserCollectionList, error) {
 	resource, action := "UserCollectionList", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.userCollections(user)
+	result, err := s.userCollections(cabby.TakeUser(ctx).Email)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }

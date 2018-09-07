@@ -90,19 +90,19 @@ func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 
 // CollectionService is a mock implementation
 type CollectionService struct {
-	CollectionFn           func(ctx context.Context, user, collectionID, apiRootPath string) (cabby.Collection, error)
-	CollectionsFn          func(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
+	CollectionFn           func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error)
+	CollectionsFn          func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
 	CollectionsInAPIRootFn func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error)
 }
 
 // Collection is a mock implementation
-func (s CollectionService) Collection(ctx context.Context, user, collectionID, apiRootPath string) (cabby.Collection, error) {
-	return s.CollectionFn(ctx, user, collectionID, apiRootPath)
+func (s CollectionService) Collection(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error) {
+	return s.CollectionFn(ctx, collectionID, apiRootPath)
 }
 
 // Collections is a mock implementation
-func (s CollectionService) Collections(ctx context.Context, user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
-	return s.CollectionsFn(ctx, user, apiRootPath, cr)
+func (s CollectionService) Collections(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	return s.CollectionsFn(ctx, apiRootPath, cr)
 }
 
 // CollectionsInAPIRoot is a mock implementation
@@ -183,22 +183,16 @@ func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) er
 
 // UserService is a mock implementation
 type UserService struct {
-	UserFn            func(ctx context.Context, user, password string) (cabby.User, error)
-	UserCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
-	ExistsFn          func(ctx context.Context, u cabby.User) bool
-}
-
-// Exists is a mock implementation
-func (s UserService) Exists(ctx context.Context, u cabby.User) bool {
-	return s.ExistsFn(ctx, u)
+	UserFn            func(ctx context.Context, password string) (cabby.User, error)
+	UserCollectionsFn func(ctx context.Context) (cabby.UserCollectionList, error)
 }
 
 // User is a mock implementation
-func (s UserService) User(ctx context.Context, user, password string) (cabby.User, error) {
-	return s.UserFn(ctx, user, password)
+func (s UserService) User(ctx context.Context, password string) (cabby.User, error) {
+	return s.UserFn(ctx, password)
 }
 
 // UserCollections is a mock implementation
-func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
-	return s.UserCollectionsFn(ctx, user)
+func (s UserService) UserCollections(ctx context.Context) (cabby.UserCollectionList, error) {
+	return s.UserCollectionsFn(ctx)
 }

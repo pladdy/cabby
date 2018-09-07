@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"context"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
@@ -15,7 +14,7 @@ func TestCollectionServiceCollection(t *testing.T) {
 
 	expected := tester.Collection
 
-	result, err := s.Collection(context.Background(), tester.UserEmail, expected.APIRootPath, expected.ID.String())
+	result, err := s.Collection(tester.Context, expected.APIRootPath, expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -36,7 +35,7 @@ func TestCollectionServiceCollectionQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Collection(context.Background(), tester.UserEmail, tester.CollectionID, tester.APIRootPath)
+	_, err = s.Collection(tester.Context, tester.CollectionID, tester.APIRootPath)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -65,7 +64,7 @@ func TestCollectionsServiceCollections(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Collections(context.Background(), tester.UserEmail, tester.APIRootPath, &test.cabbyRange)
+		results, err := s.Collections(tester.Context, tester.APIRootPath, &test.cabbyRange)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -90,7 +89,7 @@ func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Collections(context.Background(), tester.UserEmail, tester.APIRootPath, &cabby.Range{})
+	_, err = s.Collections(tester.Context, tester.APIRootPath, &cabby.Range{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -103,7 +102,7 @@ func TestCollectionsServiceCollectionsInAPIRoot(t *testing.T) {
 
 	expected := tester.Collection
 
-	results, err := s.CollectionsInAPIRoot(context.Background(), tester.APIRootPath)
+	results, err := s.CollectionsInAPIRoot(tester.Context, tester.APIRootPath)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -133,7 +132,7 @@ func TestCollectionsServiceCollectionsInAPIRootQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.CollectionsInAPIRoot(context.Background(), tester.APIRootPath)
+	_, err = s.CollectionsInAPIRoot(tester.Context, tester.APIRootPath)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

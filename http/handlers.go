@@ -56,7 +56,7 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
 
-		user, err := us.User(r.Context(), u, p)
+		user, err := us.User(r.Context(), p)
 		if err != nil {
 			internalServerError(w, err)
 			return
@@ -68,7 +68,7 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 			return
 		}
 
-		ucs, err := us.UserCollections(r.Context(), u)
+		ucs, err := us.UserCollections(r.Context())
 		if err != nil {
 			internalServerError(w, err)
 			return

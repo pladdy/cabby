@@ -1,7 +1,6 @@
 package sqlite
 
 import (
-	"context"
 	"testing"
 
 	"github.com/pladdy/cabby2/tester"
@@ -14,7 +13,7 @@ func TestUserServiceUser(t *testing.T) {
 
 	expected := tester.User
 
-	result, err := s.User(context.Background(), tester.UserEmail, tester.UserPassword)
+	result, err := s.User(tester.Context, tester.UserPassword)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -37,7 +36,7 @@ func TestUserServiceUserQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.User(context.Background(), tester.UserEmail, tester.UserPassword)
+	_, err = s.User(tester.Context, tester.UserPassword)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -50,7 +49,7 @@ func TestUserServiceUserCollections(t *testing.T) {
 
 	expected := tester.UserCollectionList
 
-	result, err := s.UserCollections(context.Background(), tester.UserEmail)
+	result, err := s.UserCollections(tester.Context)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -76,7 +75,7 @@ func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.UserCollections(context.Background(), tester.UserEmail)
+	_, err = s.UserCollections(tester.Context)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

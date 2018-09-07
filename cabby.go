@@ -89,8 +89,8 @@ type CollectionsInAPIRoot struct {
 
 // CollectionService interface for interacting with data store
 type CollectionService interface {
-	Collection(ctx context.Context, user, apiRoot, collectionID string) (Collection, error)
-	Collections(ctx context.Context, user, apiRoot string, cr *Range) (Collections, error)
+	Collection(ctx context.Context, apiRoot, collectionID string) (Collection, error)
+	Collections(ctx context.Context, apiRoot string, cr *Range) (Collections, error)
 	CollectionsInAPIRoot(ctx context.Context, apiRoot string) (CollectionsInAPIRoot, error)
 }
 
@@ -358,6 +358,6 @@ type UserCollectionList struct {
 
 // UserService provides Users behavior
 type UserService interface {
-	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
-	User(ctx context.Context, user, password string) (User, error)
+	UserCollections(ctx context.Context) (UserCollectionList, error)
+	User(ctx context.Context, password string) (User, error)
 }

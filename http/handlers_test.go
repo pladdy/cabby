@@ -116,35 +116,35 @@ func TestWithAcceptType(t *testing.T) {
 func TestWithBasicAuth(t *testing.T) {
 	tests := []struct {
 		expectedStatus    int
-		userFn            func(ctx context.Context, user, password string) (cabby.User, error)
-		userCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
+		userFn            func(ctx context.Context, password string) (cabby.User, error)
+		userCollectionsFn func(ctx context.Context) (cabby.UserCollectionList, error)
 	}{
 		{expectedStatus: http.StatusOK,
-			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
+			userFn: func(ctx context.Context, password string) (cabby.User, error) {
 				return cabby.User{Email: tester.UserEmail}, nil
 			},
-			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
 		{expectedStatus: http.StatusInternalServerError,
-			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
+			userFn: func(ctx context.Context, password string) (cabby.User, error) {
 				return cabby.User{}, errors.New("service error")
 			},
-			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
 		{expectedStatus: http.StatusUnauthorized,
-			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
+			userFn: func(ctx context.Context, password string) (cabby.User, error) {
 				return cabby.User{}, nil
 			},
-			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, nil
 			}},
 		{expectedStatus: http.StatusInternalServerError,
-			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
+			userFn: func(ctx context.Context, password string) (cabby.User, error) {
 				return cabby.User{Email: tester.UserEmail}, nil
 			},
-			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+			userCollectionsFn: func(ctx context.Context) (cabby.UserCollectionList, error) {
 				return cabby.UserCollectionList{}, errors.New("service error")
 			}},
 	}

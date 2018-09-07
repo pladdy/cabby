@@ -37,7 +37,7 @@ func TestCollectionHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	cs := mockCollectionService()
-	cs.CollectionFn = func(ctx context.Context, user, apiRootPath, collectionID string) (cabby.Collection, error) {
+	cs.CollectionFn = func(ctx context.Context, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return cabby.Collection{}, errors.New(expected.Description)
 	}
 
@@ -62,7 +62,7 @@ func TestCollectionHandlerGetFailures(t *testing.T) {
 
 func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	cs := mockCollectionService()
-	cs.CollectionFn = func(ctx context.Context, user, apiRootPath, collectionID string) (cabby.Collection, error) {
+	cs.CollectionFn = func(ctx context.Context, apiRootPath, collectionID string) (cabby.Collection, error) {
 		return cabby.Collection{}, nil
 	}
 
