@@ -29,7 +29,7 @@ func setupServer(ds cabby.DataStore, h http.Handler, c cabby.Config) *http.Serve
 
 	return &http.Server{
 		Addr:         ":" + p,
-		Handler:      withRequestLogging(withBasicAuth(h, ds.UserService())),
+		Handler:      withBasicAuth(withRequestLogging(h), ds.UserService()),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}

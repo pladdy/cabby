@@ -56,12 +56,12 @@ func TestSetupServerHandler(t *testing.T) {
 	us := tester.UserService{}
 
 	userCalled := false
-	us.UserFn = func(ctx context.Context, password string) (cabby.User, error) {
+	us.UserFn = func(ctx context.Context, user, password string) (cabby.User, error) {
 		userCalled = true
 		return cabby.User{Email: "foo"}, nil
 	}
 
-	us.UserCollectionsFn = func(ctx context.Context) (cabby.UserCollectionList, error) {
+	us.UserCollectionsFn = func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 		return cabby.UserCollectionList{}, nil
 	}
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofrs/uuid"
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
@@ -122,6 +123,11 @@ func trimSlashes(s string) string {
 
 	parts := strings.Split(s, "/")
 	return strings.Join(parts, "/")
+}
+
+func withTransactionID(r *http.Request) *http.Request {
+	transactionID := uuid.Must(uuid.NewV4())
+	return r.WithContext(cabby.WithTransactionID(r.Context(), transactionID))
 }
 
 // func userAuthorized(w http.ResponseWriter, r *http.Request) bool {

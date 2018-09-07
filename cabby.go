@@ -358,6 +358,6 @@ type UserCollectionList struct {
 
 // UserService provides Users behavior
 type UserService interface {
-	UserCollections(ctx context.Context) (UserCollectionList, error)
-	User(ctx context.Context, password string) (User, error)
+	User(ctx context.Context, user, password string) (User, error)
+	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }

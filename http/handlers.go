@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofrs/uuid"
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
 )
@@ -55,8 +54,9 @@ func WithAcceptType(h http.HandlerFunc, typeToCheck string) http.HandlerFunc {
 func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		u, p, ok := r.BasicAuth()
+		r = withTransactionID(r)
 
-		user, err := us.User(r.Context(), p)
+		user, err := us.User(r.Context(), u, p)
 		if err != nil {
 			internalServerError(w, err)
 			return
@@ -68,7 +68,7 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 			return
 		}
 
-		ucs, err := us.UserCollections(r.Context())
+		ucs, err := us.UserCollections(r.Context(), u)
 		if err != nil {
 			internalServerError(w, err)
 			return
@@ -83,15 +83,14 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 func withRequestLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		milliSecondOfNanoSeconds := int64(1000000)
-		transactionID := uuid.Must(uuid.NewV4())
-		r.WithContext(cabby.WithTransactionID(r.Context(), transactionID))
 
 		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{
 			"method":         r.Method,
 			"start_ms":       start.UnixNano() / milliSecondOfNanoSeconds,
-			"transaction_id": transactionID,
+			"transaction_id": cabby.TakeTransactionID(r.Context()),
 			"url":            r.URL.String(),
+			"user":           cabby.TakeUser(r.Context()).Email,
 		}).Info("Request received")
 
 		h.ServeHTTP(w, r)
@@ -103,8 +102,9 @@ func withRequestLogging(h http.Handler) http.Handler {
 			"elapsed_ts":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"method":         r.Method,
 			"end_ms":         end.UnixNano() / milliSecondOfNanoSeconds,
-			"transaction_id": transactionID,
+			"transaction_id": cabby.TakeTransactionID(r.Context()),
 			"url":            r.URL.String(),
+			"user":           cabby.TakeUser(r.Context()).Email,
 		}).Info("Request served")
 	})
 }

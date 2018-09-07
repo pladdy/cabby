@@ -229,10 +229,10 @@ func mockStatusService() tester.StatusService {
 
 func mockUserService() tester.UserService {
 	us := tester.UserService{}
-	us.UserFn = func(ctx context.Context, password string) (cabby.User, error) {
+	us.UserFn = func(ctx context.Context, user, password string) (cabby.User, error) {
 		return cabby.User{Email: tester.UserEmail}, nil
 	}
-	us.UserCollectionsFn = func(ctx context.Context) (cabby.UserCollectionList, error) {
+	us.UserCollectionsFn = func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 		return cabby.UserCollectionList{}, nil
 	}
 	return us

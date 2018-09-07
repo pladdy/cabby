@@ -183,16 +183,16 @@ func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) er
 
 // UserService is a mock implementation
 type UserService struct {
-	UserFn            func(ctx context.Context, password string) (cabby.User, error)
-	UserCollectionsFn func(ctx context.Context) (cabby.UserCollectionList, error)
+	UserFn            func(ctx context.Context, user, password string) (cabby.User, error)
+	UserCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
 }
 
 // User is a mock implementation
-func (s UserService) User(ctx context.Context, password string) (cabby.User, error) {
-	return s.UserFn(ctx, password)
+func (s UserService) User(ctx context.Context, user, password string) (cabby.User, error) {
+	return s.UserFn(ctx, user, password)
 }
 
 // UserCollections is a mock implementation
-func (s UserService) UserCollections(ctx context.Context) (cabby.UserCollectionList, error) {
-	return s.UserCollectionsFn(ctx)
+func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+	return s.UserCollectionsFn(ctx, user)
 }

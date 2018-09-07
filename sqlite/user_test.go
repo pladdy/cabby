@@ -13,7 +13,7 @@ func TestUserServiceUser(t *testing.T) {
 
 	expected := tester.User
 
-	result, err := s.User(tester.Context, tester.UserPassword)
+	result, err := s.User(tester.Context, tester.UserEmail, tester.UserPassword)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -36,7 +36,7 @@ func TestUserServiceUserQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.User(tester.Context, tester.UserPassword)
+	_, err = s.User(tester.Context, tester.UserEmail, tester.UserPassword)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -49,7 +49,7 @@ func TestUserServiceUserCollections(t *testing.T) {
 
 	expected := tester.UserCollectionList
 
-	result, err := s.UserCollections(tester.Context)
+	result, err := s.UserCollections(tester.Context, tester.UserEmail)
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -75,7 +75,7 @@ func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.UserCollections(tester.Context)
+	_, err = s.UserCollections(tester.Context, tester.UserEmail)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
