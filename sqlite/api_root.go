@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
@@ -17,11 +18,11 @@ type APIRootService struct {
 }
 
 // APIRoot will read from the data store and return the resource
-func (s APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
+func (s APIRootService) APIRoot(ctx context.Context, path string) (cabby.APIRoot, error) {
 	resource, action := "APIRoot", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.apiRoot(path)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -52,11 +53,11 @@ func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 }
 
 // APIRoots will read from the data store and return the resource
-func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
+func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 	resource, action := "APIRoots", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.apiRoots()
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 

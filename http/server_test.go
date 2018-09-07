@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"net/http"
@@ -54,15 +55,13 @@ func TestSetupServerHandler(t *testing.T) {
 	// mock up service; add a variable to track if User() is called
 	us := tester.UserService{}
 
-	us.ExistsFn = func(cabby.User) bool { return true }
-
 	userCalled := false
-	us.UserFn = func(user, password string) (cabby.User, error) {
+	us.UserFn = func(ctx context.Context, user, password string) (cabby.User, error) {
 		userCalled = true
-		return cabby.User{}, nil
+		return cabby.User{Email: "foo"}, nil
 	}
 
-	us.UserCollectionsFn = func(user string) (cabby.UserCollectionList, error) {
+	us.UserCollectionsFn = func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 		return cabby.UserCollectionList{}, nil
 	}
 

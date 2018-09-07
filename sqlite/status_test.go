@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
 	"github.com/pladdy/cabby2/tester"
@@ -13,12 +14,12 @@ func TestStatusServiceCreateStatus(t *testing.T) {
 
 	test := tester.Status
 
-	err := s.CreateStatus(test)
+	err := s.CreateStatus(context.Background(), test)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	result, err := s.Status(test.ID.String())
+	result, err := s.Status(context.Background(), test.ID.String())
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -36,12 +37,12 @@ func TestStatusServiceStatus(t *testing.T) {
 
 	// create a status
 	expected := tester.Status
-	err := s.CreateStatus(expected)
+	err := s.CreateStatus(context.Background(), expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	result, err := s.Status(expected.ID.String())
+	result, err := s.Status(context.Background(), expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -64,7 +65,7 @@ func TestStatusServiceStatusQueryErr(t *testing.T) {
 
 	expected := tester.Status
 
-	_, err = s.Status(expected.ID.String())
+	_, err = s.Status(context.Background(), expected.ID.String())
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -77,7 +78,7 @@ func TestStatusServiceUpdateStatus(t *testing.T) {
 
 	// create a status
 	expected := tester.Status
-	err := s.CreateStatus(expected)
+	err := s.CreateStatus(context.Background(), expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -87,14 +88,14 @@ func TestStatusServiceUpdateStatus(t *testing.T) {
 	expected.SuccessCount = 0
 	expected.FailureCount = 1
 
-	err = s.UpdateStatus(expected)
+	err = s.UpdateStatus(context.Background(), expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
 	// verify it's updated
 	expected.PendingCount = 2
-	result, err := s.Status(expected.ID.String())
+	result, err := s.Status(context.Background(), expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -106,7 +107,7 @@ func TestStatusServiceUpdateStatus(t *testing.T) {
 
 	// complete the status and check
 	expected.SuccessCount = 2
-	err = s.UpdateStatus(expected)
+	err = s.UpdateStatus(context.Background(), expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -115,7 +116,7 @@ func TestStatusServiceUpdateStatus(t *testing.T) {
 	expected.PendingCount = 0
 	expected.Status = "complete"
 
-	result, err = s.Status(expected.ID.String())
+	result, err = s.Status(context.Background(), expected.ID.String())
 	if err != nil {
 		t.Error("Got:", err)
 	}

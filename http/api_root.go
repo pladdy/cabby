@@ -17,7 +17,7 @@ type APIRootHandler struct {
 func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 	path := trimSlashes(r.URL.Path)
 
-	apiRoot, err := h.APIRootService.APIRoot(path)
+	apiRoot, err := h.APIRootService.APIRoot(r.Context(), path)
 	if err != nil {
 		internalServerError(w, err)
 		return

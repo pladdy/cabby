@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"strings"
 
@@ -17,11 +18,11 @@ type ManifestService struct {
 }
 
 // Manifest will read from the data store and return the resource
-func (s ManifestService) Manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	resource, action := "Manifest", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.manifest(collectionID, cr, f)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 

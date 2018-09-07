@@ -1,6 +1,8 @@
 package tester
 
 import (
+	"context"
+
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/stones"
 )
@@ -72,131 +74,125 @@ func (s DataStore) UserService() cabby.UserService {
 
 // APIRootService is a mock implementation
 type APIRootService struct {
-	APIRootFn  func(path string) (cabby.APIRoot, error)
-	APIRootsFn func() ([]cabby.APIRoot, error)
+	APIRootFn  func(ctx context.Context, path string) (cabby.APIRoot, error)
+	APIRootsFn func(ctx context.Context) ([]cabby.APIRoot, error)
 }
 
 // APIRoot is a mock implementation
-func (s APIRootService) APIRoot(path string) (cabby.APIRoot, error) {
-	return s.APIRootFn(path)
+func (s APIRootService) APIRoot(ctx context.Context, path string) (cabby.APIRoot, error) {
+	return s.APIRootFn(ctx, path)
 }
 
 // APIRoots is a mock implementation
-func (s APIRootService) APIRoots() ([]cabby.APIRoot, error) {
-	return s.APIRootsFn()
+func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
+	return s.APIRootsFn(ctx)
 }
 
 // CollectionService is a mock implementation
 type CollectionService struct {
-	CollectionFn           func(user, collectionID, apiRootPath string) (cabby.Collection, error)
-	CollectionsFn          func(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
-	CollectionsInAPIRootFn func(apiRootPath string) (cabby.CollectionsInAPIRoot, error)
+	CollectionFn           func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error)
+	CollectionsFn          func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
+	CollectionsInAPIRootFn func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error)
 }
 
 // Collection is a mock implementation
-func (s CollectionService) Collection(user, collectionID, apiRootPath string) (cabby.Collection, error) {
-	return s.CollectionFn(user, collectionID, apiRootPath)
+func (s CollectionService) Collection(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error) {
+	return s.CollectionFn(ctx, collectionID, apiRootPath)
 }
 
 // Collections is a mock implementation
-func (s CollectionService) Collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
-	return s.CollectionsFn(user, apiRootPath, cr)
+func (s CollectionService) Collections(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	return s.CollectionsFn(ctx, apiRootPath, cr)
 }
 
 // CollectionsInAPIRoot is a mock implementation
-func (s CollectionService) CollectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
-	return s.CollectionsInAPIRootFn(apiRootPath)
+func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
+	return s.CollectionsInAPIRootFn(ctx, apiRootPath)
 }
 
 // DiscoveryService is a mock implementation
 type DiscoveryService struct {
-	DiscoveryFn func() (cabby.Discovery, error)
+	DiscoveryFn func(ctx context.Context) (cabby.Discovery, error)
 }
 
 // Discovery is a mock implementation
-func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
-	return s.DiscoveryFn()
+func (s DiscoveryService) Discovery(ctx context.Context) (cabby.Discovery, error) {
+	return s.DiscoveryFn(ctx)
 }
 
 // ManifestService is a mock implementation
 type ManifestService struct {
-	ManifestFn func(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error)
+	ManifestFn func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error)
 }
 
 // Manifest is a mock implementation
-func (s ManifestService) Manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
-	return s.ManifestFn(collectionID, cr, f)
+func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	return s.ManifestFn(ctx, collectionID, cr, f)
 }
 
 // ObjectService is a mock implementation
 type ObjectService struct {
 	MaxContentLength int64
-	CreateBundleFn   func(b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
-	CreateObjectFn   func(object cabby.Object) error
-	ObjectFn         func(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error)
-	ObjectsFn        func(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error)
+	CreateBundleFn   func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
+	CreateObjectFn   func(ctx context.Context, object cabby.Object) error
+	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error)
+	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error)
 }
 
 // CreateBundle is a mock implementation
-func (s ObjectService) CreateBundle(b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
-	s.CreateBundleFn(b, collectionID, st, ss)
+func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	s.CreateBundleFn(ctx, b, collectionID, st, ss)
 }
 
 // CreateObject is a mock implementation
-func (s ObjectService) CreateObject(object cabby.Object) error {
-	return s.CreateObjectFn(object)
+func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) error {
+	return s.CreateObjectFn(ctx, object)
 }
 
 // Object is a mock implementation
-func (s ObjectService) Object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
-	return s.ObjectFn(collectionID, objectID, f)
+func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+	return s.ObjectFn(ctx, collectionID, objectID, f)
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
-	return s.ObjectsFn(collectionID, cr, f)
+func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+	return s.ObjectsFn(ctx, collectionID, cr, f)
 }
 
 // StatusService is a mock implementation
 type StatusService struct {
-	CreateStatusFn func(status cabby.Status) error
-	StatusFn       func(statusID string) (cabby.Status, error)
-	UpdateStatusFn func(status cabby.Status) error
+	CreateStatusFn func(ctx context.Context, status cabby.Status) error
+	StatusFn       func(ctx context.Context, statusID string) (cabby.Status, error)
+	UpdateStatusFn func(ctx context.Context, status cabby.Status) error
 }
 
 // CreateStatus is a mock implementation
-func (s StatusService) CreateStatus(status cabby.Status) error {
-	return s.CreateStatusFn(status)
+func (s StatusService) CreateStatus(ctx context.Context, status cabby.Status) error {
+	return s.CreateStatusFn(ctx, status)
 }
 
 // Status is a mock implementation
-func (s StatusService) Status(statusID string) (cabby.Status, error) {
-	return s.StatusFn(statusID)
+func (s StatusService) Status(ctx context.Context, statusID string) (cabby.Status, error) {
+	return s.StatusFn(ctx, statusID)
 }
 
 // UpdateStatus is a mock implementation
-func (s StatusService) UpdateStatus(status cabby.Status) error {
-	return s.UpdateStatusFn(status)
+func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) error {
+	return s.UpdateStatusFn(ctx, status)
 }
 
 // UserService is a mock implementation
 type UserService struct {
-	UserFn            func(user, password string) (cabby.User, error)
-	UserCollectionsFn func(user string) (cabby.UserCollectionList, error)
-	ExistsFn          func(cabby.User) bool
-}
-
-// Exists is a mock implementation
-func (s UserService) Exists(u cabby.User) bool {
-	return s.ExistsFn(u)
+	UserFn            func(ctx context.Context, user, password string) (cabby.User, error)
+	UserCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
 }
 
 // User is a mock implementation
-func (s UserService) User(user, password string) (cabby.User, error) {
-	return s.UserFn(user, password)
+func (s UserService) User(ctx context.Context, user, password string) (cabby.User, error) {
+	return s.UserFn(ctx, user, password)
 }
 
 // UserCollections is a mock implementation
-func (s UserService) UserCollections(user string) (cabby.UserCollectionList, error) {
-	return s.UserCollectionsFn(user)
+func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+	return s.UserCollectionsFn(ctx, user)
 }

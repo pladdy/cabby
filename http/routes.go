@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 
 	cabby "github.com/pladdy/cabby2"
@@ -9,7 +10,7 @@ import (
 
 func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 	ah := APIRootHandler{APIRootService: ds.APIRootService()}
-	apiRoots, err := ah.APIRootService.APIRoots()
+	apiRoots, err := ah.APIRootService.APIRoots(context.Background())
 	if err != nil {
 		log.Error("Unable to register api roots")
 		return
@@ -31,9 +32,10 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 	ch := CollectionsHandler{CollectionService: ds.CollectionService()}
 	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
 
-	acs, err := ch.CollectionService.CollectionsInAPIRoot(apiRoot.Path)
+	acs, err := ch.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
 	if err != nil {
 		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
+		return
 	}
 
 	ss := ds.StatusService()

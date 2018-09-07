@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 
 	// import sqlite dependency
@@ -16,11 +17,11 @@ type DiscoveryService struct {
 }
 
 // Discovery will read from the data store and return the resource
-func (s DiscoveryService) Discovery() (cabby.Discovery, error) {
+func (s DiscoveryService) Discovery(ctx context.Context) (cabby.Discovery, error) {
 	resource, action := "Discovery", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.discovery()
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 

@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"fmt"
@@ -17,20 +18,12 @@ type UserService struct {
 	DB *sql.DB
 }
 
-// Exists returns a bool indicating if a user is valid
-func (s UserService) Exists(u cabby.User) bool {
-	if u.Email == "" {
-		return false
-	}
-	return true
-}
-
 // User will read from the data store and populate the result with a resource
-func (s UserService) User(user, password string) (cabby.User, error) {
+func (s UserService) User(ctx context.Context, user, password string) (cabby.User, error) {
 	resource, action := "User", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.user(user, password)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
@@ -62,11 +55,11 @@ func (s UserService) user(user, password string) (cabby.User, error) {
 }
 
 // UserCollections will read from the data store and populate the result with a resource
-func (s UserService) UserCollections(user string) (cabby.UserCollectionList, error) {
+func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 	resource, action := "UserCollectionList", "read"
-	start := cabby.LogServiceStart(resource, action)
+	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.userCollections(user)
-	cabby.LogServiceEnd(resource, action, start)
+	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
