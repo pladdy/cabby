@@ -75,8 +75,8 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	//return callHandler(h, withAuthentication(newRequest(method, url, b)))
-	return callHandler(h, withUser(newRequest(method, url, b), tester.User))
+	req := newRequest(method, url, b)
+	return callHandler(h, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 }
 
 func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
@@ -125,7 +125,7 @@ func testErrorLog(result requestLog, t *testing.T) {
 		t.Error("Got:", result.Time, "Expected: a time")
 	}
 	if result.Level != "error" {
-		t.Error("Got:", result.Level, "Expected: info")
+		t.Error("Got:", result.Level, "Expected: error")
 	}
 	if len(result.Msg) <= 0 {
 		t.Error("Got:", result.Msg, "Expected: a message")

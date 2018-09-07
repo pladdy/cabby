@@ -35,6 +35,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 	acs, err := ch.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
 	if err != nil {
 		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
+		return
 	}
 
 	ss := ds.StatusService()

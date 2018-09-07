@@ -138,14 +138,14 @@ func TestWithBasicAuth(t *testing.T) {
 				return cabby.User{}, nil
 			},
 			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
-				return cabby.UserCollectionList{}, errors.New("service error")
+				return cabby.UserCollectionList{}, nil
 			}},
-		{expectedStatus: http.StatusUnauthorized,
+		{expectedStatus: http.StatusInternalServerError,
 			userFn: func(ctx context.Context, user, password string) (cabby.User, error) {
-				return cabby.User{}, nil
+				return cabby.User{Email: tester.UserEmail}, nil
 			},
 			userCollectionsFn: func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
-				return cabby.UserCollectionList{}, nil
+				return cabby.UserCollectionList{}, errors.New("service error")
 			}},
 	}
 

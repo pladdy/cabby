@@ -76,7 +76,7 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 		user.CollectionAccessList = ucs.CollectionAccessList
 
 		log.WithFields(log.Fields{"user": u}).Info("User authenticated")
-		h.ServeHTTP(withHSTS(w), withUser(r, user))
+		h.ServeHTTP(withHSTS(w), r.WithContext(cabby.WithUser(r.Context(), user)))
 	})
 }
 
@@ -84,7 +84,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		milliSecondOfNanoSeconds := int64(1000000)
 		transactionID := uuid.Must(uuid.NewV4())
-		r = withTransactionID(r, transactionID)
+		r.WithContext(cabby.WithTransactionID(r.Context(), transactionID))
 
 		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{

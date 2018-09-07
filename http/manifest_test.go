@@ -60,7 +60,7 @@ func TestManifestHandlerGetRange(t *testing.T) {
 		h := ManifestHandler{ManifestService: ms}
 
 		// set up request
-		req := withUser(newRequest("GET", testManifestURL, nil), tester.User)
+		req := newRequest("GET", testManifestURL, nil)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -102,7 +102,7 @@ func TestManifestHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := withUser(newRequest("GET", testManifestURL, nil), tester.User)
+		req := newRequest("GET", testManifestURL, nil)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()

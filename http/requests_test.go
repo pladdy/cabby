@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
-	"github.com/pladdy/cabby2/tester"
 )
 
 func TestGetToken(t *testing.T) {
@@ -128,9 +127,9 @@ func TestTakeMatchVersions(t *testing.T) {
 
 func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
 	// create a request with a valid context BUT a path with an invalid collection in it
-	request := withUser(httptest.NewRequest("GET", "/foo/bar/baz", nil), tester.User)
+	req := httptest.NewRequest("GET", "/foo/bar/baz", nil)
 
-	ca := takeCollectionAccess(request)
+	ca := takeCollectionAccess(req)
 	empty := cabby.CollectionAccess{}
 
 	if ca != empty {
@@ -157,37 +156,3 @@ func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
 // 		t.Error("Expected validation to be false")
 // 	}
 // }
-
-func TestTakeUser(t *testing.T) {
-	tests := []struct {
-		request *http.Request
-		user    string
-	}{
-		{withUser(httptest.NewRequest("GET", "/foo", nil), tester.User), tester.UserEmail},
-		{httptest.NewRequest("GET", "/foo", nil), ""},
-	}
-
-	for _, test := range tests {
-		user := takeUser(test.request)
-		if user != test.user {
-			t.Error("Got:", user, "Expected:", test.user)
-		}
-	}
-}
-
-func TestUserExists(t *testing.T) {
-	tests := []struct {
-		request  *http.Request
-		expected bool
-	}{
-		{withUser(httptest.NewRequest("GET", "/", nil), tester.User), true},
-		{httptest.NewRequest("GET", "/", nil), false},
-	}
-
-	for _, test := range tests {
-		result := userExists(test.request)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
