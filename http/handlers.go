@@ -99,7 +99,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 		elapsed := time.Since(start)
 
 		log.WithFields(log.Fields{
-			"elapsed_ts":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
+			"elapsed_ms":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"method":         r.Method,
 			"end_ms":         end.UnixNano() / milliSecondOfNanoSeconds,
 			"transaction_id": cabby.TakeTransactionID(r.Context()),
