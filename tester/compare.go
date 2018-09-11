@@ -203,6 +203,22 @@ func CompareStatus(result, expected cabby.Status) bool {
 	return passed
 }
 
+// CompareUser compares two Users
+func CompareUser(result, expected cabby.User) bool {
+	passed := true
+
+	if result.Email != expected.Email {
+		Error.Println("Got:", result.Email, "Expected:", expected.Email)
+		passed = false
+	}
+	if result.CanAdmin != expected.CanAdmin {
+		Error.Println("Got:", result.CanAdmin, "Expected:", expected.CanAdmin)
+		passed = false
+	}
+
+	return passed
+}
+
 /* compareStatus helpers */
 
 func compareFailures(result, expected cabby.Status, passed bool) bool {

@@ -7,9 +7,6 @@ PACKAGES=./ sqlite/... http/...
 
 all: config cert dependencies
 
-build: build/debian/usr/bin/
-	go build $(BUILD_TAGS) -o build/debian/usr/bin/cabby cmd/cabby/main.go
-
 build/debian/etc/cabby/:
 	mkdir -p $@
 
@@ -21,6 +18,12 @@ build/debian/lib/systemd/system/cabby.service.d/:
 
 build/debian/usr/bin/:
 	mkdir -p $@
+
+build/debian/usr/bin/cabby-cli:
+	go build -o $@ cmd/cabby-cli/*.go
+
+build/debian/usr/bin/cabby: build/debian/usr/bin/
+	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
 
 build/debian/var/cabby/:
 	mkdir -p $@

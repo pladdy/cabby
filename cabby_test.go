@@ -226,3 +226,23 @@ func TestUserDefined(t *testing.T) {
 		}
 	}
 }
+
+func TestUserValid(t *testing.T) {
+	tests := []struct {
+		user        User
+		expectError bool
+	}{
+		{user: User{Email: "foo"}, expectError: true},
+		{user: User{}, expectError: true},
+		{user: User{Email: "no@no.no"}, expectError: false},
+		{user: User{Email: "some-person@yaoo.co.uk"}, expectError: false},
+	}
+
+	for _, test := range tests {
+		result := test.user.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
+	}
+}

@@ -1,42 +1,67 @@
 package main
 
 import (
-	"flag"
 	"os"
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/sqlite"
-	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
-const (
-	cabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
-	defaultCabbyEnvironment  = "development"
-	defaultDevelopmentConfig = "config/cabby.json"
-	defaultProductionConfig  = "/etc/cabby/cabby.json"
+// https://github.com/spf13/cobra
+
+// cabby-cli create collection <flags>
+
+// cabby-cli associate -u username -c collectionID -r -w
+
+var (
+	cabbyEnv     string
+	configPath   string
+	userAdmin    bool
+	userName     string
+	userPassword string
 )
 
-var cabbyConfigs = map[string]string{
-	"development": defaultDevelopmentConfig,
-	"production":  defaultProductionConfig,
+func cmdCreate() *cobra.Command {
+	return &cobra.Command{
+		Use:   "create [command/resource]",
+		Short: "Create a resource",
+		Args:  cobra.MinimumNArgs(1),
+	}
+}
+
+func cmdDelete() *cobra.Command {
+	return &cobra.Command{
+		Use:   "delete [command/resource]",
+		Short: "Delete a resource",
+		Args:  cobra.MinimumNArgs(1),
+	}
+}
+
+func dataStoreFromConfig(path, environment string) (cabby.DataStore, error) {
+	cs := cabby.Configs{}.Parse(path)
+	c := cs[environment]
+
+	return sqlite.NewDataStore(c.DataStore["path"])
 }
 
 func main() {
-	cabbyEnv := os.Getenv(cabbyEnvironmentVariable)
+	cabbyEnv = os.Getenv(cabby.CabbyEnvironmentVariable)
 	if len(cabbyEnv) == 0 {
-		cabbyEnv = defaultCabbyEnvironment
+		cabbyEnv = cabby.DefaultCabbyEnvironment
 	}
 
-	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
+	// set up root and subcommands
+	var rootCmd = &cobra.Command{Use: "cabby-cli"}
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.CabbyConfigs[cabbyEnv], "path to cabby config file")
+	rootCmd.MarkFlagRequired("config")
 
-	var configPath = flag.String("config", cabbyConfigs[cabbyEnv], "path to cabby config file")
-	flag.Parse()
+	cmdCreate := cmdCreate()
+	cmdDelete := cmdDelete()
+	rootCmd.AddCommand(cmdCreate, cmdDelete)
 
-	cs := cabby.Configs{}.Parse(*configPath)
-	c := cs[cabbyEnv]
+	cmdDelete.AddCommand(cmdDeleteUser())
+	cmdCreate.AddCommand(cmdCreateUser())
 
-	ds, err := sqlite.NewDataStore(c.DataStore["path"])
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-	}
+	rootCmd.Execute()
 }

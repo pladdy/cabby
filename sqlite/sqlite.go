@@ -82,7 +82,7 @@ func (s *DataStore) StatusService() cabby.StatusService {
 
 // UserService returns a service for user resources
 func (s *DataStore) UserService() cabby.UserService {
-	return UserService{DB: s.DB}
+	return UserService{DB: s.DB, DataStore: s}
 }
 
 /* writer methods */

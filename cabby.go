@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,6 +18,15 @@ import (
 const (
 	cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
 
+	// CabbyEnvironmentVariable is the name of the cabby environment variable for 'environment
+	CabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
+	// DefaultCabbyEnvironment if no environment variable is st
+	DefaultCabbyEnvironment = "development"
+	// DefaultDevelopmentConfig is the path to the local dev config
+	DefaultDevelopmentConfig = "config/cabby.json"
+	// DefaultProductionConfig is the path to the packaged config file
+	DefaultProductionConfig = "/etc/cabby/cabby.json"
+
 	// StixContentType20 represents a stix 2.0 content type
 	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
 	// StixContentType represents a stix 2 content type
@@ -25,6 +36,12 @@ const (
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
 )
+
+// CabbyConfigs maps environments to default paths
+var CabbyConfigs = map[string]string{
+	"development": DefaultDevelopmentConfig,
+	"production":  DefaultProductionConfig,
+}
 
 // APIRoot resource
 type APIRoot struct {
@@ -350,6 +367,16 @@ func (u *User) Defined() bool {
 	return true
 }
 
+// Validate returns whether the object is valid or not
+func (u *User) Validate() (err error) {
+	// Validate domain? http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+	re := regexp.MustCompile(`.+.@..+\...+`)
+	if !re.Match([]byte(u.Email)) {
+		err = fmt.Errorf("Invalid e-mail: %s", u.Email)
+	}
+	return
+}
+
 // UserCollectionList holds a list of collections a user can access
 type UserCollectionList struct {
 	Email                string                  `json:"email"`
@@ -358,6 +385,8 @@ type UserCollectionList struct {
 
 // UserService provides Users behavior
 type UserService interface {
+	CreateUser(ctx context.Context, u User, password string) error
+	DeleteUser(ctx context.Context, u string) error
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }

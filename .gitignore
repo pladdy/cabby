@@ -15,7 +15,7 @@
 
 # App specific
 build/debian/etc/cabby/*
-build/debian/usr/bin/cabby
+build/debian/usr/bin/*
 build/cabby
 .env
 config/cabby.json
