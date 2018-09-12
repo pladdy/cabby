@@ -26,12 +26,12 @@ tests verbose into a DRY'er format.
 Building debian package for a vagrant VM running ubuntu: `make debian-build`
 
 ### References
-Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
-Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408
-Debian Policy Manual: https://www.debian.org/doc/debian-policy/#debian-policy-manual
-Dependencies in Debian: https://www.debian.org/doc/debian-policy/#s-binarydeps
-How to use systemctl: https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
-Understanding systemd: https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+- Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
+- Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408
+- Debian Policy Manual: https://www.debian.org/doc/debian-policy/#debian-policy-manual
+- Dependencies in Debian: https://www.debian.org/doc/debian-policy/#s-binarydeps
+- How to use systemctl: https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
+- Understanding systemd: https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
 
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like

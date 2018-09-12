@@ -93,6 +93,9 @@ type CollectionService struct {
 	CollectionFn           func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error)
 	CollectionsFn          func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
 	CollectionsInAPIRootFn func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error)
+	CreateCollectionFn     func(ctx context.Context, c cabby.Collection) error
+	DeleteCollectionFn     func(ctx context.Context, collectionID string) error
+	UpdateCollectionFn     func(ctx context.Context, c cabby.Collection) error
 }
 
 // Collection is a mock implementation
@@ -108,6 +111,21 @@ func (s CollectionService) Collections(ctx context.Context, apiRootPath string, 
 // CollectionsInAPIRoot is a mock implementation
 func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 	return s.CollectionsInAPIRootFn(ctx, apiRootPath)
+}
+
+// CreateCollection is a mock implementation
+func (s CollectionService) CreateCollection(ctx context.Context, c cabby.Collection) error {
+	return s.CreateCollectionFn(ctx, c)
+}
+
+// DeleteCollection is a mock implementation
+func (s CollectionService) DeleteCollection(ctx context.Context, id string) error {
+	return s.DeleteCollectionFn(ctx, id)
+}
+
+// UpdateCollection is a mock implementation
+func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collection) error {
+	return s.UpdateCollectionFn(ctx, c)
 }
 
 // DiscoveryService is a mock implementation
@@ -185,6 +203,7 @@ func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) er
 type UserService struct {
 	CreateUserFn      func(ctx context.Context, u cabby.User, password string) error
 	DeleteUserFn      func(ctx context.Context, u string) error
+	UpdateUserFn      func(ctx context.Context, u cabby.User) error
 	UserFn            func(ctx context.Context, user, password string) (cabby.User, error)
 	UserCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
 }
@@ -197,6 +216,11 @@ func (s UserService) CreateUser(ctx context.Context, user cabby.User, password s
 // DeleteUser is a mock implementation
 func (s UserService) DeleteUser(ctx context.Context, user string) error {
 	return s.DeleteUserFn(ctx, user)
+}
+
+// UpdateUser is a mock implementation
+func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
+	return s.UpdateUserFn(ctx, user)
 }
 
 // User is a mock implementation

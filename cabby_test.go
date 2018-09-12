@@ -38,6 +38,29 @@ func TestNewCollection(t *testing.T) {
 	}
 }
 
+func TestCollectionValidate(t *testing.T) {
+	validID, _ := NewID()
+	validTitle := "a title"
+
+	tests := []struct {
+		collection  Collection
+		expectError bool
+	}{
+		{Collection{ID: validID, Title: validTitle}, false},
+		{Collection{Title: validTitle}, true},
+		{Collection{ID: validID}, true},
+		{Collection{}, true},
+	}
+
+	for _, test := range tests {
+		result := test.collection.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
+	}
+}
+
 func TestNewRange(t *testing.T) {
 	invalidRange := Range{First: -1, Last: -1}
 
@@ -227,15 +250,15 @@ func TestUserDefined(t *testing.T) {
 	}
 }
 
-func TestUserValid(t *testing.T) {
+func TestUserValidate(t *testing.T) {
 	tests := []struct {
 		user        User
 		expectError bool
 	}{
-		{user: User{Email: "foo"}, expectError: true},
-		{user: User{}, expectError: true},
-		{user: User{Email: "no@no.no"}, expectError: false},
-		{user: User{Email: "some-person@yaoo.co.uk"}, expectError: false},
+		{User{Email: "foo"}, true},
+		{User{}, true},
+		{User{Email: "no@no.no"}, false},
+		{User{Email: "some-person@yaoo.co.uk"}, false},
 	}
 
 	for _, test := range tests {

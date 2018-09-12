@@ -15,11 +15,14 @@ import (
 // cabby-cli associate -u username -c collectionID -r -w
 
 var (
-	cabbyEnv     string
-	configPath   string
-	userAdmin    bool
-	userName     string
-	userPassword string
+	cabbyEnv              string
+	configPath            string
+	collectionID          string
+	collectionTitle       string
+	collectionDescription string
+	userAdmin             bool
+	userName              string
+	userPassword          string
 )
 
 func cmdCreate() *cobra.Command {
@@ -34,6 +37,14 @@ func cmdDelete() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [command/resource]",
 		Short: "Delete a resource",
+		Args:  cobra.MinimumNArgs(1),
+	}
+}
+
+func cmdUpdate() *cobra.Command {
+	return &cobra.Command{
+		Use:   "update [command/resource]",
+		Short: "Update a resource",
 		Args:  cobra.MinimumNArgs(1),
 	}
 }
@@ -58,10 +69,11 @@ func main() {
 
 	cmdCreate := cmdCreate()
 	cmdDelete := cmdDelete()
-	rootCmd.AddCommand(cmdCreate, cmdDelete)
+	cmdUpdate := cmdUpdate()
+	rootCmd.AddCommand(cmdCreate, cmdDelete, cmdUpdate)
 
-	cmdDelete.AddCommand(cmdDeleteUser())
-	cmdCreate.AddCommand(cmdCreateUser())
-
+	cmdCreate.AddCommand(cmdCreateCollection(), cmdCreateUser())
+	cmdDelete.AddCommand(cmdDeleteCollection(), cmdDeleteUser())
+	cmdUpdate.AddCommand(cmdUpdateCollection(), cmdUpdateUser())
 	rootCmd.Execute()
 }

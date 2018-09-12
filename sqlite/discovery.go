@@ -13,7 +13,8 @@ import (
 
 // DiscoveryService implements a SQLite version of the DiscoveryService interface
 type DiscoveryService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
 }
 
 // Discovery will read from the data store and return the resource

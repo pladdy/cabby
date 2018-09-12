@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"testing"
 
 	cabby "github.com/pladdy/cabby2"
@@ -133,6 +134,187 @@ func TestCollectionsServiceCollectionsInAPIRootQueryErr(t *testing.T) {
 	}
 
 	_, err = s.CollectionsInAPIRoot(tester.Context, tester.APIRootPath)
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestCollectionServiceCreateCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	newID, _ := cabby.NewID()
+	expected := tester.Collection
+	expected.ID = newID
+
+	err := s.CreateCollection(context.Background(), expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	rows, _ := ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	defer rows.Close()
+
+	var result string
+	for rows.Next() {
+		rows.Scan(&result)
+	}
+
+	if result != expected.ID.String() {
+		t.Error("Got:", result, "Expected:", expected.ID.String())
+	}
+}
+
+func TestUserServiceCreateUserInvalid(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	err := s.CreateCollection(context.Background(), cabby.Collection{})
+	if err == nil {
+		t.Error("Expected an err")
+	}
+}
+
+func TestCollectionServiceCreateCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	_, err := ds.DB.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = s.CreateCollection(context.Background(), tester.Collection)
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestCollectionServiceDeleteCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	// create and verify a user
+	collectionID, _ := cabby.NewID()
+	expected := cabby.Collection{ID: collectionID, Title: "a title"}
+
+	err := s.CreateCollection(context.Background(), expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	rows, _ := ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	defer rows.Close()
+
+	var result string
+	for rows.Next() {
+		rows.Scan(&result)
+	}
+
+	if result != collectionID.String() {
+		t.Error("collection not created")
+	}
+
+	// delete and verify collection is gone
+	err = s.DeleteCollection(context.Background(), expected.ID.String())
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	rows, _ = ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	defer rows.Close()
+
+	result = ""
+	for rows.Next() {
+		rows.Scan(&result)
+	}
+
+	if result != "" {
+		t.Error("Got:", result, `Expected: ""`)
+	}
+}
+
+func TestCollectionServiceDeleteCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	_, err := ds.DB.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = s.DeleteCollection(context.Background(), "foo")
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestCollectionServiceUpdateCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	newID, _ := cabby.NewID()
+	expected := tester.Collection
+	expected.ID = newID
+
+	err := s.CreateCollection(context.Background(), expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	expected.Title = "an updated title"
+	expected.Description = "an updated description"
+
+	err = s.UpdateCollection(context.Background(), expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	rows, _ := ds.DB.Query("select title, description from taxii_collection where id = ?", expected.ID.String())
+	defer rows.Close()
+
+	var title string
+	var description string
+	for rows.Next() {
+		rows.Scan(&title, &description)
+	}
+
+	if title != expected.Title {
+		t.Error("Got:", title, "Expected:", expected.Title)
+	}
+	if description != expected.Description {
+		t.Error("Got:", title, "Expected:", expected.Description)
+	}
+}
+
+func TestCollectionServiceUpdateCollectionInvalid(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	err := s.UpdateCollection(context.Background(), cabby.Collection{})
+	if err == nil {
+		t.Error("Expected an err")
+	}
+}
+
+func TestCollectionServiceUpdateCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.CollectionService()
+
+	_, err := ds.DB.Exec("drop table taxii_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = s.UpdateCollection(context.Background(), tester.Collection)
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

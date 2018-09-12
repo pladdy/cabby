@@ -86,6 +86,19 @@ func NewCollection(id ...string) (Collection, error) {
 	return c, err
 }
 
+// Validate a collection
+func (c *Collection) Validate() (err error) {
+	if c.ID.IsEmpty() {
+		return fmt.Errorf("Invalid id: %s", c.ID.String())
+	}
+
+	if len(c.Title) == 0 {
+		return fmt.Errorf("Invalid title: %s", c.Title)
+	}
+
+	return
+}
+
 // CollectionAccess defines read/write access on a collection
 type CollectionAccess struct {
 	ID       ID   `json:"id"`
@@ -109,6 +122,9 @@ type CollectionService interface {
 	Collection(ctx context.Context, apiRoot, collectionID string) (Collection, error)
 	Collections(ctx context.Context, apiRoot string, cr *Range) (Collections, error)
 	CollectionsInAPIRoot(ctx context.Context, apiRoot string) (CollectionsInAPIRoot, error)
+	CreateCollection(ctx context.Context, c Collection) error
+	DeleteCollection(ctx context.Context, collectionID string) error
+	UpdateCollection(ctx context.Context, c Collection) error
 }
 
 // Config for a server
@@ -387,6 +403,7 @@ type UserCollectionList struct {
 type UserService interface {
 	CreateUser(ctx context.Context, u User, password string) error
 	DeleteUser(ctx context.Context, u string) error
+	UpdateUser(ctx context.Context, u User) error
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }

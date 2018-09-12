@@ -30,7 +30,7 @@ func (s UserService) CreateUser(ctx context.Context, user cabby.User, password s
 	if err == nil {
 		err = s.createUser(user, password)
 	} else {
-		log.WithFields(log.Fields{"error": err, "user": user, "password": password}).Error("Invalid user and/or password")
+		log.WithFields(log.Fields{"error": err, "password": password, "user": user}).Error("Invalid user and/or password")
 	}
 
 	cabby.LogServiceEnd(ctx, resource, action, start)
@@ -41,14 +41,14 @@ func (s UserService) createUser(u cabby.User, password string) error {
 	sql := `insert into taxii_user (email, can_admin) values (?, ?)`
 	err := s.DataStore.write(sql, u.Email, u.CanAdmin)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "sql": sql, "user": u}).Error("error in sql")
 		return err
 	}
 
 	sql = `insert into taxii_user_pass (email, pass) values (?, ?)`
 	err = s.DataStore.write(sql, u.Email, hash(password))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "password": password, "sql": sql, "user": u}).Error("error in sql")
 	}
 	return err
 }
@@ -66,14 +66,39 @@ func (s UserService) deleteUser(user string) error {
 	sql := `delete from taxii_user where email = ?`
 	_, err := s.DB.Exec(sql, user)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
 		return err
 	}
 
 	sql = `delete from taxii_user_pass where email = ?`
 	_, err = s.DB.Exec(sql, user)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
+	}
+	return err
+}
+
+// UpdateUser creates a user in the data store
+func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
+	resource, action := "User", "update"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := user.Validate()
+	if err == nil {
+		err = s.updateUser(user)
+	} else {
+		log.WithFields(log.Fields{"error": err, "user": user}).Error("Invalid user")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s UserService) updateUser(u cabby.User) error {
+	sql := `update taxii_user set can_admin = ? where email = ?`
+	err := s.DataStore.write(sql, u.CanAdmin, u.Email)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "sql": sql, "user": u}).Error("error in sql")
 	}
 	return err
 }
@@ -99,7 +124,7 @@ func (s UserService) user(user, password string) (cabby.User, error) {
 
 	rows, err := s.DB.Query(sql, user, hash(password))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "password": password, "sql": sql, "user": user}).Error("error in sql")
 		return u, err
 	}
 	defer rows.Close()
@@ -135,7 +160,7 @@ func (s UserService) userCollections(user string) (cabby.UserCollectionList, err
 
 	rows, err := s.DB.Query(sql, user)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql}).Error("error in sql")
+		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
 		return ucl, err
 	}
 	defer rows.Close()

@@ -14,7 +14,8 @@ import (
 
 // APIRootService implements a SQLite version of the APIRootService interface
 type APIRootService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
 }
 
 // APIRoot will read from the data store and return the resource

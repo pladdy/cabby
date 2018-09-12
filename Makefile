@@ -109,7 +109,10 @@ reportcard: fmt
 	go vet
 
 run:
-	go run $(BUILD_TAGS) cmd/cabby/main.go
+	go run cmd/cabby/main.go
+
+run-cli:
+	go run cmd/cabby-cli/*.go
 
 run-log:
 	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log

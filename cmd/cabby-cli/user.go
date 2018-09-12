@@ -10,7 +10,7 @@ import (
 
 func cmdCreateUser() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "user -u <user> -p <password>",
+		Use:   "user",
 		Short: "Create a user",
 		Long:  `create user is used to create a user that will access the server`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -47,7 +47,7 @@ func cmdCreateUser() *cobra.Command {
 
 func cmdDeleteUser() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "user -u <user>",
+		Use:   "user",
 		Short: "Delete a user",
 		Long:  `delete user is used to delete a user from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -71,7 +71,38 @@ func cmdDeleteUser() *cobra.Command {
 
 	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
 	cmd.MarkFlagRequired("user")
+	return cmd
+}
+
+func cmdUpdateUser() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "user",
+		Short: "Update a user",
+		Long:  `update user is used to update a users properties`,
+		Run: func(cmd *cobra.Command, args []string) {
+			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			if err != nil {
+				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
+			}
+			defer ds.Close()
+
+			newUser := cabby.User{Email: userName, CanAdmin: userAdmin}
+			err = ds.UserService().UpdateUser(context.Background(), newUser)
+			if err != nil {
+				log.WithFields(log.Fields{"error": err, "user": newUser}).Error("Failed to create")
+			}
+		},
+		PreRun: func(cmd *cobra.Command, args []string) {
+			if userName == "" {
+				log.Fatal("User name required")
+			}
+		},
+	}
+
+	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
+	cmd.MarkFlagRequired("user")
 	cmd.PersistentFlags().BoolVarP(&userAdmin, "admin", "a", false, "user is an admin")
+	cmd.MarkFlagRequired("admin")
 
 	return cmd
 }

@@ -14,7 +14,8 @@ import (
 
 // CollectionService implements a SQLite version of the CollectionService interface
 type CollectionService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
 }
 
 // Collection will read from the data store and return the resource
@@ -39,7 +40,9 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 
 	rows, err := s.DB.Query(sql, user, apiRootPath, collectionID)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		log.WithFields(
+			log.Fields{"api_root_path": apiRootPath, "collection_id": collectionID, "error": err, "sql": sql, "user": user},
+		).Error("error in sql")
 		return c, err
 	}
 	defer rows.Close()
@@ -93,7 +96,9 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		log.WithFields(
+			log.Fields{"api_root_path": apiRootPath, "error": err, "sql": sql, "user": user},
+		).Error("error in sql")
 		return cs, err
 	}
 	defer rows.Close()
@@ -123,16 +128,14 @@ func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath
 }
 
 func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
-	sql := `select c.api_root_path, c.id
-					from
-						taxii_collection c
-					where c.api_root_path = ?`
+	sql := `select c.api_root_path, c.id from taxii_collection c where c.api_root_path = ?`
 
 	ac := cabby.CollectionsInAPIRoot{}
 	var err error
 
 	rows, err := s.DB.Query(sql, apiRootPath)
 	if err != nil {
+		log.WithFields(log.Fields{"api_root_path": apiRootPath, "error": err, "sql": sql}).Error("error in sql")
 		return ac, err
 	}
 	defer rows.Close()
@@ -148,4 +151,75 @@ func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.Colle
 
 	err = rows.Err()
 	return ac, err
+}
+
+// CreateCollection creates a user in the data store
+func (s CollectionService) CreateCollection(ctx context.Context, c cabby.Collection) error {
+	resource, action := "Collection", "create"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := c.Validate()
+	if err == nil {
+		err = s.createCollection(c)
+	} else {
+		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid user and/or password")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s CollectionService) createCollection(c cabby.Collection) error {
+	sql := `insert into taxii_collection (id, api_root_path, title, description, media_types)
+					values (?, ?, ?, ?, ?)`
+
+	err := s.DataStore.write(sql, c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ","))
+	if err != nil {
+		log.WithFields(log.Fields{"collection": c, "error": err, "sql": sql}).Error("error in sql")
+	}
+	return err
+}
+
+// DeleteCollection creates a user in the data store
+func (s CollectionService) DeleteCollection(ctx context.Context, id string) error {
+	resource, action := "Collection", "delete"
+	start := cabby.LogServiceStart(ctx, resource, action)
+	err := s.deleteCollection(id)
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s CollectionService) deleteCollection(id string) error {
+	sql := `delete from taxii_collection where id = ?`
+	_, err := s.DB.Exec(sql, id)
+	if err != nil {
+		log.WithFields(log.Fields{"id": id, "error": err, "sql": sql}).Error("error in sql")
+	}
+	return err
+}
+
+// UpdateCollection creates a user in the data store
+func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collection) error {
+	resource, action := "Collection", "update"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := c.Validate()
+	if err == nil {
+		err = s.updateCollection(c)
+	} else {
+		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid user and/or password")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s CollectionService) updateCollection(c cabby.Collection) error {
+	sql := `update taxii_collection set api_root_path = ?, title = ?, description = ? where id = ?`
+
+	err := s.DataStore.write(sql, c.APIRootPath, c.Title, c.Description, c.ID.String())
+	if err != nil {
+		log.WithFields(log.Fields{"collection": c, "error": err, "sql": sql}).Error("error in sql")
+	}
+	return err
 }

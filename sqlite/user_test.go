@@ -153,6 +153,77 @@ func TestUserServiceDeleteUserPasswordQueryFail(t *testing.T) {
 	}
 }
 
+func TestUserServiceUpdateUser(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	// create a user
+	expected := cabby.User{Email: "test@test.test", CanAdmin: false}
+	pass := "new-user-password"
+
+	err := s.CreateUser(context.Background(), expected, pass)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	result, err := s.User(context.Background(), expected.Email, pass)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	passed := tester.CompareUser(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
+	// update to be admin
+	expected = cabby.User{Email: "test@test.test", CanAdmin: true}
+
+	err = s.UpdateUser(context.Background(), expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	// check it
+	result, err = s.User(context.Background(), expected.Email, pass)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	passed = tester.CompareUser(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestUserServiceUpdateUserInvalid(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	err := s.UpdateUser(context.Background(), cabby.User{})
+	if err == nil {
+		t.Error("Expected an err")
+	}
+}
+
+func TestUserServiceUpdateUserQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	_, err := ds.DB.Exec("drop table taxii_user")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = s.UpdateUser(context.Background(), cabby.User{Email: "foo@foo.com"})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
 func TestUserServiceUser(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
