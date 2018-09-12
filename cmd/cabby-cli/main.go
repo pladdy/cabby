@@ -17,6 +17,7 @@ import (
 var (
 	cabbyEnv              string
 	configPath            string
+	collectionAPIRootPath string
 	collectionID          string
 	collectionTitle       string
 	collectionDescription string

@@ -32,6 +32,9 @@ func cmdCreateCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if collectionAPIRootPath == "" {
+				log.Fatal("API Root Path required")
+			}
 			if collectionID == "" {
 				log.Fatal("ID required")
 			}
@@ -41,6 +44,8 @@ func cmdCreateCollection() *cobra.Command {
 		},
 	}
 
+	cmd.PersistentFlags().StringVarP(&collectionAPIRootPath, "api_root_path", "a", "", "api root path")
+	cmd.MarkFlagRequired("api_root_path")
 	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
 	cmd.MarkFlagRequired("id")
 	cmd.PersistentFlags().StringVarP(&collectionTitle, "title", "t", "", "collection title")
@@ -113,6 +118,8 @@ func cmdUpdateCollection() *cobra.Command {
 		},
 	}
 
+	cmd.PersistentFlags().StringVarP(&collectionAPIRootPath, "api_root_path", "a", "", "api root path")
+	cmd.MarkFlagRequired("api_root_path")
 	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
 	cmd.MarkFlagRequired("id")
 	cmd.PersistentFlags().StringVarP(&collectionTitle, "title", "t", "", "collection title")
