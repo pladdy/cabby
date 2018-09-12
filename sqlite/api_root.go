@@ -7,7 +7,6 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
-	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -31,12 +30,13 @@ func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root
 				  where api_root_path = ?`
+	args := []interface{}{path}
 
 	a := cabby.APIRoot{}
 
-	rows, err := s.DB.Query(sql, path)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return a, err
 	}
 	defer rows.Close()
@@ -65,11 +65,13 @@ func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 func (s APIRootService) apiRoots() ([]cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root`
+	args := []interface{}{}
 
 	as := []cabby.APIRoot{}
 
-	rows, err := s.DB.Query(sql)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
+		logSQLError(sql, args, err)
 		return as, err
 	}
 

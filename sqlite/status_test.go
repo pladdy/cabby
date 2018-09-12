@@ -30,6 +30,24 @@ func TestStatusServiceCreateStatus(t *testing.T) {
 	}
 }
 
+func TestStatusServiceCreateStatusFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.StatusService()
+
+	_, err := ds.DB.Exec("drop table taxii_status")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	test := tester.Status
+
+	err = s.CreateStatus(context.Background(), test)
+	if err == nil {
+		t.Error("Expected an error")
+	}
+}
+
 func TestStatusServiceStatus(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()

@@ -39,16 +39,20 @@ func (s UserService) CreateUser(ctx context.Context, user cabby.User, password s
 
 func (s UserService) createUser(u cabby.User, password string) error {
 	sql := `insert into taxii_user (email, can_admin) values (?, ?)`
-	err := s.DataStore.write(sql, u.Email, u.CanAdmin)
+	args := []interface{}{u.Email, u.CanAdmin}
+
+	err := s.DataStore.write(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql, "user": u}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return err
 	}
 
 	sql = `insert into taxii_user_pass (email, pass) values (?, ?)`
-	err = s.DataStore.write(sql, u.Email, hash(password))
+	args = []interface{}{u.Email, hash(password)}
+
+	err = s.DataStore.write(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "password": password, "sql": sql, "user": u}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }
@@ -64,16 +68,18 @@ func (s UserService) DeleteUser(ctx context.Context, user string) error {
 
 func (s UserService) deleteUser(user string) error {
 	sql := `delete from taxii_user where email = ?`
-	_, err := s.DB.Exec(sql, user)
+	args := []interface{}{user}
+
+	_, err := s.DB.Exec(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return err
 	}
 
 	sql = `delete from taxii_user_pass where email = ?`
-	_, err = s.DB.Exec(sql, user)
+	_, err = s.DB.Exec(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }
@@ -96,9 +102,11 @@ func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
 
 func (s UserService) updateUser(u cabby.User) error {
 	sql := `update taxii_user set can_admin = ? where email = ?`
-	err := s.DataStore.write(sql, u.CanAdmin, u.Email)
+	args := []interface{}{u.CanAdmin, u.Email}
+
+	err := s.DataStore.write(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql, "user": u}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }
@@ -119,12 +127,13 @@ func (s UserService) user(user, password string) (cabby.User, error) {
             inner join taxii_user_pass tup
               on tu.email = tup.email
           where tu.email = ? and tup.pass = ?`
+	args := []interface{}{user, hash(password)}
 
 	u := cabby.User{}
 
-	rows, err := s.DB.Query(sql, user, hash(password))
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "password": password, "sql": sql, "user": user}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return u, err
 	}
 	defer rows.Close()
@@ -155,12 +164,13 @@ func (s UserService) userCollections(user string) (cabby.UserCollectionList, err
 						inner join taxii_user_collection tuc
 							on tu.email = tuc.email
 					where tu.email = ?`
+	args := []interface{}{user}
 
 	ucl := cabby.UserCollectionList{Email: user, CollectionAccessList: map[cabby.ID]cabby.CollectionAccess{}}
 
-	rows, err := s.DB.Query(sql, user)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err, "sql": sql, "user": user}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return ucl, err
 	}
 	defer rows.Close()

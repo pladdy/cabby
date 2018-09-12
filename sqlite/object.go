@@ -65,7 +65,14 @@ func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) er
 }
 
 func (s ObjectService) createObject(o cabby.Object) error {
-	return s.DataStore.write(createObjectSQL, o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID)
+	sql := createObjectSQL
+	args := []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID}
+
+	err := s.DataStore.write(createObjectSQL, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
 }
 
 // Object will read from the data store and return the resource
@@ -93,7 +100,7 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return objects, err
 	}
 	defer rows.Close()
@@ -141,7 +148,7 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return objects, err
 	}
 	defer rows.Close()

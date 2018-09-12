@@ -6,7 +6,6 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
-	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -35,13 +34,14 @@ func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 						 taxii_discovery td
 						 left join taxii_api_root tar
 							 on td.id = tar.discovery_id`
+	args := []interface{}{}
 
 	d := cabby.Discovery{}
 	var apiRoots []string
 
-	rows, err := s.DB.Query(sql)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return d, err
 	}
 	defer rows.Close()

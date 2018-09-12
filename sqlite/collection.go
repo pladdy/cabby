@@ -34,15 +34,14 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 						inner join taxii_user_collection uc
 							on c.id = uc.collection_id
 					where uc.email = ? and c.api_root_path = ? and c.id = ? and uc.can_read = 1`
+	args := []interface{}{user, apiRootPath, collectionID}
 
 	c := cabby.Collection{}
 	var err error
 
-	rows, err := s.DB.Query(sql, user, apiRootPath, collectionID)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(
-			log.Fields{"api_root_path": apiRootPath, "collection_id": collectionID, "error": err, "sql": sql, "user": user},
-		).Error("error in sql")
+		logSQLError(sql, args, err)
 		return c, err
 	}
 	defer rows.Close()
@@ -91,14 +90,13 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 
 	args := []interface{}{user, apiRootPath}
 	sql, args = applyPaging(sql, cr, args)
+
 	cs := cabby.Collections{}
 	var err error
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(
-			log.Fields{"api_root_path": apiRootPath, "error": err, "sql": sql, "user": user},
-		).Error("error in sql")
+		logSQLError(sql, args, err)
 		return cs, err
 	}
 	defer rows.Close()
@@ -129,13 +127,14 @@ func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath
 
 func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
 	sql := `select c.api_root_path, c.id from taxii_collection c where c.api_root_path = ?`
+	args := []interface{}{apiRootPath}
 
 	ac := cabby.CollectionsInAPIRoot{}
 	var err error
 
-	rows, err := s.DB.Query(sql, apiRootPath)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"api_root_path": apiRootPath, "error": err, "sql": sql}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return ac, err
 	}
 	defer rows.Close()
@@ -172,10 +171,11 @@ func (s CollectionService) CreateCollection(ctx context.Context, c cabby.Collect
 func (s CollectionService) createCollection(c cabby.Collection) error {
 	sql := `insert into taxii_collection (id, api_root_path, title, description, media_types)
 					values (?, ?, ?, ?, ?)`
+	args := []interface{}{c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ",")}
 
-	err := s.DataStore.write(sql, c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ","))
+	err := s.DataStore.write(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"collection": c, "error": err, "sql": sql}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }
@@ -191,9 +191,11 @@ func (s CollectionService) DeleteCollection(ctx context.Context, id string) erro
 
 func (s CollectionService) deleteCollection(id string) error {
 	sql := `delete from taxii_collection where id = ?`
+	args := []interface{}{id}
+
 	_, err := s.DB.Exec(sql, id)
 	if err != nil {
-		log.WithFields(log.Fields{"id": id, "error": err, "sql": sql}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }
@@ -216,10 +218,11 @@ func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collect
 
 func (s CollectionService) updateCollection(c cabby.Collection) error {
 	sql := `update taxii_collection set api_root_path = ?, title = ?, description = ? where id = ?`
+	args := []interface{}{c.APIRootPath, c.Title, c.Description, c.ID.String()}
 
-	err := s.DataStore.write(sql, c.APIRootPath, c.Title, c.Description, c.ID.String())
+	err := s.DataStore.write(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"collection": c, "error": err, "sql": sql}).Error("error in sql")
+		logSQLError(sql, args, err)
 	}
 	return err
 }

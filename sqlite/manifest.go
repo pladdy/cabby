@@ -7,7 +7,6 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
-	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -49,7 +48,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 
 	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return m, err
 	}
 	defer rows.Close()

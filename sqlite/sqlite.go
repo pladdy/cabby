@@ -275,6 +275,10 @@ func filterVersion(rawVersion string) (filter string, args []interface{}) {
 	return "(" + strings.Join(ors, " or ") + ")", args
 }
 
+func logSQLError(sql string, args []interface{}, err error) {
+	log.WithFields(log.Fields{"error": err, "sql": sql, "args": args}).Error("Error in sql")
+}
+
 // Range implementation for SQLite
 type Range struct {
 	*cabby.Range
