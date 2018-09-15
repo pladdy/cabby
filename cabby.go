@@ -35,6 +35,8 @@ const (
 	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
+	// TaxiiVersion notes the supported version of the server
+	TaxiiVersion = "taxii-2.0"
 )
 
 // CabbyConfigs maps environments to default paths
@@ -52,10 +54,43 @@ type APIRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+// IncludesMinVersion checks if minimum taxii version is included in list
+func (a *APIRoot) IncludesMinVersion(vs []string) bool {
+	versions := map[string]bool{}
+
+	for _, v := range vs {
+		versions[v] = true
+	}
+
+	b, _ := versions[TaxiiVersion]
+	return b
+}
+
+// Validate an API Root
+func (a *APIRoot) Validate() error {
+	if a.Path == "" {
+		return errors.New("Path must be defined")
+	}
+	if a.Title == "" {
+		return errors.New("Title must be defined")
+	}
+	if len(a.Versions) <= 0 {
+		return errors.New("At least one version must be specified")
+	}
+	if !a.IncludesMinVersion(a.Versions) {
+		return fmt.Errorf("Minimum TAXII version %s must be included in 'Versions'", TaxiiVersion)
+	}
+
+	return nil
+}
+
 // APIRootService for interacting with APIRoots
 type APIRootService interface {
 	APIRoot(ctx context.Context, path string) (APIRoot, error)
 	APIRoots(ctx context.Context) ([]APIRoot, error)
+	CreateAPIRoot(ctx context.Context, a APIRoot) error
+	DeleteAPIRoot(ctx context.Context, path string) error
+	UpdateAPIRoot(ctx context.Context, a APIRoot) error
 }
 
 // Collection resource
@@ -175,9 +210,21 @@ type Discovery struct {
 	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
+// Validate a discovery resource
+func (d *Discovery) Validate() error {
+	if d.Title == "" {
+		return errors.New("Title must be defined")
+	}
+
+	return nil
+}
+
 // DiscoveryService interface for interacting with Discovery resources
 type DiscoveryService interface {
+	CreateDiscovery(ctx context.Context, d Discovery) error
+	DeleteDiscovery(ctx context.Context) error
 	Discovery(ctx context.Context) (Discovery, error)
+	UpdateDiscovery(ctx context.Context, d Discovery) error
 }
 
 // Error struct for TAXII 2 errors
@@ -404,6 +451,9 @@ type UserService interface {
 	CreateUser(ctx context.Context, u User, password string) error
 	DeleteUser(ctx context.Context, u string) error
 	UpdateUser(ctx context.Context, u User) error
+	CreateUserCollection(ctx context.Context, u string, ca CollectionAccess) error
+	DeleteUserCollection(ctx context.Context, u, id string) error
+	UpdateUserCollection(ctx context.Context, u string, ca CollectionAccess) error
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }

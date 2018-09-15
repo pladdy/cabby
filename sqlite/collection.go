@@ -118,7 +118,7 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 
 // CollectionsInAPIRoot return collections in a given api root
 func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
-	resource, action := "APIRootCollections", "read"
+	resource, action := "CollectionsInAPIRoot", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.collectionsInAPIRoot(apiRootPath)
 	cabby.LogServiceEnd(ctx, resource, action, start)
@@ -161,7 +161,7 @@ func (s CollectionService) CreateCollection(ctx context.Context, c cabby.Collect
 	if err == nil {
 		err = s.createCollection(c)
 	} else {
-		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid user and/or password")
+		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid Collection")
 	}
 
 	cabby.LogServiceEnd(ctx, resource, action, start)
@@ -193,7 +193,7 @@ func (s CollectionService) deleteCollection(id string) error {
 	sql := `delete from taxii_collection where id = ?`
 	args := []interface{}{id}
 
-	_, err := s.DB.Exec(sql, id)
+	_, err := s.DB.Exec(sql, args...)
 	if err != nil {
 		logSQLError(sql, args, err)
 	}
@@ -209,7 +209,7 @@ func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collect
 	if err == nil {
 		err = s.updateCollection(c)
 	} else {
-		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid user and/or password")
+		log.WithFields(log.Fields{"collection": c, "error": err}).Error("Invalid Collection")
 	}
 
 	cabby.LogServiceEnd(ctx, resource, action, start)

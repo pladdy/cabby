@@ -74,8 +74,11 @@ func (s DataStore) UserService() cabby.UserService {
 
 // APIRootService is a mock implementation
 type APIRootService struct {
-	APIRootFn  func(ctx context.Context, path string) (cabby.APIRoot, error)
-	APIRootsFn func(ctx context.Context) ([]cabby.APIRoot, error)
+	APIRootFn       func(ctx context.Context, path string) (cabby.APIRoot, error)
+	APIRootsFn      func(ctx context.Context) ([]cabby.APIRoot, error)
+	CreateAPIRootFn func(ctx context.Context, ca cabby.APIRoot) error
+	DeleteAPIRootFn func(ctx context.Context, path string) error
+	UpdateAPIRootFn func(ctx context.Context, a cabby.APIRoot) error
 }
 
 // APIRoot is a mock implementation
@@ -86,6 +89,21 @@ func (s APIRootService) APIRoot(ctx context.Context, path string) (cabby.APIRoot
 // APIRoots is a mock implementation
 func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 	return s.APIRootsFn(ctx)
+}
+
+// CreateAPIRoot is a mock implementation
+func (s APIRootService) CreateAPIRoot(ctx context.Context, a cabby.APIRoot) error {
+	return s.CreateAPIRootFn(ctx, a)
+}
+
+// DeleteAPIRoot is a mock implementation
+func (s APIRootService) DeleteAPIRoot(ctx context.Context, path string) error {
+	return s.DeleteAPIRootFn(ctx, path)
+}
+
+// UpdateAPIRoot is a mock implementation
+func (s APIRootService) UpdateAPIRoot(ctx context.Context, a cabby.APIRoot) error {
+	return s.UpdateAPIRootFn(ctx, a)
 }
 
 // CollectionService is a mock implementation
@@ -130,12 +148,30 @@ func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collect
 
 // DiscoveryService is a mock implementation
 type DiscoveryService struct {
-	DiscoveryFn func(ctx context.Context) (cabby.Discovery, error)
+	CreateDiscoveryFn func(ctx context.Context, d cabby.Discovery) error
+	DeleteDiscoveryFn func(ctx context.Context) error
+	DiscoveryFn       func(ctx context.Context) (cabby.Discovery, error)
+	UpdateDiscoveryFn func(ctx context.Context, d cabby.Discovery) error
+}
+
+// CreateDiscovery is a mock implementation
+func (s DiscoveryService) CreateDiscovery(ctx context.Context, d cabby.Discovery) error {
+	return s.CreateDiscoveryFn(ctx, d)
+}
+
+// DeleteDiscovery is a mock implementation
+func (s DiscoveryService) DeleteDiscovery(ctx context.Context) error {
+	return s.DeleteDiscoveryFn(ctx)
 }
 
 // Discovery is a mock implementation
 func (s DiscoveryService) Discovery(ctx context.Context) (cabby.Discovery, error) {
 	return s.DiscoveryFn(ctx)
+}
+
+// UpdateDiscovery is a mock implementation
+func (s DiscoveryService) UpdateDiscovery(ctx context.Context, d cabby.Discovery) error {
+	return s.UpdateDiscoveryFn(ctx, d)
 }
 
 // ManifestService is a mock implementation
@@ -201,11 +237,14 @@ func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) er
 
 // UserService is a mock implementation
 type UserService struct {
-	CreateUserFn      func(ctx context.Context, u cabby.User, password string) error
-	DeleteUserFn      func(ctx context.Context, u string) error
-	UpdateUserFn      func(ctx context.Context, u cabby.User) error
-	UserFn            func(ctx context.Context, user, password string) (cabby.User, error)
-	UserCollectionsFn func(ctx context.Context, user string) (cabby.UserCollectionList, error)
+	CreateUserFn           func(ctx context.Context, u cabby.User, password string) error
+	DeleteUserFn           func(ctx context.Context, u string) error
+	UpdateUserFn           func(ctx context.Context, u cabby.User) error
+	CreateUserCollectionFn func(ctx context.Context, u string, ca cabby.CollectionAccess) error
+	DeleteUserCollectionFn func(ctx context.Context, u, id string) error
+	UpdateUserCollectionFn func(ctx context.Context, u string, ca cabby.CollectionAccess) error
+	UserFn                 func(ctx context.Context, user, password string) (cabby.User, error)
+	UserCollectionsFn      func(ctx context.Context, user string) (cabby.UserCollectionList, error)
 }
 
 // CreateUser is a mock implementation
@@ -221,6 +260,21 @@ func (s UserService) DeleteUser(ctx context.Context, user string) error {
 // UpdateUser is a mock implementation
 func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
 	return s.UpdateUserFn(ctx, user)
+}
+
+// CreateUserCollection is a mock implementation
+func (s UserService) CreateUserCollection(ctx context.Context, user string, ca cabby.CollectionAccess) error {
+	return s.CreateUserCollectionFn(ctx, user, ca)
+}
+
+// DeleteUserCollection is a mock implementation
+func (s UserService) DeleteUserCollection(ctx context.Context, user, id string) error {
+	return s.DeleteUserCollectionFn(ctx, user, id)
+}
+
+// UpdateUserCollection is a mock implementation
+func (s UserService) UpdateUserCollection(ctx context.Context, user string, ca cabby.CollectionAccess) error {
+	return s.UpdateUserCollectionFn(ctx, user, ca)
 }
 
 // User is a mock implementation

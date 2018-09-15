@@ -15,15 +15,26 @@ import (
 // cabby-cli associate -u username -c collectionID -r -w
 
 var (
-	cabbyEnv              string
-	configPath            string
-	collectionAPIRootPath string
-	collectionID          string
-	collectionTitle       string
-	collectionDescription string
-	userAdmin             bool
-	userName              string
-	userPassword          string
+	apiRootDescription     string
+	apiRootPath            string
+	apiRootTitle           string
+	apiRootVersions        string
+	cabbyEnv               string
+	configPath             string
+	collectionAPIRootPath  string
+	collectionID           string
+	collectionTitle        string
+	collectionDescription  string
+	discoveryContact       string
+	discoveryDefault       string
+	discoveryDescription   string
+	discoveryTitle         string
+	maxContentLength       int64
+	userAdmin              bool
+	userCollectionCanRead  bool
+	userCollectionCanWrite bool
+	userName               string
+	userPassword           string
 )
 
 func cmdCreate() *cobra.Command {
@@ -73,8 +84,26 @@ func main() {
 	cmdUpdate := cmdUpdate()
 	rootCmd.AddCommand(cmdCreate, cmdDelete, cmdUpdate)
 
-	cmdCreate.AddCommand(cmdCreateCollection(), cmdCreateUser())
-	cmdDelete.AddCommand(cmdDeleteCollection(), cmdDeleteUser())
-	cmdUpdate.AddCommand(cmdUpdateCollection(), cmdUpdateUser())
+	cmdCreate.AddCommand(
+		cmdCreateAPIRoot(),
+		cmdCreateCollection(),
+		cmdCreateDiscovery(),
+		cmdCreateUser(),
+		cmdCreateUserCollection())
+
+	cmdDelete.AddCommand(
+		cmdDeleteAPIRoot(),
+		cmdDeleteCollection(),
+		cmdDeleteDiscovery(),
+		cmdDeleteUser(),
+		cmdDeleteUserCollection())
+
+	cmdUpdate.AddCommand(
+		cmdUpdateAPIRoot(),
+		cmdUpdateCollection(),
+		cmdUpdateDiscovery(),
+		cmdUpdateUser(),
+		cmdUpdateUserCollection())
+
 	rootCmd.Execute()
 }

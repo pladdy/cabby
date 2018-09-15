@@ -6,6 +6,7 @@ import (
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
 
 	cabby "github.com/pladdy/cabby2"
 )
@@ -14,6 +15,53 @@ import (
 type DiscoveryService struct {
 	DB        *sql.DB
 	DataStore *DataStore
+}
+
+// CreateDiscovery creates a user in the data store
+func (s DiscoveryService) CreateDiscovery(ctx context.Context, d cabby.Discovery) error {
+	resource, action := "Discovery", "create"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := d.Validate()
+	if err == nil {
+		err = s.createDiscovery(d)
+	} else {
+		log.WithFields(log.Fields{"discovery": d, "error": err}).Error("Invalid Discovery")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s DiscoveryService) createDiscovery(d cabby.Discovery) error {
+	sql := `insert into taxii_discovery (title, description, contact, default_url) values (?, ?, ?, ?)`
+	args := []interface{}{d.Title, d.Description, d.Contact, d.Default}
+
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
+}
+
+// DeleteDiscovery creates a user in the data store
+func (s DiscoveryService) DeleteDiscovery(ctx context.Context) error {
+	resource, action := "Discovery", "delete"
+	start := cabby.LogServiceStart(ctx, resource, action)
+	err := s.deleteDiscovery()
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s DiscoveryService) deleteDiscovery() error {
+	sql := `delete from taxii_discovery`
+	args := []interface{}{}
+
+	_, err := s.DB.Exec(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
 }
 
 // Discovery will read from the data store and return the resource
@@ -29,7 +77,7 @@ func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 	sql := `select td.title, td.description, td.contact, td.default_url,
 						 case
 							 when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
-						 end api_root_path
+						 end discovery_path
 					 from
 						 taxii_discovery td
 						 left join taxii_api_root tar
@@ -59,4 +107,32 @@ func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 	err = rows.Err()
 	d.APIRoots = apiRoots
 	return d, err
+}
+
+// UpdateDiscovery creates a user in the data store
+func (s DiscoveryService) UpdateDiscovery(ctx context.Context, d cabby.Discovery) error {
+	resource, action := "Discovery", "update"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := d.Validate()
+	if err == nil {
+		err = s.updateDiscovery(d)
+	} else {
+		log.WithFields(log.Fields{"discovery": d, "error": err}).Error("Invalid Discovery")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s DiscoveryService) updateDiscovery(d cabby.Discovery) error {
+	sql := `update taxii_discovery
+					set title = ?, description = ?, contact = ?, default_url = ?`
+	args := []interface{}{d.Title, d.Description, d.Contact, d.Default}
+
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
 }

@@ -26,7 +26,7 @@ const (
 	// UserEmail for tests
 	UserEmail = "test@cabby.com"
 	// UserPassword for tests
-	UserPassword = "test"
+	UserPassword = "test-password"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 		Path:             APIRootPath,
 		Title:            "test api root title",
 		Description:      "test api root description",
-		Versions:         []string{"taxii-2.0"},
+		Versions:         []string{cabby.TaxiiVersion},
 		MaxContentLength: eightMB}
 
 	// BaseURL for tests
@@ -61,7 +61,7 @@ var (
 		Description: "test discovery description",
 		Contact:     "cabby test",
 		Default:     BaseURL + "taxii/",
-		APIRoots:    []string{BaseURL + APIRootPath + "/"}}
+		APIRoots:    []string{APIRootPath}}
 	// DiscoveryDataStore mock; the service just returns an API root path
 	DiscoveryDataStore = cabby.Discovery{
 		Title:       "test discovery",

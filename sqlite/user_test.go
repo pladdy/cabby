@@ -224,6 +224,164 @@ func TestUserServiceUpdateUserQueryFail(t *testing.T) {
 	}
 }
 
+// start
+func TestUserServiceCreateUserCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	id, _ := cabby.NewID()
+	expected := cabby.CollectionAccess{ID: id}
+	err := s.CreateUserCollection(context.Background(), tester.UserEmail, expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	result, err := s.UserCollections(context.Background(), tester.UserEmail)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	ca, ok := result.CollectionAccessList[id]
+	if !ok {
+		t.Error("Got:", ca, "Expected:", expected)
+	}
+}
+
+func TestUserServiceCreateUserCollectionInvalid(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	err := s.CreateUserCollection(context.Background(), "", cabby.CollectionAccess{})
+	if err == nil {
+		t.Error("Expected an err")
+	}
+}
+
+func TestUserServiceCreateUserCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id, _ := cabby.NewID()
+	err = s.CreateUserCollection(context.Background(), tester.UserEmail, cabby.CollectionAccess{ID: id})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestUserServiceDeleteUserCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	err := s.DeleteUserCollection(context.Background(), tester.UserEmail, tester.CollectionID)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	result, err := s.UserCollections(context.Background(), tester.UserEmail)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	id, _ := cabby.IDFromString(tester.CollectionID)
+	_, ok := result.CollectionAccessList[id]
+	if ok {
+		t.Error("Expected not ok")
+	}
+}
+
+func TestUserServiceDeleteUserCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = s.DeleteUserCollection(context.Background(), tester.UserEmail, tester.CollectionID)
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+func TestUserServiceUpdateUserCollection(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	// create a collection with no access for the user
+	id, _ := cabby.NewID()
+
+	err := s.CreateUserCollection(context.Background(), tester.UserEmail, cabby.CollectionAccess{ID: id})
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	// update it to have read/write
+	expected := cabby.CollectionAccess{ID: id, CanRead: true, CanWrite: true}
+	err = s.UpdateUserCollection(context.Background(), tester.UserEmail, expected)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	result, err := s.UserCollections(context.Background(), tester.UserEmail)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	ca, ok := result.CollectionAccessList[id]
+	if !ok {
+		t.Error("Expected not ok")
+	}
+
+	if ca.CanRead == false {
+		t.Error("Got: false", "Expected: true")
+	}
+	if ca.CanWrite == false {
+		t.Error("Got: false", "Expected: true")
+	}
+}
+
+func TestUserServiceUpdateUserCollectionInvalid(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	err := s.UpdateUserCollection(context.Background(), "", cabby.CollectionAccess{})
+	if err == nil {
+		t.Error("Expected an err")
+	}
+}
+
+func TestUserServiceUpdateUserCollectionQueryFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.UserService()
+
+	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id, _ := cabby.NewID()
+	err = s.UpdateUserCollection(context.Background(), tester.UserEmail, cabby.CollectionAccess{ID: id})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
+
+// end
+
 func TestUserServiceUser(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
@@ -325,6 +483,28 @@ func TestValidatePassword(t *testing.T) {
 
 	for _, test := range tests {
 		result := validatePassword(test.password)
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
+	}
+}
+
+func TestValidateUserCollection(t *testing.T) {
+	newID, _ := cabby.NewID()
+
+	tests := []struct {
+		user        string
+		ca          cabby.CollectionAccess
+		expectError bool
+	}{
+		{"", cabby.CollectionAccess{}, true},
+		{"foo", cabby.CollectionAccess{}, true},
+		{"foo", cabby.CollectionAccess{ID: newID}, false},
+	}
+
+	for _, test := range tests {
+		result := validateUserCollection(test.user, test.ca)
 
 		if test.expectError && result == nil {
 			t.Error("Got:", result, "Expected:", test.expectError)

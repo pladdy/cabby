@@ -74,7 +74,7 @@ create table stix_objects (
 drop table if exists taxii_api_root;
 
 create table taxii_api_root (
-  id                 text    not null primary key,
+  id                 integer not null primary key,
   discovery_id       integer check(discovery_id = 1) default 1,
   api_root_path      text    not null,
   title              text    not null,
@@ -236,7 +236,7 @@ create table taxii_user_collection (
 drop table if exists taxii_user_pass;
 
 create table taxii_user_pass (
-  id         integer primary key not null,
+  id         integer not null primary key,
   email      text not null,
   -- check password is not empty string or sha256 of empty string
   pass       text not null check (
