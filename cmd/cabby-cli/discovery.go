@@ -87,7 +87,7 @@ func cmdUpdateDiscovery() *cobra.Command {
 				Contact:     discoveryContact,
 				Default:     discoveryDefault}
 
-			err = ds.DiscoveryService().CreateDiscovery(context.Background(), newDiscovery)
+			err = ds.DiscoveryService().UpdateDiscovery(context.Background(), newDiscovery)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "discovery": newDiscovery}).Error("Failed to create")
 			}

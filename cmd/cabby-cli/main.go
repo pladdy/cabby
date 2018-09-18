@@ -8,12 +8,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// https://github.com/spf13/cobra
-
-// cabby-cli create collection <flags>
-
-// cabby-cli associate -u username -c collectionID -r -w
-
 var (
 	apiRootDescription     string
 	apiRootPath            string
@@ -21,7 +15,6 @@ var (
 	apiRootVersions        string
 	cabbyEnv               string
 	configPath             string
-	collectionAPIRootPath  string
 	collectionID           string
 	collectionTitle        string
 	collectionDescription  string
@@ -62,10 +55,28 @@ func cmdUpdate() *cobra.Command {
 }
 
 func dataStoreFromConfig(path, environment string) (cabby.DataStore, error) {
-	cs := cabby.Configs{}.Parse(path)
-	c := cs[environment]
+	configs := cabby.Configs{}.Parse(path)
+	config := configs[environment]
 
-	return sqlite.NewDataStore(c.DataStore["path"])
+	return sqlite.NewDataStore(config.DataStore["path"])
+}
+
+func withCollectionIDFlag(cmd *cobra.Command) *cobra.Command {
+	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
+	cmd.MarkFlagRequired("id")
+	return cmd
+}
+
+func withPasswordFlag(cmd *cobra.Command) *cobra.Command {
+	cmd.PersistentFlags().StringVarP(&userPassword, "password", "p", "", "user's password")
+	cmd.MarkFlagRequired("password")
+	return cmd
+}
+
+func withUserFlag(cmd *cobra.Command) *cobra.Command {
+	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "user's name")
+	cmd.MarkFlagRequired("user")
+	return cmd
 }
 
 func main() {

@@ -141,6 +141,6 @@ func status() cabby.Status {
 func userCollectionList() cabby.UserCollectionList {
 	ucl := cabby.UserCollectionList{Email: UserEmail}
 	id, _ := cabby.IDFromString(CollectionID)
-	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{id: cabby.CollectionAccess{CanRead: true, CanWrite: true}}
+	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{id: cabby.CollectionAccess{ID: id, CanRead: true, CanWrite: true}}
 	return ucl
 }

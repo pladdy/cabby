@@ -76,7 +76,7 @@ drop table if exists taxii_api_root;
 create table taxii_api_root (
   id                 integer not null primary key,
   discovery_id       integer check(discovery_id = 1) default 1,
-  api_root_path      text    not null,
+  api_root_path      text    check(api_root_path != "") not null,
   title              text    not null,
   description        text,
   versions           text,

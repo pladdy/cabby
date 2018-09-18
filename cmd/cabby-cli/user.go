@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
@@ -36,10 +37,8 @@ func cmdCreateUser() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
-	cmd.PersistentFlags().StringVarP(&userPassword, "password", "p", "", "users password")
-	cmd.MarkFlagRequired("password")
+	cmd = withUserFlag(cmd)
+	cmd = withPasswordFlag(cmd)
 	cmd.PersistentFlags().BoolVarP(&userAdmin, "admin", "a", false, "user is an admin")
 
 	return cmd
@@ -69,8 +68,7 @@ func cmdDeleteUser() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
+	cmd = withUserFlag(cmd)
 	return cmd
 }
 
@@ -99,8 +97,7 @@ func cmdUpdateUser() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
+	cmd = withUserFlag(cmd)
 	cmd.PersistentFlags().BoolVarP(&userAdmin, "admin", "a", false, "user is an admin")
 	cmd.MarkFlagRequired("admin")
 
@@ -124,7 +121,11 @@ func cmdCreateUserCollection() *cobra.Command {
 				log.WithFields(log.Fields{"error": err, "id": collectionID}).Error("Failed to create ID")
 			}
 
-			ca := cabby.CollectionAccess{ID: id, CanRead: userCollectionCanRead, CanWrite: userCollectionCanWrite}
+			ca := cabby.CollectionAccess{
+				ID:       id,
+				CanRead:  userCollectionCanRead,
+				CanWrite: userCollectionCanWrite}
+
 			err = ds.UserService().CreateUserCollection(context.Background(), userName, ca)
 			if err != nil {
 				log.WithFields(log.Fields{"collection access": ca, "error": err, "user": userName}).Error("Failed to create")
@@ -140,12 +141,10 @@ func cmdCreateUserCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "users password")
-	cmd.MarkFlagRequired("id")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "can read", "r", false, "user can read from the collection")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "can write", "w", true, "user can write to the collection")
+	cmd = withUserFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
+	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "read", "r", false, "user can read from the collection")
+	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "write", "w", false, "user can write to the collection")
 
 	return cmd
 }
@@ -177,10 +176,8 @@ func cmdDeleteUserCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "users password")
-	cmd.MarkFlagRequired("id")
+	cmd = withUserFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
 	return cmd
 }
 
@@ -201,7 +198,12 @@ func cmdUpdateUserCollection() *cobra.Command {
 				log.WithFields(log.Fields{"error": err, "id": collectionID}).Error("Failed to create ID")
 			}
 
-			ca := cabby.CollectionAccess{ID: id, CanRead: userCollectionCanRead, CanWrite: userCollectionCanWrite}
+			ca := cabby.CollectionAccess{
+				ID:       id,
+				CanRead:  userCollectionCanRead,
+				CanWrite: userCollectionCanWrite}
+			fmt.Println("sending to service:", ca)
+
 			err = ds.UserService().UpdateUserCollection(context.Background(), userName, ca)
 			if err != nil {
 				log.WithFields(log.Fields{"collection access": ca, "error": err, "user": userName}).Error("Failed to create")
@@ -217,12 +219,10 @@ func cmdUpdateUserCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "users name")
-	cmd.MarkFlagRequired("user")
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "users password")
-	cmd.MarkFlagRequired("id")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "can read", "r", false, "user can read from the collection")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "can write", "w", true, "user can write to the collection")
+	cmd = withUserFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
+	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "read", "r", false, "user can read from the collection")
+	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "write", "w", false, "user can write to the collection")
 
 	return cmd
 }

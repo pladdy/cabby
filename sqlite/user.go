@@ -105,33 +105,6 @@ func (s UserService) deleteUserCollection(user, id string) error {
 	return err
 }
 
-// UpdateUserCollection update a users access to a specfific collection
-func (s UserService) UpdateUserCollection(ctx context.Context, user string, ca cabby.CollectionAccess) error {
-	resource, action := "UserCollection", "update"
-	start := cabby.LogServiceStart(ctx, resource, action)
-
-	err := validateUserCollection(user, ca)
-	if err == nil {
-		err = s.updateUserCollection(user, ca)
-	} else {
-		log.WithFields(log.Fields{"error": err, "collection_access": ca, "user": user}).Error("Invalid user and/or collection")
-	}
-
-	cabby.LogServiceEnd(ctx, resource, action, start)
-	return err
-}
-
-func (s UserService) updateUserCollection(user string, ca cabby.CollectionAccess) error {
-	sql := `update taxii_user_collection set can_read = ?, can_write = ? where email = ?`
-	args := []interface{}{ca.CanRead, ca.CanWrite, user}
-
-	err := s.DataStore.write(sql, args...)
-	if err != nil {
-		logSQLError(sql, args, err)
-	}
-	return err
-}
-
 // DeleteUser creates a user in the data store
 func (s UserService) DeleteUser(ctx context.Context, user string) error {
 	resource, action := "User", "delete"
@@ -178,6 +151,33 @@ func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
 func (s UserService) updateUser(u cabby.User) error {
 	sql := `update taxii_user set can_admin = ? where email = ?`
 	args := []interface{}{u.CanAdmin, u.Email}
+
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
+}
+
+// UpdateUserCollection update a users access to a specfific collection
+func (s UserService) UpdateUserCollection(ctx context.Context, user string, ca cabby.CollectionAccess) error {
+	resource, action := "UserCollection", "update"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := validateUserCollection(user, ca)
+	if err == nil {
+		err = s.updateUserCollection(user, ca)
+	} else {
+		log.WithFields(log.Fields{"error": err, "collection_access": ca, "user": user}).Error("Invalid user and/or collection")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s UserService) updateUserCollection(user string, ca cabby.CollectionAccess) error {
+	sql := `update taxii_user_collection set can_read = ?, can_write = ? where email = ?`
+	args := []interface{}{ca.CanRead, ca.CanWrite, user}
 
 	err := s.DataStore.write(sql, args...)
 	if err != nil {

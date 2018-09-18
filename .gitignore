@@ -28,6 +28,10 @@ config/cabby.json
 TODO.md
 coverage.txt
 
+# CLI
+cmd/cabby-cli/cabby-cli
+cmd/cabby-cli/cabby-cli.db
+
 # Vagrant
 .vagrant
 *.log

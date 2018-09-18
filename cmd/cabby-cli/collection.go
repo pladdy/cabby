@@ -24,7 +24,11 @@ func cmdCreateCollection() *cobra.Command {
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "id": collectionID}).Error("Failed to create ID")
 			}
-			newCollection := cabby.Collection{ID: id, Title: collectionTitle, Description: collectionDescription}
+			newCollection := cabby.Collection{
+				APIRootPath: apiRootPath,
+				ID:          id,
+				Title:       collectionTitle,
+				Description: collectionDescription}
 
 			err = ds.CollectionService().CreateCollection(context.Background(), newCollection)
 			if err != nil {
@@ -32,7 +36,7 @@ func cmdCreateCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if collectionAPIRootPath == "" {
+			if apiRootPath == "" {
 				log.Fatal("API Root Path required")
 			}
 			if collectionID == "" {
@@ -44,7 +48,7 @@ func cmdCreateCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&collectionAPIRootPath, "api_root_path", "a", "", "api root path")
+	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "api root path")
 	cmd.MarkFlagRequired("api_root_path")
 	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
 	cmd.MarkFlagRequired("id")
@@ -101,7 +105,11 @@ func cmdUpdateCollection() *cobra.Command {
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "id": id}).Error("Failed to create ID")
 			}
-			newCollection := cabby.Collection{ID: id, Title: collectionTitle, Description: collectionDescription}
+			newCollection := cabby.Collection{
+				APIRootPath: apiRootPath,
+				ID:          id,
+				Title:       collectionTitle,
+				Description: collectionDescription}
 
 			err = ds.CollectionService().UpdateCollection(context.Background(), newCollection)
 			if err != nil {
@@ -109,6 +117,9 @@ func cmdUpdateCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
+			if apiRootPath == "" {
+				log.Fatal("API Root Path required")
+			}
 			if collectionID == "" {
 				log.Fatal("ID required")
 			}
@@ -118,7 +129,7 @@ func cmdUpdateCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&collectionAPIRootPath, "api_root_path", "a", "", "api root path")
+	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "api root path")
 	cmd.MarkFlagRequired("api_root_path")
 	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
 	cmd.MarkFlagRequired("id")

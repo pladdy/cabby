@@ -82,9 +82,12 @@ func CompareDiscovery(result, expected cabby.Discovery) bool {
 		Error.Println("Got:", result.Default, "Expected:", expected.Default)
 		passed = false
 	}
-	if result.APIRoots[0] != expected.APIRoots[0] {
-		Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
-		passed = false
+
+	for _, apiRoot := range result.APIRoots {
+		if apiRoot != apiRoot {
+			Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
+			passed = false
+		}
 	}
 
 	return passed
