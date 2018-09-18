@@ -32,23 +32,18 @@ func cmdCreateDiscovery() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if discoveryTitle == "" {
-				log.Fatal("Title required")
-			}
+			validateDiscoveryFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&discoveryTitle, "title", "t", "", "title of the server")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&discoveryDescription, "description", "d", "", "discovery description")
-	cmd.PersistentFlags().StringVarP(&discoveryContact, "contact", "c", "", "contact for server")
-	cmd.PersistentFlags().StringVarP(&discoveryDefault, "default", "u", "", "default URL for server")
-
-	return cmd
+	cmd = withDiscoveryContactFlag(cmd)
+	cmd = withDiscoveryDefaultsFlag(cmd)
+	cmd = withDiscoveryDescriptionFlag(cmd)
+	return withDiscoveryTitleFlag(cmd)
 }
 
 func cmdDeleteDiscovery() *cobra.Command {
-	cmd := &cobra.Command{
+	return &cobra.Command{
 		Use:   "discovery",
 		Short: "Delete the discovery resource",
 		Long:  `delete discovery is used to delete the discovery from a server`,
@@ -65,8 +60,6 @@ func cmdDeleteDiscovery() *cobra.Command {
 			}
 		},
 	}
-
-	return cmd
 }
 
 func cmdUpdateDiscovery() *cobra.Command {
@@ -93,17 +86,18 @@ func cmdUpdateDiscovery() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if discoveryTitle == "" {
-				log.Fatal("Title required")
-			}
+			validateDiscoveryFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&discoveryTitle, "title", "t", "", "title of the server")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&discoveryDescription, "description", "d", "", "discovery description")
-	cmd.PersistentFlags().StringVarP(&discoveryContact, "contact", "c", "", "contact for server")
-	cmd.PersistentFlags().StringVarP(&discoveryDefault, "default", "u", "", "default URL for server")
+	cmd = withDiscoveryContactFlag(cmd)
+	cmd = withDiscoveryDefaultsFlag(cmd)
+	cmd = withDiscoveryDescriptionFlag(cmd)
+	return withDiscoveryTitleFlag(cmd)
+}
 
-	return cmd
+func validateDiscoveryFlags() {
+	if discoveryTitle == "" {
+		log.Fatal("Title required")
+	}
 }

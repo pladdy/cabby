@@ -9,8 +9,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const eightMB = 8388608
-
 func cmdCreateAPIRoot() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "apiRoot",
@@ -36,32 +34,15 @@ func cmdCreateAPIRoot() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if apiRootPath == "" {
-				log.Fatal("API Root Path required")
-			}
-			if apiRootTitle == "" {
-				log.Fatal("Title required")
-			}
-			if apiRootVersions == "" {
-				log.Fatal("Version(s) required")
-			}
-			if maxContentLength <= 0 {
-				log.Fatal("Max Content Length required")
-			}
+			validateAPIRootFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "path for the api root")
-	cmd.MarkFlagRequired("api_root_path")
-	cmd.PersistentFlags().StringVarP(&apiRootTitle, "title", "t", "", "title of api root")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&apiRootVersions, "versions", "v", cabby.TaxiiVersion, "versions api root supports")
-	cmd.MarkFlagRequired("versions")
-	cmd.PersistentFlags().Int64VarP(&maxContentLength, "max_content_length", "m", eightMB, "max content length of requests supported")
-	cmd.MarkFlagRequired("max_content_length")
-	cmd.PersistentFlags().StringVarP(&apiRootDescription, "description", "d", "", "api root description")
-
-	return cmd
+	cmd = withAPIRootDescriptionFlag(cmd)
+	cmd = withAPIRootMaxContentLengthFlag(cmd)
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withAPIRootTitleFlag(cmd)
+	return withAPIRootVersionsFlag(cmd)
 }
 
 func cmdDeleteAPIRoot() *cobra.Command {
@@ -88,10 +69,7 @@ func cmdDeleteAPIRoot() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "path for the api root")
-	cmd.MarkFlagRequired("api_root_path")
-
-	return cmd
+	return withAPIRootPathFlag(cmd)
 }
 
 func cmdUpdateAPIRoot() *cobra.Command {
@@ -119,30 +97,28 @@ func cmdUpdateAPIRoot() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if apiRootPath == "" {
-				log.Fatal("API Root Path required")
-			}
-			if apiRootTitle == "" {
-				log.Fatal("Title required")
-			}
-			if apiRootVersions == "" {
-				log.Fatal("Version(s) required")
-			}
-			if maxContentLength <= 0 {
-				log.Fatal("Max Content Length required")
-			}
+			validateAPIRootFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "path for the api root")
-	cmd.MarkFlagRequired("api_root_path")
-	cmd.PersistentFlags().StringVarP(&apiRootTitle, "title", "t", "", "title of api root")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&apiRootVersions, "versions", "v", cabby.TaxiiVersion, "versions api root supports")
-	cmd.MarkFlagRequired("versions")
-	cmd.PersistentFlags().Int64VarP(&maxContentLength, "max_content_length", "m", eightMB, "max content length of requests supported")
-	cmd.MarkFlagRequired("max_content_length")
-	cmd.PersistentFlags().StringVarP(&apiRootDescription, "description", "d", "", "api root description")
+	cmd = withAPIRootDescriptionFlag(cmd)
+	cmd = withAPIRootMaxContentLengthFlag(cmd)
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withAPIRootTitleFlag(cmd)
+	return withAPIRootVersionsFlag(cmd)
+}
 
-	return cmd
+func validateAPIRootFlags() {
+	if apiRootPath == "" {
+		log.Fatal("API Root Path required")
+	}
+	if apiRootTitle == "" {
+		log.Fatal("Title required")
+	}
+	if apiRootVersions == "" {
+		log.Fatal("Version(s) required")
+	}
+	if maxContentLength <= 0 {
+		log.Fatal("Max Content Length required")
+	}
 }

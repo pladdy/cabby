@@ -28,9 +28,7 @@ func cmdCreateUser() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
+			validateUserFlags()
 			if userPassword == "" {
 				log.Fatal("Password required")
 			}
@@ -39,9 +37,7 @@ func cmdCreateUser() *cobra.Command {
 
 	cmd = withUserFlag(cmd)
 	cmd = withPasswordFlag(cmd)
-	cmd.PersistentFlags().BoolVarP(&userAdmin, "admin", "a", false, "user is an admin")
-
-	return cmd
+	return withAdminFlag(cmd)
 }
 
 func cmdDeleteUser() *cobra.Command {
@@ -62,14 +58,11 @@ func cmdDeleteUser() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
+			validateUserFlags()
 		},
 	}
 
-	cmd = withUserFlag(cmd)
-	return cmd
+	return withUserFlag(cmd)
 }
 
 func cmdUpdateUser() *cobra.Command {
@@ -91,16 +84,13 @@ func cmdUpdateUser() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
+			validateUserFlags()
 		},
 	}
 
 	cmd = withUserFlag(cmd)
-	cmd.PersistentFlags().BoolVarP(&userAdmin, "admin", "a", false, "user is an admin")
+	cmd = withAdminFlag(cmd)
 	cmd.MarkFlagRequired("admin")
-
 	return cmd
 }
 
@@ -132,21 +122,14 @@ func cmdCreateUserCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
-			if collectionID == "" {
-				log.Fatal("ID required")
-			}
+			validateUserCollectionFlags()
+			validateUserCollectionFlags()
 		},
 	}
 
 	cmd = withUserFlag(cmd)
 	cmd = withCollectionIDFlag(cmd)
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "read", "r", false, "user can read from the collection")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "write", "w", false, "user can write to the collection")
-
-	return cmd
+	return withReadWriteFlags(cmd)
 }
 
 func cmdDeleteUserCollection() *cobra.Command {
@@ -167,12 +150,8 @@ func cmdDeleteUserCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
-			if collectionID == "" {
-				log.Fatal("ID required")
-			}
+			validateUserCollectionFlags()
+			validateUserCollectionFlags()
 		},
 	}
 
@@ -210,19 +189,24 @@ func cmdUpdateUserCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if userName == "" {
-				log.Fatal("User name required")
-			}
-			if collectionID == "" {
-				log.Fatal("ID required")
-			}
+			validateUserCollectionFlags()
+			validateUserCollectionFlags()
 		},
 	}
 
 	cmd = withUserFlag(cmd)
 	cmd = withCollectionIDFlag(cmd)
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanRead, "read", "r", false, "user can read from the collection")
-	cmd.PersistentFlags().BoolVarP(&userCollectionCanWrite, "write", "w", false, "user can write to the collection")
+	return withReadWriteFlags(cmd)
+}
 
-	return cmd
+func validateUserFlags() {
+	if userName == "" {
+		log.Fatal("User name required")
+	}
+}
+
+func validateUserCollectionFlags() {
+	if collectionID == "" {
+		log.Fatal("ID required")
+	}
 }

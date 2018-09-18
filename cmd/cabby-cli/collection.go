@@ -36,27 +36,14 @@ func cmdCreateCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if apiRootPath == "" {
-				log.Fatal("API Root Path required")
-			}
-			if collectionID == "" {
-				log.Fatal("ID required")
-			}
-			if collectionTitle == "" {
-				log.Fatal("Title required")
-			}
+			validateCollectionFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "api root path")
-	cmd.MarkFlagRequired("api_root_path")
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
-	cmd.MarkFlagRequired("id")
-	cmd.PersistentFlags().StringVarP(&collectionTitle, "title", "t", "", "collection title")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&collectionDescription, "description", "d", "", "collection description")
-
-	return cmd
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
+	cmd = withCollectionTitleFlag(cmd)
+	return withCollectionDescriptionFlag(cmd)
 }
 
 func cmdDeleteCollection() *cobra.Command {
@@ -83,10 +70,7 @@ func cmdDeleteCollection() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
-	cmd.MarkFlagRequired("id")
-
-	return cmd
+	return withCollectionIDFlag(cmd)
 }
 
 func cmdUpdateCollection() *cobra.Command {
@@ -117,25 +101,24 @@ func cmdUpdateCollection() *cobra.Command {
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {
-			if apiRootPath == "" {
-				log.Fatal("API Root Path required")
-			}
-			if collectionID == "" {
-				log.Fatal("ID required")
-			}
-			if collectionTitle == "" {
-				log.Fatal("Title required")
-			}
+			validateCollectionFlags()
 		},
 	}
 
-	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "api root path")
-	cmd.MarkFlagRequired("api_root_path")
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
-	cmd.MarkFlagRequired("id")
-	cmd.PersistentFlags().StringVarP(&collectionTitle, "title", "t", "", "collection title")
-	cmd.MarkFlagRequired("title")
-	cmd.PersistentFlags().StringVarP(&collectionDescription, "description", "d", "", "collection description")
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
+	cmd = withCollectionTitleFlag(cmd)
+	return withCollectionDescriptionFlag(cmd)
+}
 
-	return cmd
+func validateCollectionFlags() {
+	if apiRootPath == "" {
+		log.Fatal("API Root Path required")
+	}
+	if collectionID == "" {
+		log.Fatal("ID required")
+	}
+	if collectionTitle == "" {
+		log.Fatal("Title required")
+	}
 }

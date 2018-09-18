@@ -61,24 +61,6 @@ func dataStoreFromConfig(path, environment string) (cabby.DataStore, error) {
 	return sqlite.NewDataStore(config.DataStore["path"])
 }
 
-func withCollectionIDFlag(cmd *cobra.Command) *cobra.Command {
-	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
-	cmd.MarkFlagRequired("id")
-	return cmd
-}
-
-func withPasswordFlag(cmd *cobra.Command) *cobra.Command {
-	cmd.PersistentFlags().StringVarP(&userPassword, "password", "p", "", "user's password")
-	cmd.MarkFlagRequired("password")
-	return cmd
-}
-
-func withUserFlag(cmd *cobra.Command) *cobra.Command {
-	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "user's name")
-	cmd.MarkFlagRequired("user")
-	return cmd
-}
-
 func main() {
 	cabbyEnv = os.Getenv(cabby.CabbyEnvironmentVariable)
 	if len(cabbyEnv) == 0 {
