@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"os"
 
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/http"
@@ -11,18 +10,10 @@ import (
 )
 
 func main() {
-	cabbyEnv := os.Getenv(cabby.CabbyEnvironmentVariable)
-	if len(cabbyEnv) == 0 {
-		cabbyEnv = cabby.DefaultCabbyEnvironment
-	}
-
-	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
-
-	var configPath = flag.String("config", cabby.CabbyConfigs[cabbyEnv], "path to cabby config file")
+	var configPath = flag.String("config", cabby.DefaultProductionConfig, "path to cabby config file")
 	flag.Parse()
 
-	cs := cabby.Configs{}.Parse(*configPath)
-	c := cs[cabbyEnv]
+	c := cabby.Config{}.Parse(*configPath)
 
 	ds, err := sqlite.NewDataStore(c.DataStore["path"])
 	if err != nil {

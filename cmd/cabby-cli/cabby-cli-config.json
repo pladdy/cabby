@@ -1,11 +1,9 @@
 {
-  "development": {
-    "host": "localhost",
-    "port": 1234,
-    "ssl_cert": "server.crt",
-    "ssl_key": "server.key",
-    "data_store": {
-      "path": "cabby-cli.db"
-    }
+  "host": "localhost",
+  "port": 1234,
+  "ssl_cert": "server.crt",
+  "ssl_key": "server.key",
+  "data_store": {
+    "path": "cabby-cli.db"
   }
 }

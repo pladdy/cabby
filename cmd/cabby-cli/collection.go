@@ -14,7 +14,7 @@ func cmdCreateCollection() *cobra.Command {
 		Short: "Create a collection",
 		Long:  `create collection is used to create a collection on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -49,7 +49,7 @@ func cmdDeleteCollection() *cobra.Command {
 		Short: "Delete a collection",
 		Long:  `delete collection is used to delete a collection from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -76,7 +76,7 @@ func cmdUpdateCollection() *cobra.Command {
 		Short: "Update a collection",
 		Long:  `update collection is used to update a collection on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"os"
-
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/sqlite"
 	"github.com/spf13/cobra"
@@ -54,22 +52,15 @@ func cmdUpdate() *cobra.Command {
 	}
 }
 
-func dataStoreFromConfig(path, environment string) (cabby.DataStore, error) {
-	configs := cabby.Configs{}.Parse(path)
-	config := configs[environment]
-
+func dataStoreFromConfig(path string) (cabby.DataStore, error) {
+	config := cabby.Config{}.Parse(path)
 	return sqlite.NewDataStore(config.DataStore["path"])
 }
 
 func main() {
-	cabbyEnv = os.Getenv(cabby.CabbyEnvironmentVariable)
-	if len(cabbyEnv) == 0 {
-		cabbyEnv = cabby.DefaultCabbyEnvironment
-	}
-
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}
-	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.CabbyConfigs[cabbyEnv], "path to cabby config file")
+	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.DefaultProductionConfig, "path to cabby config file")
 	rootCmd.MarkFlagRequired("config")
 
 	cmdCreate := cmdCreate()
