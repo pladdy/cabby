@@ -90,6 +90,19 @@ else
 	done
 endif
 
+cover-cabby.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
+
+cover-http.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
+
+cover-sqlite.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
+
+coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
+	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
+	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
+
 dependencies:
 	go get -t -v  ./...
 	go get github.com/fzipp/gocyclo
