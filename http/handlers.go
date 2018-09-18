@@ -86,11 +86,12 @@ func withRequestLogging(h http.Handler) http.Handler {
 
 		start := time.Now().In(time.UTC)
 		log.WithFields(log.Fields{
-			"method":         r.Method,
-			"start_ms":       start.UnixNano() / milliSecondOfNanoSeconds,
-			"transaction_id": cabby.TakeTransactionID(r.Context()),
-			"url":            r.URL.String(),
-			"user":           cabby.TakeUser(r.Context()).Email,
+			"method":                 r.Method,
+			"request_content_length": r.ContentLength,
+			"start_ms":               start.UnixNano() / milliSecondOfNanoSeconds,
+			"transaction_id":         cabby.TakeTransactionID(r.Context()),
+			"url":                    r.URL.String(),
+			"user":                   cabby.TakeUser(r.Context()).Email,
 		}).Info("Request received")
 
 		h.ServeHTTP(w, r)
@@ -99,9 +100,9 @@ func withRequestLogging(h http.Handler) http.Handler {
 		elapsed := time.Since(start)
 
 		log.WithFields(log.Fields{
-			"elapsed_ts":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
-			"method":         r.Method,
+			"elapsed_ms":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"end_ms":         end.UnixNano() / milliSecondOfNanoSeconds,
+			"method":         r.Method,
 			"transaction_id": cabby.TakeTransactionID(r.Context()),
 			"url":            r.URL.String(),
 			"user":           cabby.TakeUser(r.Context()).Email,

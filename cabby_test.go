@@ -10,6 +10,67 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func TestAPIRootValidate(t *testing.T) {
+	tests := []struct {
+		apiRoot     APIRoot
+		expectError bool
+	}{
+		{APIRoot{Path: "foo"}, true},
+		{APIRoot{}, true},
+		{APIRoot{Path: "foo", Title: "title"}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{"taxii-2.1"}}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{TaxiiVersion}}, false},
+	}
+
+	for _, test := range tests {
+		result := test.apiRoot.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
+	}
+}
+
+func TestAPIRootIncludesMinVersion(t *testing.T) {
+	tests := []struct {
+		apiRoot  APIRoot
+		expected bool
+	}{
+		{APIRoot{Path: "foo"}, false},
+		{APIRoot{}, false},
+		{APIRoot{Path: "foo", Title: "title"}, false},
+		{APIRoot{Versions: []string{TaxiiVersion}}, true},
+		{APIRoot{Versions: []string{TaxiiVersion, TaxiiVersion}}, true},
+		{APIRoot{Versions: []string{TaxiiVersion, "taxii-2.1"}}, true},
+	}
+
+	for _, test := range tests {
+		result := test.apiRoot.IncludesMinVersion(test.apiRoot.Versions)
+
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestDiscoveryValidate(t *testing.T) {
+	tests := []struct {
+		discovery   Discovery
+		expectError bool
+	}{
+		{Discovery{Title: "foo"}, false},
+		{Discovery{}, true},
+	}
+
+	for _, test := range tests {
+		result := test.discovery.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
+	}
+}
+
 func TestNewCollection(t *testing.T) {
 	tests := []struct {
 		idString    string
@@ -35,6 +96,29 @@ func TestNewCollection(t *testing.T) {
 	_, err := NewCollection("collections")
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
+	}
+}
+
+func TestCollectionValidate(t *testing.T) {
+	validID, _ := NewID()
+	validTitle := "a title"
+
+	tests := []struct {
+		collection  Collection
+		expectError bool
+	}{
+		{Collection{ID: validID, Title: validTitle}, false},
+		{Collection{Title: validTitle}, true},
+		{Collection{ID: validID}, true},
+		{Collection{}, true},
+	}
+
+	for _, test := range tests {
+		result := test.collection.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
 	}
 }
 
@@ -223,6 +307,26 @@ func TestUserDefined(t *testing.T) {
 		result := test.user.Defined()
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestUserValidate(t *testing.T) {
+	tests := []struct {
+		user        User
+		expectError bool
+	}{
+		{User{Email: "foo"}, true},
+		{User{}, true},
+		{User{Email: "no@no.no"}, false},
+		{User{Email: "some-person@yaoo.co.uk"}, false},
+	}
+
+	for _, test := range tests {
+		result := test.user.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
 		}
 	}
 }

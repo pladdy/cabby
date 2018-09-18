@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,6 +18,15 @@ import (
 const (
 	cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
 
+	// CabbyEnvironmentVariable is the name of the cabby environment variable for 'environment
+	CabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
+	// DefaultCabbyEnvironment if no environment variable is st
+	DefaultCabbyEnvironment = "development"
+	// DefaultDevelopmentConfig is the path to the local dev config
+	DefaultDevelopmentConfig = "config/cabby.json"
+	// DefaultProductionConfig is the path to the packaged config file
+	DefaultProductionConfig = "/etc/cabby/cabby.json"
+
 	// StixContentType20 represents a stix 2.0 content type
 	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
 	// StixContentType represents a stix 2 content type
@@ -24,7 +35,15 @@ const (
 	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
+	// TaxiiVersion notes the supported version of the server
+	TaxiiVersion = "taxii-2.0"
 )
+
+// CabbyConfigs maps environments to default paths
+var CabbyConfigs = map[string]string{
+	"development": DefaultDevelopmentConfig,
+	"production":  DefaultProductionConfig,
+}
 
 // APIRoot resource
 type APIRoot struct {
@@ -35,10 +54,43 @@ type APIRoot struct {
 	MaxContentLength int64    `json:"max_content_length"`
 }
 
+// IncludesMinVersion checks if minimum taxii version is included in list
+func (a *APIRoot) IncludesMinVersion(vs []string) bool {
+	versions := map[string]bool{}
+
+	for _, v := range vs {
+		versions[v] = true
+	}
+
+	b, _ := versions[TaxiiVersion]
+	return b
+}
+
+// Validate an API Root
+func (a *APIRoot) Validate() error {
+	if a.Path == "" {
+		return errors.New("Path must be defined")
+	}
+	if a.Title == "" {
+		return errors.New("Title must be defined")
+	}
+	if len(a.Versions) <= 0 {
+		return errors.New("At least one version must be specified")
+	}
+	if !a.IncludesMinVersion(a.Versions) {
+		return fmt.Errorf("Minimum TAXII version %s must be included in 'Versions'", TaxiiVersion)
+	}
+
+	return nil
+}
+
 // APIRootService for interacting with APIRoots
 type APIRootService interface {
 	APIRoot(ctx context.Context, path string) (APIRoot, error)
 	APIRoots(ctx context.Context) ([]APIRoot, error)
+	CreateAPIRoot(ctx context.Context, a APIRoot) error
+	DeleteAPIRoot(ctx context.Context, path string) error
+	UpdateAPIRoot(ctx context.Context, a APIRoot) error
 }
 
 // Collection resource
@@ -69,6 +121,19 @@ func NewCollection(id ...string) (Collection, error) {
 	return c, err
 }
 
+// Validate a collection
+func (c *Collection) Validate() (err error) {
+	if c.ID.IsEmpty() {
+		return fmt.Errorf("Invalid id: %s", c.ID.String())
+	}
+
+	if len(c.Title) == 0 {
+		return fmt.Errorf("Invalid title: %s", c.Title)
+	}
+
+	return
+}
+
 // CollectionAccess defines read/write access on a collection
 type CollectionAccess struct {
 	ID       ID   `json:"id"`
@@ -92,6 +157,9 @@ type CollectionService interface {
 	Collection(ctx context.Context, apiRoot, collectionID string) (Collection, error)
 	Collections(ctx context.Context, apiRoot string, cr *Range) (Collections, error)
 	CollectionsInAPIRoot(ctx context.Context, apiRoot string) (CollectionsInAPIRoot, error)
+	CreateCollection(ctx context.Context, c Collection) error
+	DeleteCollection(ctx context.Context, collectionID string) error
+	UpdateCollection(ctx context.Context, c Collection) error
 }
 
 // Config for a server
@@ -142,9 +210,21 @@ type Discovery struct {
 	APIRoots    []string `json:"api_roots,omitempty"`
 }
 
+// Validate a discovery resource
+func (d *Discovery) Validate() error {
+	if d.Title == "" {
+		return errors.New("Title must be defined")
+	}
+
+	return nil
+}
+
 // DiscoveryService interface for interacting with Discovery resources
 type DiscoveryService interface {
+	CreateDiscovery(ctx context.Context, d Discovery) error
+	DeleteDiscovery(ctx context.Context) error
 	Discovery(ctx context.Context) (Discovery, error)
+	UpdateDiscovery(ctx context.Context, d Discovery) error
 }
 
 // Error struct for TAXII 2 errors
@@ -350,6 +430,16 @@ func (u *User) Defined() bool {
 	return true
 }
 
+// Validate returns whether the object is valid or not
+func (u *User) Validate() (err error) {
+	// Validate domain? http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+	re := regexp.MustCompile(`.+.@..+\...+`)
+	if !re.Match([]byte(u.Email)) {
+		err = fmt.Errorf("Invalid e-mail: %s", u.Email)
+	}
+	return
+}
+
 // UserCollectionList holds a list of collections a user can access
 type UserCollectionList struct {
 	Email                string                  `json:"email"`
@@ -358,6 +448,12 @@ type UserCollectionList struct {
 
 // UserService provides Users behavior
 type UserService interface {
+	CreateUser(ctx context.Context, u User, password string) error
+	DeleteUser(ctx context.Context, u string) error
+	UpdateUser(ctx context.Context, u User) error
+	CreateUserCollection(ctx context.Context, u string, ca CollectionAccess) error
+	DeleteUserCollection(ctx context.Context, u, id string) error
+	UpdateUserCollection(ctx context.Context, u string, ca CollectionAccess) error
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }

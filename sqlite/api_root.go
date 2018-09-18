@@ -14,7 +14,8 @@ import (
 
 // APIRootService implements a SQLite version of the APIRootService interface
 type APIRootService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
 }
 
 // APIRoot will read from the data store and return the resource
@@ -30,12 +31,13 @@ func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root
 				  where api_root_path = ?`
+	args := []interface{}{path}
 
 	a := cabby.APIRoot{}
 
-	rows, err := s.DB.Query(sql, path)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
-		log.WithFields(log.Fields{"sql": sql, "error": err}).Error("error in sql")
+		logSQLError(sql, args, err)
 		return a, err
 	}
 	defer rows.Close()
@@ -64,11 +66,13 @@ func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 func (s APIRootService) apiRoots() ([]cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
 				  from taxii_api_root`
+	args := []interface{}{}
 
 	as := []cabby.APIRoot{}
 
-	rows, err := s.DB.Query(sql)
+	rows, err := s.DB.Query(sql, args...)
 	if err != nil {
+		logSQLError(sql, args, err)
 		return as, err
 	}
 
@@ -86,4 +90,81 @@ func (s APIRootService) apiRoots() ([]cabby.APIRoot, error) {
 
 	err = rows.Err()
 	return as, err
+}
+
+// CreateAPIRoot creates a user in the data store
+func (s APIRootService) CreateAPIRoot(ctx context.Context, a cabby.APIRoot) error {
+	resource, action := "APIRoot", "create"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := a.Validate()
+	if err == nil {
+		err = s.createAPIRoot(a)
+	} else {
+		log.WithFields(log.Fields{"api_root": a, "error": err}).Error("Invalid API Root")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s APIRootService) createAPIRoot(a cabby.APIRoot) error {
+	sql := `insert into taxii_api_root (api_root_path, title, description, versions, max_content_length)
+					values (?, ?, ?, ?, ?)`
+	args := []interface{}{a.Path, a.Title, a.Description, strings.Join(a.Versions, ","), a.MaxContentLength}
+
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
+}
+
+// DeleteAPIRoot creates a user in the data store
+func (s APIRootService) DeleteAPIRoot(ctx context.Context, id string) error {
+	resource, action := "APIRoot", "delete"
+	start := cabby.LogServiceStart(ctx, resource, action)
+	err := s.deleteAPIRoot(id)
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s APIRootService) deleteAPIRoot(path string) error {
+	sql := `delete from taxii_api_root where api_root_path = ?`
+	args := []interface{}{path}
+
+	_, err := s.DB.Exec(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
+}
+
+// UpdateAPIRoot creates a user in the data store
+func (s APIRootService) UpdateAPIRoot(ctx context.Context, a cabby.APIRoot) error {
+	resource, action := "APIRoot", "update"
+	start := cabby.LogServiceStart(ctx, resource, action)
+
+	err := a.Validate()
+	if err == nil {
+		err = s.updateAPIRoot(a)
+	} else {
+		log.WithFields(log.Fields{"api_root": a, "error": err}).Error("Invalid API Root")
+	}
+
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s APIRootService) updateAPIRoot(a cabby.APIRoot) error {
+	sql := `update taxii_api_root
+				  set title = ?, description = ?, versions = ?, max_content_length = ?
+				  where api_root_path = ?`
+	args := []interface{}{a.Title, a.Description, strings.Join(a.Versions, ","), a.MaxContentLength, a.Path}
+
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
 }

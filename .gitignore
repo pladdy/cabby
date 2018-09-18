@@ -15,7 +15,7 @@
 
 # App specific
 build/debian/etc/cabby/*
-build/debian/usr/bin/cabby
+build/debian/usr/bin/*
 build/cabby
 .env
 config/cabby.json
@@ -27,6 +27,10 @@ config/cabby.json
 *.db
 TODO.md
 coverage.txt
+
+# CLI
+cmd/cabby-cli/cabby-cli
+cmd/cabby-cli/cabby-cli.db
 
 # Vagrant
 .vagrant

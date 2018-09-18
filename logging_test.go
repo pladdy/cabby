@@ -29,7 +29,7 @@ func TestLogServiceEnd(t *testing.T) {
 
 	type expectedLog struct {
 		Action    string
-		ElapsedTS float64 `json:"elapsed_ts"`
+		ElapsedMS float64 `json:"elapsed_ms"`
 		EndTS     int64   `json:"end_ts"`
 		Level     string
 		Msg       string
@@ -47,8 +47,8 @@ func TestLogServiceEnd(t *testing.T) {
 	if result.Action != action {
 		t.Error("Got:", result.Action, "Expected:", action)
 	}
-	if result.ElapsedTS <= 0 {
-		t.Error("Got:", result.ElapsedTS, "Expected: > 0")
+	if result.ElapsedMS <= 0 {
+		t.Error("Got:", result.ElapsedMS, "Expected: > 0")
 	}
 	if result.EndTS <= 0 {
 		t.Error("Got:", result.EndTS, "Expected: > 0")

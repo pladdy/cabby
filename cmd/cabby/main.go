@@ -10,27 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	cabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
-	defaultCabbyEnvironment  = "development"
-	defaultDevelopmentConfig = "config/cabby.json"
-	defaultProductionConfig  = "/etc/cabby/cabby.json"
-)
-
-var cabbyConfigs = map[string]string{
-	"development": defaultDevelopmentConfig,
-	"production":  defaultProductionConfig,
-}
-
 func main() {
-	cabbyEnv := os.Getenv(cabbyEnvironmentVariable)
+	cabbyEnv := os.Getenv(cabby.CabbyEnvironmentVariable)
 	if len(cabbyEnv) == 0 {
-		cabbyEnv = defaultCabbyEnvironment
+		cabbyEnv = cabby.DefaultCabbyEnvironment
 	}
 
 	log.WithFields(log.Fields{"environment": cabbyEnv}).Info("Cabby environment set")
 
-	var configPath = flag.String("config", cabbyConfigs[cabbyEnv], "path to cabby config file")
+	var configPath = flag.String("config", cabby.CabbyConfigs[cabbyEnv], "path to cabby config file")
 	flag.Parse()
 
 	cs := cabby.Configs{}.Parse(*configPath)

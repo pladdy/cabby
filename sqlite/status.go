@@ -29,8 +29,13 @@ func (s StatusService) CreateStatus(ctx context.Context, status cabby.Status) er
 func (s StatusService) createStatus(st cabby.Status) error {
 	sql := `insert into taxii_status (id, status, total_count, success_count, failure_count, pending_count)
 					values (?, ?, ?, ?, ?, ?)`
+	args := []interface{}{st.ID, st.Status, st.TotalCount, st.SuccessCount, st.FailureCount, st.PendingCount}
 
-	return s.DataStore.write(sql, st.ID, st.Status, st.TotalCount, st.SuccessCount, st.FailureCount, st.PendingCount)
+	err := s.DataStore.write(sql, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
 }
 
 // Status will read from the data store and return the resource

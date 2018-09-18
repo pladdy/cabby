@@ -82,9 +82,12 @@ func CompareDiscovery(result, expected cabby.Discovery) bool {
 		Error.Println("Got:", result.Default, "Expected:", expected.Default)
 		passed = false
 	}
-	if result.APIRoots[0] != expected.APIRoots[0] {
-		Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
-		passed = false
+
+	for _, apiRoot := range result.APIRoots {
+		if apiRoot != apiRoot {
+			Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
+			passed = false
+		}
 	}
 
 	return passed
@@ -200,6 +203,22 @@ func CompareStatus(result, expected cabby.Status) bool {
 	passed = compareFailures(result, expected, passed)
 	passed = comparePendings(result, expected, passed)
 	passed = compareSuccesses(result, expected, passed)
+	return passed
+}
+
+// CompareUser compares two Users
+func CompareUser(result, expected cabby.User) bool {
+	passed := true
+
+	if result.Email != expected.Email {
+		Error.Println("Got:", result.Email, "Expected:", expected.Email)
+		passed = false
+	}
+	if result.CanAdmin != expected.CanAdmin {
+		Error.Println("Got:", result.CanAdmin, "Expected:", expected.CanAdmin)
+		passed = false
+	}
+
 	return passed
 }
 

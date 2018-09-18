@@ -3,15 +3,17 @@
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
-PACKAGES=./ sqlite/... http/...
+PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
 
 all: config cert dependencies
 
-build: build/debian/usr/bin/
-	go build $(BUILD_TAGS) -o build/debian/usr/bin/cabby cmd/cabby/main.go
+build: build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
 build/debian/etc/cabby/:
 	mkdir -p $@
+
+build/debian/etc/cabby/cabby.json: build/debian/etc/cabby/
+	cp config/cabby.json build/debian/etc/cabby/
 
 build/debian/etc/systemd/:
 	mkdir -p $@
@@ -22,17 +24,29 @@ build/debian/lib/systemd/system/cabby.service.d/:
 build/debian/usr/bin/:
 	mkdir -p $@
 
+CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
+build/debian/usr/bin/cabby-cli:
+	go build -o $@ $(CLI_FILES)
+
+build/debian/usr/bin/cabby: build/debian/usr/bin/
+	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
+
 build/debian/var/cabby/:
 	mkdir -p $@
 
-build-debian: config build/debian/etc/cabby/
-	cp config/cabby.json build/debian/etc/cabby/
+build/debian/var/cabby/schema.sql: build/debian/var/cabby/
+	cp sqlite/schema.sql $@
+
+build-debian: config build/debian/etc/cabby/cabby.json
 	vagrant up
 	@echo Magic has happend to make a debian...
 
 clean:
 	rm -rf db/
-	rm -f server.key server.crt *.log cover.out config/cabby.json
+	rm -f server.key server.crt *.log cover.out config/cabby.json build/debian/usr/bin/*
+
+clean-cli:
+	rm -f build/debian/usr/bin/cabby-cli
 
 cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
@@ -59,19 +73,6 @@ else
 	done
 endif
 
-cover-cabby.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
-
-cover-http.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
-
-cover-sqlite.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
-
-coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
-	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
-	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
-
 cover-html:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
@@ -88,6 +89,19 @@ else
 		rm $${package}.out; \
 	done
 endif
+
+cover-cabby.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
+
+cover-http.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
+
+cover-sqlite.txt:
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
+
+coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
+	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
+	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
 
 dependencies:
 	go get -t -v  ./...
@@ -106,7 +120,10 @@ reportcard: fmt
 	go vet
 
 run:
-	go run $(BUILD_TAGS) cmd/cabby/main.go
+	go run cmd/cabby/main.go
+
+run-cli:
+	go run cmd/cabby-cli/*.go
 
 run-log:
 	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log

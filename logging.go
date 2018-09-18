@@ -29,7 +29,7 @@ func LogServiceEnd(ctx context.Context, resource, action string, start time.Time
 
 	log.WithFields(log.Fields{
 		"action":         action,
-		"elapsed_ts":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
+		"elapsed_ms":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 		"end_ts":         end.UnixNano() / milliSecondOfNanoSeconds,
 		"resource":       resource,
 		"transaction_id": TakeTransactionID(ctx).String(),
