@@ -38,11 +38,7 @@ func cmdCreateAPIRoot() *cobra.Command {
 		},
 	}
 
-	cmd = withAPIRootDescriptionFlag(cmd)
-	cmd = withAPIRootMaxContentLengthFlag(cmd)
-	cmd = withAPIRootPathFlag(cmd)
-	cmd = withAPIRootTitleFlag(cmd)
-	return withAPIRootVersionsFlag(cmd)
+	return withAPIRootFlags(cmd)
 }
 
 func cmdDeleteAPIRoot() *cobra.Command {
@@ -101,11 +97,7 @@ func cmdUpdateAPIRoot() *cobra.Command {
 		},
 	}
 
-	cmd = withAPIRootDescriptionFlag(cmd)
-	cmd = withAPIRootMaxContentLengthFlag(cmd)
-	cmd = withAPIRootPathFlag(cmd)
-	cmd = withAPIRootTitleFlag(cmd)
-	return withAPIRootVersionsFlag(cmd)
+	return withAPIRootFlags(cmd)
 }
 
 func validateAPIRootFlags() {

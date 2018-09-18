@@ -40,10 +40,7 @@ func cmdCreateCollection() *cobra.Command {
 		},
 	}
 
-	cmd = withAPIRootPathFlag(cmd)
-	cmd = withCollectionIDFlag(cmd)
-	cmd = withCollectionTitleFlag(cmd)
-	return withCollectionDescriptionFlag(cmd)
+	return withCollectionFlags(cmd)
 }
 
 func cmdDeleteCollection() *cobra.Command {
@@ -105,10 +102,7 @@ func cmdUpdateCollection() *cobra.Command {
 		},
 	}
 
-	cmd = withAPIRootPathFlag(cmd)
-	cmd = withCollectionIDFlag(cmd)
-	cmd = withCollectionTitleFlag(cmd)
-	return withCollectionDescriptionFlag(cmd)
+	return withCollectionFlags(cmd)
 }
 
 func validateCollectionFlags() {

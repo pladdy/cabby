@@ -9,6 +9,14 @@ const eightMB = 8388608
 
 /* api root flags */
 
+func withAPIRootFlags(cmd *cobra.Command) *cobra.Command {
+	cmd = withAPIRootDescriptionFlag(cmd)
+	cmd = withAPIRootMaxContentLengthFlag(cmd)
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withAPIRootTitleFlag(cmd)
+	return withAPIRootVersionsFlag(cmd)
+}
+
 func withAPIRootDescriptionFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&apiRootDescription, "description", "d", "", "api root description")
 	return cmd
@@ -39,6 +47,13 @@ func withAPIRootVersionsFlag(cmd *cobra.Command) *cobra.Command {
 }
 
 /* collection flags */
+
+func withCollectionFlags(cmd *cobra.Command) *cobra.Command {
+	cmd = withAPIRootPathFlag(cmd)
+	cmd = withCollectionIDFlag(cmd)
+	cmd = withCollectionTitleFlag(cmd)
+	return withCollectionDescriptionFlag(cmd)
+}
 
 func withCollectionDescriptionFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&collectionDescription, "description", "d", "", "collection description")
