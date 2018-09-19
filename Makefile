@@ -3,6 +3,7 @@
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
+CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
 PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
 
 all: config cert dependencies
@@ -24,7 +25,6 @@ build/debian/lib/systemd/system/cabby.service.d/:
 build/debian/usr/bin/:
 	mkdir -p $@
 
-CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
 build/debian/usr/bin/cabby-cli:
 	go build -o $@ $(CLI_FILES)
 
@@ -37,7 +37,7 @@ build/debian/var/cabby/:
 build/debian/var/cabby/schema.sql: build/debian/var/cabby/
 	cp sqlite/schema.sql $@
 
-build-debian: config build/debian/etc/cabby/cabby.json
+build-debian: config build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
 	vagrant up
 	@echo Magic has happend to make a debian...
 
@@ -120,10 +120,10 @@ reportcard: fmt
 	go vet
 
 run:
-	go run cmd/cabby/main.go
+	go run cmd/cabby/main.go -config config/cabby.json
 
 run-cli:
-	go run cmd/cabby-cli/*.go
+	go run $(CLI_FILES)
 
 run-log:
 	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log

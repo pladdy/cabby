@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+
+# add user and group
+/usr/sbin/adduser --system --group cabby
+chmod 775 /usr/bin/cabby-certs
+
+# create db
+CABBY_SCHEMA="/var/cabby/schema.sql"
+CONFIG_PATH="/etc/cabby/cabby.json"
+DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
+mkdir -p "$(dirname $DB_PATH)"
+sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
+
+# warn the user
+echo "To finish setup:"
+echo "  'sudo cabby-certs', or edit /etc/cabby/cabby.json to point to .crt and .key file"
+echo
+echo "To create resources: 'sudo cabby-cli -h'"
+echo
+echo "To run server in a terminal:"
+echo "  'sudo cabby'"
+echo
+echo "To run as daemon/service:"
+echo "  'sudo systemctl start cabby'"
+echo
+echo "To check status:"
+echo "  'sudo systemctl status cabby"
+echo
+echo "To check service logs:"
+echo "  'sudo journalctl -u cabby'"
+
+exit 0
