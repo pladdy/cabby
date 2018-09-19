@@ -18,10 +18,6 @@ import (
 const (
 	cabbyTaxiiNamespace = "15e011d3-bcec-4f41-92d0-c6fc22ab9e45"
 
-	// CabbyEnvironmentVariable is the name of the cabby environment variable for 'environment
-	CabbyEnvironmentVariable = "CABBY_ENVIRONMENT"
-	// DefaultCabbyEnvironment if no environment variable is st
-	DefaultCabbyEnvironment = "development"
 	// DefaultDevelopmentConfig is the path to the local dev config
 	DefaultDevelopmentConfig = "config/cabby.json"
 	// DefaultProductionConfig is the path to the packaged config file
@@ -38,12 +34,6 @@ const (
 	// TaxiiVersion notes the supported version of the server
 	TaxiiVersion = "taxii-2.0"
 )
-
-// CabbyConfigs maps environments to default paths
-var CabbyConfigs = map[string]string{
-	"development": DefaultDevelopmentConfig,
-	"production":  DefaultProductionConfig,
-}
 
 // APIRoot resource
 type APIRoot struct {
@@ -171,17 +161,14 @@ type Config struct {
 	DataStore map[string]string `json:"data_store"`
 }
 
-// Configs holds Configs by key (environment)
-type Configs map[string]Config
-
 // Parse takes a path to a config file and converts to Configs
-func (c Configs) Parse(file string) (cs Configs) {
+func (c Config) Parse(file string) (initializedConfig Config) {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.WithFields(log.Fields{"file": file, "error": err}).Panic("Can't parse config file")
 	}
 
-	if err = json.Unmarshal(b, &cs); err != nil {
+	if err = json.Unmarshal(b, &initializedConfig); err != nil {
 		log.WithFields(log.Fields{"file": file, "error": err}).Panic("Can't unmarshal JSON")
 	}
 

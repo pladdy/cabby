@@ -15,7 +15,7 @@ func cmdCreateAPIRoot() *cobra.Command {
 		Short: "Create a apiRoot",
 		Long:  `create apiRoot is used to create a apiRoot on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -47,7 +47,7 @@ func cmdDeleteAPIRoot() *cobra.Command {
 		Short: "Delete a apiRoot",
 		Long:  `delete apiRoot is used to delete a apiRoot from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -74,7 +74,7 @@ func cmdUpdateAPIRoot() *cobra.Command {
 		Short: "Update a apiRoot",
 		Long:  `update apiRoot is used to update a apiRoot on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}

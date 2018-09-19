@@ -53,6 +53,43 @@ func TestAPIRootIncludesMinVersion(t *testing.T) {
 	}
 }
 
+func TestConfigParse(t *testing.T) {
+	c := Config{}.Parse("config/cabby.example.json")
+
+	if c.Host != "localhost" {
+		t.Error("Got:", "localhost", "Expected:", "localhost")
+	}
+	if c.Port != 1234 {
+		t.Error("Got:", strconv.Itoa(1234), "Expected:", strconv.Itoa(1234))
+	}
+}
+
+func TestParseConfigNotFound(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+		}
+	}()
+
+	_ = Config{}.Parse("foo/bar")
+	t.Error("Failed to panic with an unknown resource")
+}
+
+func TestConfigParseInvalidJSON(t *testing.T) {
+	invalidJSON := "invalid.json"
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+			os.Remove(invalidJSON)
+		}
+	}()
+
+	ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
+	Config{}.Parse(invalidJSON)
+	t.Error("Failed to panic with an unknown resource")
+}
+
 func TestDiscoveryValidate(t *testing.T) {
 	tests := []struct {
 		discovery   Discovery
@@ -181,43 +218,6 @@ func TestRangeValid(t *testing.T) {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
 	}
-}
-
-func TestParseConfig(t *testing.T) {
-	cs := Configs{}.Parse("config/cabby.example.json")
-
-	if cs["development"].Host != "localhost" {
-		t.Error("Got:", "localhost", "Expected:", "localhost")
-	}
-	if cs["development"].Port != 1234 {
-		t.Error("Got:", strconv.Itoa(1234), "Expected:", strconv.Itoa(1234))
-	}
-}
-
-func TestParseConfigNotFound(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered", r)
-		}
-	}()
-
-	_ = Configs{}.Parse("foo/bar")
-	t.Error("Failed to panic with an unknown resource")
-}
-
-func TestParseConfigInvalidJSON(t *testing.T) {
-	invalidJSON := "invalid.json"
-
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovered", r)
-			os.Remove(invalidJSON)
-		}
-	}()
-
-	ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
-	Configs{}.Parse(invalidJSON)
-	t.Error("Failed to panic with an unknown resource")
 }
 
 func TestNewID(t *testing.T) {

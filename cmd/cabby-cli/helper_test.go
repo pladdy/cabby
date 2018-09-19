@@ -38,8 +38,7 @@ func createTestUser(collectionID string) {
 }
 
 func testDataStore() cabby.DataStore {
-	configs := cabby.Configs{}.Parse(CLIConfig)
-	config := configs["development"]
+	config := cabby.Config{}.Parse(CLIConfig)
 
 	ds, err := sqlite.NewDataStore(config.DataStore["path"])
 	if err != nil {

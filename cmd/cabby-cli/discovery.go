@@ -14,7 +14,7 @@ func cmdCreateDiscovery() *cobra.Command {
 		Short: "Create the discovery resource",
 		Long:  `create discovery is used to create the discovery resource on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -48,7 +48,7 @@ func cmdDeleteDiscovery() *cobra.Command {
 		Short: "Delete the discovery resource",
 		Long:  `delete discovery is used to delete the discovery from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
@@ -68,7 +68,7 @@ func cmdUpdateDiscovery() *cobra.Command {
 		Short: "Update the discovery resource",
 		Long:  `update discovery is used to update the discovery resource on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath, cabbyEnv)
+			ds, err := dataStoreFromConfig(configPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
 			}
