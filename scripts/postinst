@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set -e
+
+# add user and group
+/usr/sbin/adduser --system --group cabby
+
+# create db
+CABBY_ENV="production"
+CABBY_SCHEMA="/var/cabby/schema.sql"
+CONFIG_PATH="/etc/cabby/cabby.json"
+DB_PATH="$(jq .$CABBY_ENV.data_store.path $CONFIG_PATH | sed 's/\"//g')"
+mkdir -p "$(dirname $DB_PATH)"
+sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
+
+# warn the user
+echo "To finish setup:"
+echo "  'sudo cabby-certs', or edit /etc/cabby/cabby.json to point to .crt and .key file"
+echo
+echo "To create resources: 'sudo cabby-cli -h'"
+echo
+echo "To run server:"
+echo "  'sudo CABBY_ENVIRONMENT=production cabby'"
+
+exit 0

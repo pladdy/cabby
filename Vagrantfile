@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "dependencies", type: "shell" do |s|
     s.inline = <<-OUT
       apt-get update
-      apt-get install -y make golang-1.9 ruby-dev build-essential jq sqlite
+      apt-get install -y ruby-dev build-essential
       gem install --no-ri --no-doc fpm
     OUT
   end
@@ -33,8 +33,21 @@ Vagrant.configure("2") do |config|
       cd /opt/go/src/cabby
 
       make && make test && make build
-      cp build/cabby build/debian/usr/bin
-      fpm -f -s dir -t deb -n cabby -d jq -m "Matt Pladna" --description "A TAXII 2.0 server" --after-install scripts/postinst --deb-user cabby --deb-group cabby -C build/debian .
+      fpm -f \
+        -s dir \
+        -t deb \
+        -n cabby \
+        -m "Matt Pladna" \
+        --description "A TAXII 2.0 server" \
+        --before-install scripts/preinst \
+        --after-install scripts/postinst \
+        --deb-user cabby \
+        --deb-group cabby \
+        --deb-pre-depends make \
+        --deb-pre-depends jq \
+        --deb-pre-depends golang-1.9 \
+        --deb-pre-depends sqlite \
+        -C build/debian .
 
       if [ $? -eq 0 ]; then
         cp *.deb /vagrant

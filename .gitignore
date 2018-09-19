@@ -13,10 +13,12 @@
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
 
-# App specific
-build/debian/etc/cabby/*
+# build
 build/debian/usr/bin/*
+build/debian/var/cabby/schema.sql
 build/cabby
+
+# app
 .env
 config/cabby.json
 !config/*example.json

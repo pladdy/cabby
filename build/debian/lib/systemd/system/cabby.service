@@ -1,0 +1,14 @@
+[Unit]
+Description=Cabby TAXII 2 Server
+ConditionPathExists=/usr/bin/cabby
+
+[Service]
+Type=simple
+User=cabby
+Group=cabby
+Restart=on-failure
+RestartSec=5
+ExecStart=/usr/bin/cabby
+
+[Install]
+WantedBy=multi-user.target
