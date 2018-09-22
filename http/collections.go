@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	cabby "github.com/pladdy/cabby2"
+	log "github.com/sirupsen/logrus"
 )
 
 // CollectionsHandler handles Collections requests
@@ -14,6 +15,8 @@ type CollectionsHandler struct {
 
 // Get handles a get request
 func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "CollectionsHandler"}).Debug("Handler called")
+
 	if len(takeCollectionID(r)) > 0 {
 		resourceNotFound(w, errors.New("Collection ID doesn't exist in this API Root"))
 		return

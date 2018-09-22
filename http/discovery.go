@@ -18,6 +18,8 @@ type DiscoveryHandler struct {
 
 // Get serves a discovery resource
 func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "DiscoveryHandler"}).Debug("Handler called")
+
 	discovery, err := h.DiscoveryService.Discovery(r.Context())
 	if err != nil {
 		internalServerError(w, err)

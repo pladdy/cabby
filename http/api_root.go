@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	cabby "github.com/pladdy/cabby2"
+	log "github.com/sirupsen/logrus"
 )
 
 // APIRootHandler holds a cabby APIRootService
@@ -15,6 +16,8 @@ type APIRootHandler struct {
 
 // Get handles a get request
 func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "APIRootHandler"}).Debug("Handler called")
+
 	path := trimSlashes(r.URL.Path)
 
 	apiRoot, err := h.APIRootService.APIRoot(r.Context(), path)
