@@ -88,11 +88,6 @@ func takeObjectID(r *http.Request) string {
 	return getToken(r.URL.Path, objectIDIndex)
 }
 
-func takeStatusID(r *http.Request) string {
-	var statusIndex = 3
-	return getToken(r.URL.Path, statusIndex)
-}
-
 func takeMatchFilters(r *http.Request, filter string) string {
 	filters := r.URL.Query()[filter]
 
@@ -123,6 +118,11 @@ func trimSlashes(s string) string {
 
 	parts := strings.Split(s, "/")
 	return strings.Join(parts, "/")
+}
+
+func takeStatusID(r *http.Request) string {
+	var statusIndex = 3
+	return getToken(r.URL.Path, statusIndex)
 }
 
 func withTransactionID(r *http.Request) *http.Request {

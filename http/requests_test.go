@@ -65,6 +65,24 @@ func TestTakeAddedAfter(t *testing.T) {
 	}
 }
 
+func TestTakeCollectionID(t *testing.T) {
+	tests := []struct {
+		request *http.Request
+		id      string
+	}{
+		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID", nil), "collectionID"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID/objects", nil), "collectionID"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+	}
+
+	for _, test := range tests {
+		result := takeCollectionID(test.request)
+		if result != test.id {
+			t.Error("Got:", result, "Expected:", test.id)
+		}
+	}
+}
+
 func TestTakeMatchIDs(t *testing.T) {
 	tests := []struct {
 		request *http.Request
