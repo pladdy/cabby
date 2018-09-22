@@ -106,24 +106,6 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
 	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
 
-	API_ROOT_PATH="cabby_test_root"
-	API_ROOT_TITLE="a cabby api root"
-	API_ROOT_MAX_CONTENT_LENGTH=8388608
-	API_ROOT_VERSION="taxii-2.0"
-
-	COLLECTION_ID="352abc04-a474-4e22-9f4d-944ca508e68c"
-	COLLECTION_TITLE="a collection title"
-
-	DISCOVERY_CONTACT="github.com/pladdy"
-	DISCOVERY_DEFAULT="https://localhost/taxii/"
-	DISCOVERY_DESCRIPTION="test cabby server"
-	DISCOVERY_TITLE="test cabby server"
-
-	TAXII_HOST="https://localhost"
-	TAXII_PORT=1234
-	TAXII_USER="test@cabby.com"
-	TAXII_PASSWORD="test-password"
-
 db/cabby.db: cmd/cabby-cli/cabby-cli
 	scripts/setup-cabby
 
