@@ -72,14 +72,6 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 curl -sk --location-trusted -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
 ```
 
-Check it:
-```sh
-# with headers
-curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
-# parsed json
-curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
-```
-
 #### View API Root
 ```sh
 # with headers

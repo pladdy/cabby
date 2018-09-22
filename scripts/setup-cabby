@@ -28,8 +28,8 @@ DB_DIR="$(dirname $DB_PATH)"
 mkdir -p "$DB_DIR"
 sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
 
-cmd/cabby-cli/cabby-cli --config $CONFIG_PATH create user -u $TAXII_USER -p $TAXII_PASSWORD -a
-cmd/cabby-cli/cabby-cli --config $CONFIG_PATH create discovery -d $DISCOVERY_DESCRIPTION -t $DISCOVERY_TITLE -u $DISCOVERY_DEFAULT -c $DISCOVERY_CONTACT
-cmd/cabby-cli/cabby-cli --config $CONFIG_PATH create apiRoot -a $API_ROOT_PATH -t $API_ROOT_TITLE -m $API_ROOT_MAX_CONTENT_LENGTH -v $API_ROOT_VERSION
-cmd/cabby-cli/cabby-cli --config $CONFIG_PATH create collection -a $API_ROOT_PATH -t $COLLECTION_TITLE -i $COLLECTION_ID
-cmd/cabby-cli/cabby-cli --config $CONFIG_PATH create userCollection -u $TAXII_USER -i $COLLECTION_ID -r -w
+cmd/cabby-cli/cabby-cli --config "$CONFIG_PATH" create user -u "$TAXII_USER" -p "$TAXII_PASSWORD" -a
+cmd/cabby-cli/cabby-cli --config "$CONFIG_PATH" create discovery -d "$DISCOVERY_DESCRIPTION" -t "$DISCOVERY_TITLE" -u "$DISCOVERY_DEFAULT" -c "$DISCOVERY_CONTACT"
+cmd/cabby-cli/cabby-cli --config "$CONFIG_PATH" create apiRoot -a "$API_ROOT_PATH" -t "$API_ROOT_TITLE" -m "$API_ROOT_MAX_CONTENT_LENGTH" -v "$API_ROOT_VERSION"
+cmd/cabby-cli/cabby-cli --config "$CONFIG_PATH" create collection -a "$API_ROOT_PATH" -t "$COLLECTION_TITLE" -i "$COLLECTION_ID"
+cmd/cabby-cli/cabby-cli --config "$CONFIG_PATH" create userCollection -u "$TAXII_USER" -i "$COLLECTION_ID" -r -w

@@ -1,4 +1,5 @@
-.PHONY: all build clean config cover cover-html db/cabby.db reportcard run run-log sqlite
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+.PHONY: clean clean-cli cmd/cabby-cli/cabby-cli config cover cover-html db/cabby.db reportcard run run-log
 .PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
@@ -25,7 +26,7 @@ build/debian/lib/systemd/system/cabby.service.d/:
 build/debian/usr/bin/:
 	mkdir -p $@
 
-build/debian/usr/bin/cabby-cli:
+build/debian/usr/bin/cabby-cli: build/debian/usr/bin/
 	go build -o $@ $(CLI_FILES)
 
 build/debian/usr/bin/cabby: build/debian/usr/bin/
@@ -43,7 +44,8 @@ build-debian: config build/debian/etc/cabby/cabby.json build/debian/var/cabby/sc
 
 clean:
 	rm -rf db/
-	rm -f server.key server.crt *.log cover.out config/cabby.json build/debian/usr/bin/*
+	rm -f server.key server.crt *.log cover.out config/cabby.json
+	rm -f build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
 clean-cli:
 	rm -f build/debian/usr/bin/cabby-cli
