@@ -109,7 +109,7 @@ dependencies:
 	go get github.com/golang/lint
 
 dev-db:
-	cmd/cabby-cli -u test@cabby.com -p test -a
+	cmd/cabby-cli.sh -c config/cabby.json -u test@cabby.com -p test-password -a
 
 fmt:
 	go fmt -x

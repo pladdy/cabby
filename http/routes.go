@@ -29,10 +29,10 @@ func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
-	ch := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
+	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
+	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(csh), cabby.TaxiiContentType))
 
-	acs, err := ch.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
+	acs, err := csh.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
 	if err != nil {
 		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
 		return
@@ -45,6 +45,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		StatusService:    ss}
 
 	mh := ManifestHandler{ManifestService: ds.ManifestService()}
+	ch := CollectionHandler{CollectionService: ds.CollectionService()}
 
 	for _, collectionID := range acs.CollectionIDs {
 		registerRoute(

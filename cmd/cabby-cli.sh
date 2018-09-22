@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 function usage() {
   echo "Usage: $0 -c [config path] -u [user name] -p [password]"
@@ -63,7 +64,7 @@ if [ -z $PASS ]; then
   exit 1
 fi
 
-DB_PATH="$(jq .$CABBY_ENV.data_store.path $CONFIG_PATH | sed 's/\"//g')"
+DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
 DB_DIR="$(dirname $DB_PATH)"
 
 mkdir -p "$DB_DIR"
@@ -93,8 +94,7 @@ echo "Creating an API Root"
 API_ROOT=cabby_test_root
 
 sqlite3 $DB_PATH "
-insert into taxii_api_root (id, api_root_path, title, description, versions, max_content_length) values (
-  'testId',
+insert into taxii_api_root (api_root_path, title, description, versions, max_content_length) values (
   '$API_ROOT',
   'a title',
   'a description',
