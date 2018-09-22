@@ -123,7 +123,8 @@ func TestSetupServerLogging(t *testing.T) {
 	}()
 
 	handler := http.NewServeMux()
-	_ = setupServer(mockDataStore(), handler, cabby.Config{Port: 1234})
+	server := setupServer(mockDataStore(), handler, cabby.Config{Port: 1234})
+	defer server.Close()
 
 	type expectedLog struct {
 		Time  string
@@ -147,6 +148,7 @@ func TestSetupServerLogging(t *testing.T) {
 func TestSetupServerSettings(t *testing.T) {
 	handler := http.NewServeMux()
 	server := setupServer(mockDataStore(), handler, cabby.Config{Port: 1234})
+	defer server.Close()
 
 	// set server settings
 	expectedAddr := ":1234"

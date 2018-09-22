@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	cabby "github.com/pladdy/cabby2"
 	log "github.com/sirupsen/logrus"
@@ -181,7 +180,6 @@ func cmdUpdateUserCollection() *cobra.Command {
 				ID:       id,
 				CanRead:  userCollectionCanRead,
 				CanWrite: userCollectionCanWrite}
-			fmt.Println("sending to service:", ca)
 
 			err = ds.UserService().UpdateUserCollection(context.Background(), userName, ca)
 			if err != nil {

@@ -3,6 +3,7 @@ package main
 import (
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/sqlite"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -58,6 +59,8 @@ func dataStoreFromConfig(path string) (cabby.DataStore, error) {
 }
 
 func main() {
+	log.SetLevel(log.ErrorLevel)
+
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.DefaultProductionConfig, "path to cabby config file")

@@ -28,7 +28,7 @@ func cmdCreateDiscovery() *cobra.Command {
 
 			err = ds.DiscoveryService().CreateDiscovery(context.Background(), newDiscovery)
 			if err != nil {
-				log.WithFields(log.Fields{"error": err, "api_root": newDiscovery}).Error("Failed to create")
+				log.WithFields(log.Fields{"error": err, "discovery": newDiscovery}).Error("Failed to create")
 			}
 		},
 		PreRun: func(cmd *cobra.Command, args []string) {

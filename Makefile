@@ -1,4 +1,5 @@
-.PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+.PHONY: clean clean-cli cmd/cabby-cli/cabby-cli config cover cover-html db/cabby.db reportcard run run-log
 .PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
@@ -25,7 +26,7 @@ build/debian/lib/systemd/system/cabby.service.d/:
 build/debian/usr/bin/:
 	mkdir -p $@
 
-build/debian/usr/bin/cabby-cli:
+build/debian/usr/bin/cabby-cli: build/debian/usr/bin/
 	go build -o $@ $(CLI_FILES)
 
 build/debian/usr/bin/cabby: build/debian/usr/bin/
@@ -43,7 +44,8 @@ build-debian: config build/debian/etc/cabby/cabby.json build/debian/var/cabby/sc
 
 clean:
 	rm -rf db/
-	rm -f server.key server.crt *.log cover.out config/cabby.json build/debian/usr/bin/*
+	rm -f server.key server.crt *.log cover.out config/cabby.json
+	rm -f build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
 clean-cli:
 	rm -f build/debian/usr/bin/cabby-cli
@@ -51,6 +53,9 @@ clean-cli:
 cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
 	chmod 600 server.key
+
+cmd/cabby-cli/cabby-cli:
+	go build -o $@ $(CLI_FILES)
 
 config:
 	@for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
@@ -103,13 +108,15 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
 	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
 
+db/cabby.db: cmd/cabby-cli/cabby-cli
+	scripts/setup-cabby
+
 dependencies:
 	go get -t -v  ./...
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
 
-dev-db:
-	cmd/cabby-cli -u test@cabby.com -p test -a
+dev-db: db/cabby.db
 
 fmt:
 	go fmt -x

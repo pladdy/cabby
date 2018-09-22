@@ -169,6 +169,33 @@ func TestCollectionsHandlerGetNoCollections(t *testing.T) {
 	}
 }
 
+func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
+	nonRoutedCollection, _ := cabby.NewID()
+	badRoute := testCollectionsURL + nonRoutedCollection.String() + "/"
+
+	cs := mockCollectionService()
+	h := CollectionsHandler{CollectionService: &cs}
+	status, body := handlerTest(h.Get, "GET", badRoute, nil)
+
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "Collection ID doesn't exist in this API Root"
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
 func TestCollectionsHandlePost(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, "POST", testCollectionsURL, nil)

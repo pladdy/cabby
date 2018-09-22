@@ -23,6 +23,8 @@ type ObjectsHandler struct {
 
 // Get handles a get request
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
+
 	if takeObjectID(r) == "" {
 		h.getObjects(w, r)
 		return
@@ -87,6 +89,8 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 
 // Post handles post request
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
+
 	if greaterThan(r.ContentLength, h.MaxContentLength) {
 		requestTooLarge(w, r.ContentLength, h.MaxContentLength)
 		return

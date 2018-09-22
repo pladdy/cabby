@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	cabby "github.com/pladdy/cabby2"
+	log "github.com/sirupsen/logrus"
 )
 
 // ManifestHandler holds a cabby ManifestService
@@ -14,6 +15,8 @@ type ManifestHandler struct {
 
 // Get serves a manifest resource
 func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ManifestHandler"}).Debug("Handler called")
+
 	cr, err := cabby.NewRange(r.Header.Get("Range"))
 	if err != nil {
 		rangeNotSatisfiable(w, err)

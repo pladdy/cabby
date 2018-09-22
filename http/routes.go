@@ -29,14 +29,8 @@ func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
-	ch := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
-
-	acs, err := ch.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
-	if err != nil {
-		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
-		return
-	}
+	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
+	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(csh), cabby.TaxiiContentType))
 
 	ss := ds.StatusService()
 	oh := ObjectsHandler{
@@ -45,6 +39,13 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		StatusService:    ss}
 
 	mh := ManifestHandler{ManifestService: ds.ManifestService()}
+	ch := CollectionHandler{CollectionService: ds.CollectionService()}
+
+	acs, err := csh.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
+	if err != nil {
+		log.WithFields(log.Fields{"api_root": apiRoot.Path}).Error("Unable to read collections")
+		return
+	}
 
 	for _, collectionID := range acs.CollectionIDs {
 		registerRoute(
@@ -66,32 +67,11 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
-	log.WithFields(log.Fields{"path": path}).Info("Registering handler")
-
 	// assume route is root
 	route := "/"
 	if path != "/" {
 		route = "/" + path + "/"
 	}
-
+	log.WithFields(log.Fields{"route": route}).Info("Registering handler to route")
 	sm.HandleFunc(route, h)
 }
-
-// // SetupRouteHandler sets up a handler and returns it with routes defined for the server
-// func SetupRouteHandler(ds cabby.DataStore, port int) (*http.ServeMux, error) {
-// 	handler := http.NewServeMux()
-//
-// registerAPIRoots(ds, handler)
-//
-// // admin routes
-// registerRoute(handler, "admin/api_root", withAcceptTaxii(handleAdminTaxiiAPIRoot(ds, handler)))
-// registerRoute(handler, "admin/collections", withAcceptTaxii(handleAdminTaxiiCollections(ds)))
-// registerRoute(handler, "admin/discovery", withAcceptTaxii(handleAdminTaxiiDiscovery(ds)))
-// registerRoute(handler, "admin/user", withAcceptTaxii(handleAdminTaxiiUser(ds)))
-// registerRoute(handler, "admin/user/collection", withAcceptTaxii(handleAdminTaxiiUserCollection(ds)))
-// registerRoute(handler, "admin/user/password", withAcceptTaxii(handleAdminTaxiiUserPassword(ds)))
-//
-// 	registerRoute(handler, "taxii", withAcceptTaxii(dh.HandleDiscovery(port)))
-// 	registerRoute(handler, "/", handleUndefinedRequest)
-// 	return handler, err
-// }
