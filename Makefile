@@ -1,4 +1,4 @@
-.PHONY: all build clean config cover cover-html db/cabby.db mt reportcard run run-log sqlite
+.PHONY: all build clean config cover cover-html db/cabby.db reportcard run run-log sqlite
 .PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
