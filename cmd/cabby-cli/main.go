@@ -1,8 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
-
 	cabby "github.com/pladdy/cabby2"
 	"github.com/pladdy/cabby2/sqlite"
 	log "github.com/sirupsen/logrus"
@@ -61,7 +59,7 @@ func dataStoreFromConfig(path string) (cabby.DataStore, error) {
 }
 
 func main() {
-	log.SetOutput(ioutil.Discard)
+	log.SetLevel(log.ErrorLevel)
 
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}

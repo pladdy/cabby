@@ -1,4 +1,4 @@
-.PHONY: all build clean config cover cover-html fmt reportcard run run-log sqlite
+.PHONY: all build clean config cover cover-html db/cabby.db mt reportcard run run-log sqlite
 .PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
@@ -52,6 +52,9 @@ cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
 	chmod 600 server.key
 
+cmd/cabby-cli/cabby-cli:
+	go build -o $@ $(CLI_FILES)
+
 config:
 	@for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
 		cp $${file}.example.json $${file}.json; \
@@ -103,13 +106,33 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
 	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
 
+	API_ROOT_PATH="cabby_test_root"
+	API_ROOT_TITLE="a cabby api root"
+	API_ROOT_MAX_CONTENT_LENGTH=8388608
+	API_ROOT_VERSION="taxii-2.0"
+
+	COLLECTION_ID="352abc04-a474-4e22-9f4d-944ca508e68c"
+	COLLECTION_TITLE="a collection title"
+
+	DISCOVERY_CONTACT="github.com/pladdy"
+	DISCOVERY_DEFAULT="https://localhost/taxii/"
+	DISCOVERY_DESCRIPTION="test cabby server"
+	DISCOVERY_TITLE="test cabby server"
+
+	TAXII_HOST="https://localhost"
+	TAXII_PORT=1234
+	TAXII_USER="test@cabby.com"
+	TAXII_PASSWORD="test-password"
+
+db/cabby.db: cmd/cabby-cli/cabby-cli
+	scripts/setup-cabby
+
 dependencies:
 	go get -t -v  ./...
 	go get github.com/fzipp/gocyclo
 	go get github.com/golang/lint
 
-dev-db:
-	cmd/cabby-cli.sh -c config/cabby.json -u test@cabby.com -p test-password -a
+dev-db: db/cabby.db
 
 fmt:
 	go fmt -x
