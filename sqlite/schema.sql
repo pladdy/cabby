@@ -82,7 +82,9 @@ create table taxii_api_root (
   versions           text,
   max_content_length integer not null,
   created_at         text,
-  updated_at         text
+  updated_at         text,
+
+  unique(api_root_path) on conflict fail
 );
 
   create trigger taxii_api_root_ai_created_at after insert on taxii_api_root

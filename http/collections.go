@@ -14,6 +14,11 @@ type CollectionsHandler struct {
 
 // Get handles a get request
 func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
+	if len(takeCollectionID(r)) > 0 {
+		resourceNotFound(w, errors.New("Collection ID doesn't exist in this API Root"))
+		return
+	}
+
 	cr, err := cabby.NewRange(r.Header.Get("Range"))
 	if err != nil {
 		rangeNotSatisfiable(w, err)

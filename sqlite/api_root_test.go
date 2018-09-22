@@ -86,6 +86,7 @@ func TestUserServiceCreateAPIRoot(t *testing.T) {
 	s := ds.APIRootService()
 
 	expected := tester.APIRoot
+	expected.Path = "new path"
 
 	err := s.CreateAPIRoot(context.Background(), expected)
 	if err != nil {
@@ -135,31 +136,15 @@ func TestUserServiceDeleteAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	// create and verify a user
 	expected := tester.APIRoot
 
-	err := s.CreateAPIRoot(context.Background(), expected)
+	// delete and verify user is gone
+	err := s.DeleteAPIRoot(context.Background(), expected.Path)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
 	result, err := s.APIRoot(context.Background(), expected.Path)
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	passed := tester.CompareAPIRoot(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-
-	// delete and verify user is gone
-	err = s.DeleteAPIRoot(context.Background(), expected.Path)
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	result, err = s.APIRoot(context.Background(), expected.Path)
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -190,39 +175,23 @@ func TestUserServiceUpdateAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	// create an api root
 	expected := tester.APIRoot
 
-	err := s.CreateAPIRoot(context.Background(), expected)
+	// update description
+	expected.Description = "a description"
+
+	err := s.UpdateAPIRoot(context.Background(), expected)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
+	// check it
 	result, err := s.APIRoot(context.Background(), expected.Path)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
 	passed := tester.CompareAPIRoot(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-
-	// update description
-	expected.Description = "a description"
-
-	err = s.UpdateAPIRoot(context.Background(), expected)
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	// check it
-	result, err = s.APIRoot(context.Background(), expected.Path)
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	passed = tester.CompareAPIRoot(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
