@@ -8,14 +8,16 @@ set -euo pipefail
 chmod 775 /usr/bin/cabby-certs
 
 # create db
-CABBY_SCHEMA="/var/cabby/schema.sql"
+CABBY_ROOT=/var/cabby
+CABBY_SCHEMA="$CABBY_ROOT/schema.sql"
 CONFIG_PATH="/etc/cabby/cabby.json"
 DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
 mkdir -p "$(dirname $DB_PATH)"
 sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
 
 # change ownership
-chown cabby:cabby $DB_PATH
+chown cabby:cabby -R $CABBY_ROOT
+chmod 664 $DB_PATH
 
 # warn the user
 echo "To finish setup:"
