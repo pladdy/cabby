@@ -25,6 +25,10 @@ type ObjectsHandler struct {
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
+	if !verifySupportedMimeType(w, r, "Accept", cabby.StixContentType) {
+		return
+	}
+
 	if takeObjectID(r) == "" {
 		h.getObjects(w, r)
 		return
@@ -91,13 +95,7 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	if greaterThan(r.ContentLength, h.MaxContentLength) {
-		requestTooLarge(w, r.ContentLength, h.MaxContentLength)
-		return
-	}
-
-	if !takeCollectionAccess(r).CanWrite {
-		forbidden(w, fmt.Errorf("Unauthorized to write to collection"))
+	if !h.validPost(w, r) {
 		return
 	}
 
@@ -129,6 +127,28 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
 	go h.ObjectService.CreateBundle(r.Context(), bundle, takeCollectionID(r), status, h.StatusService)
+}
+
+func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isValid bool) {
+	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
+		return
+	}
+
+	if !verifySupportedMimeType(w, r, "Content-Type", cabby.StixContentType) {
+		return
+	}
+
+	if greaterThan(r.ContentLength, h.MaxContentLength) {
+		requestTooLarge(w, r.ContentLength, h.MaxContentLength)
+		return
+	}
+
+	if !takeCollectionAccess(r).CanWrite {
+		forbidden(w, fmt.Errorf("Unauthorized to write to collection"))
+		return
+	}
+
+	return true
 }
 
 /* helpers */

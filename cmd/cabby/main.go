@@ -10,6 +10,8 @@ import (
 )
 
 func main() {
+	log.SetLevel(log.InfoLevel)
+
 	var configPath = flag.String("config", cabby.DefaultProductionConfig, "path to cabby config file")
 	flag.Parse()
 

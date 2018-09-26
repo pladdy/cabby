@@ -29,9 +29,10 @@ Vagrant.configure("2") do |config|
       export GOPATH=/opt/go
       export PATH=/usr/lib/go-1.10/bin/:$PATH
 
-      mkdir -p /opt/go/src/cabby
-      cp -r /vagrant/* /opt/go/src/cabby
-      cd /opt/go/src/cabby
+      SRC_DIR=/opt/go/src/github.com/pladdy/cabby2
+      mkdir -p $SRC_DIR
+      cp -r /vagrant/* $SRC_DIR
+      cd $SRC_DIR
 
       make && make test && make build
       fpm -f \

@@ -53,7 +53,9 @@ func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	status, body := handlerTest(h.Get, "GET", testObjectURL, nil)
+	req := newRequest("GET", testObjectURL, nil)
+	req.Header.Set("Accept", cabby.StixContentType)
+	status, body := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -83,7 +85,9 @@ func TestObjectsHandlerGet(t *testing.T) {
 	}
 
 	// call handler for objects
-	status, body = handlerTest(h.Get, "GET", testObjectsURL, nil)
+	req = newRequest("GET", testObjectsURL, nil)
+	req.Header.Set("Accept", cabby.StixContentType)
+	status, body = callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -104,6 +108,21 @@ func TestObjectsHandlerGet(t *testing.T) {
 	passed = tester.CompareObject(object, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestObjectsHandlerGetUnsupportedMimeType(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+
+	// call handler for object
+	req := newRequest("GET", testObjectURL, nil)
+	req.Header.Set("Accept", "invalid")
+
+	res := httptest.NewRecorder()
+	h.Get(res, req)
+
+	if res.Code != http.StatusUnsupportedMediaType {
+		t.Error("Got:", res.Code, "Expected:", http.StatusUnsupportedMediaType)
 	}
 }
 
@@ -208,6 +227,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 
 		// set up request
 		req := newRequest("GET", testObjectsURL, nil)
+		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -250,6 +270,7 @@ func TestObjectsHandlerGetInvalidRange(t *testing.T) {
 	for _, test := range tests {
 		// set up request
 		req := newRequest("GET", testObjectsURL, nil)
+		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -332,7 +353,8 @@ func TestObjectsHandlerPost(t *testing.T) {
 	bundle, _ := ioutil.ReadAll(bundleFile)
 	b := bytes.NewBuffer(bundle)
 
-	status, body := handlerTest(h.Post, "POST", testObjectURL, b)
+	req := newPostRequest(testObjectURL, b)
+	status, body := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusAccepted {
 		t.Error("Got:", status, "Expected:", http.StatusAccepted)
@@ -354,7 +376,9 @@ func TestObjectsHandlerPost(t *testing.T) {
 
 func TestObjectsHandlerPostForbidden(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	status, _ := handlerTestNoAuth(h.Post, "POST", testObjectURL, nil)
+
+	req := newPostRequest(testObjectsURL, nil)
+	status, _ := callHandler(h.Post, req)
 
 	if status != http.StatusForbidden {
 		t.Error("Got:", status, "Expected:", http.StatusForbidden)
@@ -368,7 +392,8 @@ func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	bundle, _ := ioutil.ReadAll(bundleFile)
 	b := bytes.NewBuffer(bundle)
 
-	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+	req := newPostRequest(testObjectsURL, b)
+	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusRequestEntityTooLarge {
 		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
@@ -381,7 +406,8 @@ func TestObjectsHandlerPostInvalidBundle(t *testing.T) {
 	bundle := []byte(`{"foo":"bar"}`)
 	b := bytes.NewBuffer(bundle)
 
-	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+	req := newPostRequest(testObjectsURL, b)
+	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -395,7 +421,8 @@ func TestObjectsHandlerPostEmptyBundle(t *testing.T) {
 	bundle := []byte(`{"type": "bundle", "objects": [], "spec_version": "2.0", "id": "bundle--5d0092c5-5f74-4287-9642-33f4c354e56d"}`)
 	b := bytes.NewBuffer(bundle)
 
-	status, _ := handlerTest(h.Post, "POST", testObjectsURL, b)
+	req := newPostRequest(testObjectsURL, b)
+	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -417,7 +444,8 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	bundle, _ := ioutil.ReadAll(bundleFile)
 	b := bytes.NewBuffer(bundle)
 
-	status, body := handlerTest(h.Post, "POST", testObjectsURL, b)
+	req := newPostRequest(testObjectsURL, b)
+	status, body := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -432,6 +460,33 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestObjectsPostValidPost(t *testing.T) {
+	tests := []struct {
+		accept      string
+		contentType string
+		valid       bool
+	}{
+		{cabby.TaxiiContentType, cabby.StixContentType, true},
+		{"invalid", cabby.StixContentType, false},
+		{cabby.TaxiiContentType, "invalid", false},
+	}
+
+	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
+
+	for _, test := range tests {
+		r := newRequest("POST", testObjectsURL, nil)
+		r.Header.Set("Accept", test.accept)
+		r.Header.Set("Content-Type", test.contentType)
+
+		w := httptest.NewRecorder()
+
+		result := h.validPost(w, r.WithContext(cabby.WithUser(r.Context(), tester.User)))
+		if result != test.valid {
+			t.Error("Got:", result, "Expected:", test.valid)
+		}
 	}
 }
 

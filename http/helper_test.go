@@ -88,6 +88,13 @@ func lastLog(buf bytes.Buffer) string {
 	return logs[len(logs)-1]
 }
 
+func newPostRequest(url string, b *bytes.Buffer) *http.Request {
+	req := newRequest("POST", url, b)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	req.Header.Set("Content-Type", cabby.StixContentType)
+	return req
+}
+
 func newRequest(method, url string, b *bytes.Buffer) *http.Request {
 	if b != nil {
 		return httptest.NewRequest(method, url, b)
