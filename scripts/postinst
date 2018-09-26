@@ -14,6 +14,9 @@ DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
 mkdir -p "$(dirname $DB_PATH)"
 sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
 
+# change ownership
+chown cabby:cabby $DB_PATH
+
 # warn the user
 echo "To finish setup:"
 echo "  'sudo cabby-certs', or edit /etc/cabby/cabby.json to point to .crt and .key file"

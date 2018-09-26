@@ -1,4 +1,4 @@
-.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli build/debian/var/cabby/schema.sql
 .PHONY: clean clean-cli cmd/cabby-cli/cabby-cli config cover cover-html db/cabby.db reportcard run run-log
 .PHONY: test test-failures test test-run
 
