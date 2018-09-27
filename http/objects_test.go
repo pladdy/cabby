@@ -55,7 +55,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 	// call handler for object
 	req := newRequest("GET", testObjectURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
-	status, body := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -87,7 +87,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 	// call handler for objects
 	req = newRequest("GET", testObjectsURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
-	status, body = callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, body, _ = callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -354,10 +354,14 @@ func TestObjectsHandlerPost(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectURL, b)
-	status, body := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusAccepted {
 		t.Error("Got:", status, "Expected:", http.StatusAccepted)
+	}
+
+	if headers.Get("content-type") != cabby.TaxiiContentType {
+		t.Error("Got:", headers["content-type"], "Expected:", cabby.TaxiiContentType)
 	}
 
 	var result cabby.Status
@@ -378,7 +382,7 @@ func TestObjectsHandlerPostForbidden(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	req := newPostRequest(testObjectsURL, nil)
-	status, _ := callHandler(h.Post, req)
+	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusForbidden {
 		t.Error("Got:", status, "Expected:", http.StatusForbidden)
@@ -393,7 +397,7 @@ func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectsURL, b)
-	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusRequestEntityTooLarge {
 		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
@@ -407,7 +411,7 @@ func TestObjectsHandlerPostInvalidBundle(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectsURL, b)
-	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -422,7 +426,7 @@ func TestObjectsHandlerPostEmptyBundle(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectsURL, b)
-	status, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -445,10 +449,14 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectsURL, b)
-	status, body := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
+
+	if headers.Get("content-type") != cabby.TaxiiContentType {
+		t.Error("Got:", headers["content-type"], "Expected:", cabby.TaxiiContentType)
 	}
 
 	var result cabby.Error

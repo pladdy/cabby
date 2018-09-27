@@ -124,8 +124,10 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", cabby.TaxiiContentType)
 	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
+
 	go h.ObjectService.CreateBundle(r.Context(), bundle, takeCollectionID(r), status, h.StatusService)
 }
 
