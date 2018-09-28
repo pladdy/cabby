@@ -38,13 +38,20 @@ func RouteRequest(h RequestHandler) http.HandlerFunc {
 	})
 }
 
-// WithAcceptType decorates a handle with content type check
-func WithAcceptType(h http.HandlerFunc, typeToCheck string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		contentType, _ := splitAcceptHeader(r.Header.Get("Accept"))
+func verifySupportedMimeType(w http.ResponseWriter, r *http.Request, mh, mv string) bool {
+	mimeType, _ := splitMimeType(r.Header.Get(mh))
 
-		if contentType != typeToCheck {
-			unsupportedMediaType(w, fmt.Errorf("Invalid 'Accept' Header: %v", contentType))
+	if mimeType != mv {
+		unsupportedMediaType(w, fmt.Errorf("Invalid '%v' Header: %v", mh, mimeType))
+		return false
+	}
+	return true
+}
+
+// WithMimeType decorates a handle with content type check
+func WithMimeType(h http.HandlerFunc, mh, mv string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !verifySupportedMimeType(w, r, mh, mv) {
 			return
 		}
 		h(w, r)
@@ -112,7 +119,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 
 /* helpers */
 
-func splitAcceptHeader(h string) (string, string) {
+func splitMimeType(h string) (string, string) {
 	parts := strings.Split(h, ";")
 	first := parts[0]
 

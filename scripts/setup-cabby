@@ -23,6 +23,7 @@ DISCOVERY_TITLE="test cabby server"
 TAXII_USER="test@cabby.com"
 TAXII_PASSWORD="test-password"
 
+# set up db
 DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
 DB_DIR="$(dirname $DB_PATH)"
 mkdir -p "$DB_DIR"

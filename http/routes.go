@@ -24,13 +24,13 @@ func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 
 func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 	if path != "" {
-		registerRoute(sm, path, WithAcceptType(RouteRequest(ah), cabby.TaxiiContentType))
+		registerRoute(sm, path, WithMimeType(RouteRequest(ah), "Accept", cabby.TaxiiContentType))
 	}
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
 	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptType(RouteRequest(csh), cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(RouteRequest(csh), "Accept", cabby.TaxiiContentType))
 
 	ss := ds.StatusService()
 	oh := ObjectsHandler{
@@ -51,19 +51,19 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String(),
-			WithAcceptType(RouteRequest(ch), cabby.TaxiiContentType))
+			WithMimeType(RouteRequest(ch), "Accept", cabby.TaxiiContentType))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
-			WithAcceptType(RouteRequest(oh), cabby.StixContentType))
+			RouteRequest(oh))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithAcceptType(RouteRequest(mh), cabby.TaxiiContentType))
+			WithMimeType(RouteRequest(mh), "Accept", cabby.TaxiiContentType))
 	}
 
 	sh := StatusHandler{StatusService: ss}
-	registerRoute(sm, apiRoot.Path+"/status", WithAcceptType(RouteRequest(sh), cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(RouteRequest(sh), "Accept", cabby.TaxiiContentType))
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {

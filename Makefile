@@ -1,4 +1,4 @@
-.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli build/debian/var/cabby/schema.sql
 .PHONY: clean clean-cli cmd/cabby-cli/cabby-cli config cover cover-html db/cabby.db reportcard run run-log
 .PHONY: test test-failures test test-run
 
@@ -41,6 +41,7 @@ build/debian/var/cabby/schema.sql: build/debian/var/cabby/
 build-debian: config build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
 	vagrant up
 	@echo Magic has happend to make a debian...
+	vagrant destroy -f
 
 clean:
 	rm -rf db/
@@ -127,7 +128,7 @@ reportcard: fmt
 	go vet
 
 run:
-	go run cmd/cabby/main.go -config config/cabby.json
+	go run $(BUILD_TAGS) cmd/cabby/main.go -config config/cabby.json
 
 run-cli:
 	go run $(CLI_FILES)

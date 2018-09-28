@@ -73,7 +73,7 @@ func TestRequestHandlerRouteRequest(t *testing.T) {
 	}
 }
 
-func TestWithAcceptType(t *testing.T) {
+func TestWithMimeType(t *testing.T) {
 	tests := []struct {
 		acceptedHeader string
 		acceptHeader   string
@@ -98,7 +98,7 @@ func TestWithAcceptType(t *testing.T) {
 			accept := r.Header.Get("Accept")
 			io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
 		}
-		testHandler = WithAcceptType(testHandler, test.acceptedHeader)
+		testHandler = WithMimeType(testHandler, "Accept", test.acceptedHeader)
 
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Add("Accept", test.acceptHeader)

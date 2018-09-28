@@ -59,12 +59,12 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 	return nil, errors.New("Failed to get request")
 }
 
-func callHandler(h http.HandlerFunc, req *http.Request) (int, string) {
+func callHandler(h http.HandlerFunc, req *http.Request) (int, string, http.Header) {
 	res := httptest.NewRecorder()
 	h(res, req)
 
 	body, _ := ioutil.ReadAll(res.Body)
-	return res.Code, string(body)
+	return res.Code, string(body), res.Header()
 }
 
 func getResponse(req *http.Request, server *httptest.Server) (*http.Response, error) {
@@ -76,16 +76,25 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
 	req := newRequest(method, url, b)
-	return callHandler(h, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	code, body, _ := callHandler(h, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	return code, body
 }
 
 func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	return callHandler(h, newRequest(method, url, b))
+	code, body, _ := callHandler(h, newRequest(method, url, b))
+	return code, body
 }
 
 func lastLog(buf bytes.Buffer) string {
 	logs := regexp.MustCompile("\n").Split(strings.TrimSpace(buf.String()), -1)
 	return logs[len(logs)-1]
+}
+
+func newPostRequest(url string, b *bytes.Buffer) *http.Request {
+	req := newRequest("POST", url, b)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	req.Header.Set("Content-Type", cabby.StixContentType)
+	return req
 }
 
 func newRequest(method, url string, b *bytes.Buffer) *http.Request {
