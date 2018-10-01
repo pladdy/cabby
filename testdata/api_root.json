@@ -1,6 +1,0 @@
-{
-  "title": "Test API root",
-  "description": "this is a test api root",
-  "versions": ["1.0"],
-  "max_content_length": 1000000
-}
