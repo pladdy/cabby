@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# use to set up a local vagrant to test the server running on a VM
+
 set -euo pipefail
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
