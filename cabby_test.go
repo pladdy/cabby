@@ -1,233 +1,332 @@
-package main
+package cabby
 
 import (
-	"crypto/tls"
-	"encoding/json"
-	"errors"
 	"io/ioutil"
-	"net/http"
-	"strings"
+	"os"
+	"strconv"
 	"testing"
-	"time"
+
+	"github.com/gofrs/uuid"
+	log "github.com/sirupsen/logrus"
 )
 
-/* helpers */
-
-func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
-	info.Println("Requesting", r.URL, "from test server")
-	MaxTries := 3
-
-	for i := 0; i < MaxTries; i++ {
-		res, err := c.Do(r)
-		if err != err {
-			fail.Fatal(err)
-		}
-		if res != nil {
-			return res, err
-		}
-		warn.Println("Web server for test not responding, waiting...")
-		time.Sleep(time.Duration(i+1) * time.Second)
-	}
-
-	return nil, errors.New("Failed to get request")
-}
-
-func requestWithBasicAuth(u string) *http.Request {
-	req, err := http.NewRequest("GET", u, nil)
-	if err != nil {
-		fail.Fatal(err)
-	}
-	req.Header.Add("Accept", taxiiContentType)
-	req.SetBasicAuth(testUser, testPass)
-	return req
-}
-
-func requestFromTestServer(r *http.Request) (*http.Response, string) {
-	server := runTestServer()
-	defer server.Close()
-
-	res, err := attemptRequest(tlsClient(), r)
-	if err != nil {
-		fail.Fatal(err)
-	}
-	defer res.Body.Close()
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != err {
-		fail.Fatal(err)
-	}
-
-	return res, string(body)
-}
-
-// run server in go routine and return it
-func runTestServer() *http.Server {
-	server, err := newCabby(testConfig())
-	if err != nil {
-		fail.Fatal(err)
-	}
-
-	go func() {
-		server.ListenAndServeTLS(testConfig().SSLCert, testConfig().SSLKey)
-	}()
-	return server
-}
-
-// set up a http client that uses TLS
-func tlsClient() *http.Client {
-	tlsConfig := &tls.Config{
-		InsecureSkipVerify: true,
-	}
-	tr := &http.Transport{TLSClientConfig: tlsConfig}
-	return &http.Client{Transport: tr}
-}
-
-/* tests */
-
-func TestBasicAuth(t *testing.T) {
+func TestAPIRootValidate(t *testing.T) {
 	tests := []struct {
-		user           string
-		pass           string
-		expectedStatus int
+		apiRoot     APIRoot
+		expectError bool
 	}{
-		{testUser, testPass, http.StatusOK},
-		{"invalid", "pass", http.StatusUnauthorized},
+		{APIRoot{Path: "foo"}, true},
+		{APIRoot{}, true},
+		{APIRoot{Path: "foo", Title: "title"}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{"taxii-2.1"}}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{TaxiiVersion}}, false},
 	}
 
 	for _, test := range tests {
-		req, err := http.NewRequest("GET", discoveryURL, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		req.Header.Add("Accept", taxiiContentType)
-		req.SetBasicAuth(test.user, test.pass)
+		result := test.apiRoot.Validate()
 
-		res, _ := requestFromTestServer(req)
-
-		if res.StatusCode != test.expectedStatus {
-			t.Error("Got:", res.StatusCode, "Expected:", test.expectedStatus)
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
 		}
 	}
 }
 
-func TestHSTS(t *testing.T) {
-	req := requestWithBasicAuth(discoveryURL)
-	res, _ := requestFromTestServer(req)
+func TestAPIRootIncludesMinVersion(t *testing.T) {
+	tests := []struct {
+		apiRoot  APIRoot
+		expected bool
+	}{
+		{APIRoot{Path: "foo"}, false},
+		{APIRoot{}, false},
+		{APIRoot{Path: "foo", Title: "title"}, false},
+		{APIRoot{Versions: []string{TaxiiVersion}}, true},
+		{APIRoot{Versions: []string{TaxiiVersion, TaxiiVersion}}, true},
+		{APIRoot{Versions: []string{TaxiiVersion, "taxii-2.1"}}, true},
+	}
 
-	expected := "max-age=" + sixMonthsOfSeconds + "; includeSubDomains"
-	result := strings.Join(res.Header["Strict-Transport-Security"], "")
+	for _, test := range tests {
+		result := test.apiRoot.IncludesMinVersion(test.apiRoot.Versions)
 
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
 	}
 }
 
-func TestMain(t *testing.T) {
-	renameFile(defaultDevelopmentConfig, defaultDevelopmentConfig+".testing")
-	renameFile("testdata/config/main_test_config.json", defaultDevelopmentConfig)
+func TestConfigParse(t *testing.T) {
+	c := Config{}.Parse("config/cabby.example.json")
+
+	if c.Host != "localhost" {
+		t.Error("Got:", "localhost", "Expected:", "localhost")
+	}
+	if c.Port != 1234 {
+		t.Error("Got:", strconv.Itoa(1234), "Expected:", strconv.Itoa(1234))
+	}
+}
+
+func TestParseConfigNotFound(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+		}
+	}()
+
+	_ = Config{}.Parse("foo/bar")
+	t.Error("Failed to panic with an unknown resource")
+}
+
+func TestConfigParseInvalidJSON(t *testing.T) {
+	invalidJSON := "invalid.json"
 
 	defer func() {
-		renameFile(defaultDevelopmentConfig, "testdata/config/main_test_config.json")
-		renameFile(defaultDevelopmentConfig+".testing", defaultDevelopmentConfig)
+		if r := recover(); r != nil {
+			log.Println("Recovered", r)
+			os.Remove(invalidJSON)
+		}
 	}()
 
-	go func() {
-		main()
-	}()
-
-	mainTestConfigPort := "1235"
-
-	req := requestWithBasicAuth(strings.Replace(discoveryURL, "1234", mainTestConfigPort, 1))
-	res, _ := attemptRequest(tlsClient(), req)
-	defer res.Body.Close()
-
-	body, _ := ioutil.ReadAll(res.Body)
-
-	var result taxiiDiscovery
-	err := json.Unmarshal(body, &result)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	expected := testDiscovery
-
-	expected.Default = ""
-	result.Default = ""
-
-	if result.Default != expected.Default {
-		t.Error("Got:", result.Default, "Expected:", expected.Default)
-	}
+	ioutil.WriteFile(invalidJSON, []byte("invalid"), 0644)
+	Config{}.Parse(invalidJSON)
+	t.Error("Failed to panic with an unknown resource")
 }
 
-func TestMainPanic(t *testing.T) {
-	renameFile(defaultDevelopmentConfig, defaultDevelopmentConfig+".testing")
-	renameFile("testdata/config/no_datastore_config.json", defaultDevelopmentConfig)
+func TestDiscoveryValidate(t *testing.T) {
+	tests := []struct {
+		discovery   Discovery
+		expectError bool
+	}{
+		{Discovery{Title: "foo"}, false},
+		{Discovery{}, true},
+	}
 
-	defer func() {
-		renameFile(defaultDevelopmentConfig, "testdata/config/no_datastore_config.json")
-		renameFile(defaultDevelopmentConfig+".testing", defaultDevelopmentConfig)
-	}()
+	for _, test := range tests {
+		result := test.discovery.Validate()
 
-	p := panicChecker{}
-	go func() {
-		defer attemptRecover(t, &p)
-
-		main()
-	}()
-
-	// try to check the panic up to 3 times
-	for i := 1; i <= 3; i++ {
-		if p.recovered == false {
-			time.Sleep(time.Duration(i*100) * time.Millisecond)
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
 		}
 	}
-	if p.recovered != true {
-		t.Error("Failed to recover a panic")
+}
+
+func TestNewCollection(t *testing.T) {
+	tests := []struct {
+		idString    string
+		shouldError bool
+	}{
+		{"invalid", true},
+		{uuid.Must(uuid.NewV4()).String(), false},
+	}
+
+	for _, test := range tests {
+		c, err := NewCollection(test.idString)
+
+		if test.shouldError && err == nil {
+			t.Error("Test with id of", test.idString, "should produce an error!")
+		}
+
+		if err == nil && c.ID.String() != test.idString {
+			t.Error("Got:", c.ID.String(), "Expected:", test.idString)
+		}
+	}
+
+	// test if 'collections' is passed; return a uuid
+	_, err := NewCollection("collections")
+	if err != nil {
+		t.Error("Got:", err, "Expected no error")
 	}
 }
 
-func TestMainAPIRoot(t *testing.T) {
-	setupSQLite()
+func TestCollectionValidate(t *testing.T) {
+	validID, _ := NewID()
+	validTitle := "a title"
 
-	req := requestWithBasicAuth(testAPIRootURL)
-	_, body := requestFromTestServer(req)
-
-	var result taxiiAPIRoot
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		collection  Collection
+		expectError bool
+	}{
+		{Collection{ID: validID, Title: validTitle}, false},
+		{Collection{Title: validTitle}, true},
+		{Collection{ID: validID}, true},
+		{Collection{}, true},
 	}
 
-	expected := testAPIRoot
+	for _, test := range tests {
+		result := test.collection.Validate()
 
-	if result.Title != expected.Title {
-		t.Error("Got:", result.Title, "Expected:", expected.Title, "Result:", result)
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
 	}
 }
 
-func TestNewCabbyNoAPIRoots(t *testing.T) {
-	defer setupSQLite()
+func TestNewRange(t *testing.T) {
+	invalidRange := Range{First: -1, Last: -1}
 
-	s := getSQLiteDB()
-	defer s.disconnect()
-
-	_, err := s.db.Exec("drop table taxii_api_root")
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		input       string
+		resultRange Range
+		isError     bool
+	}{
+		{"items 0-10", Range{First: 0, Last: 10}, false},
+		{"items 0 10", invalidRange, true},
+		{"items 10", invalidRange, true},
+		{"", invalidRange, false},
 	}
 
-	_, err = newCabby(testConfig())
+	for _, test := range tests {
+		result, err := NewRange(test.input)
+		if result != test.resultRange {
+			t.Error("Got:", result, "Expected:", test.resultRange)
+		}
+
+		if err != nil && test.isError == false {
+			t.Error("Got:", err, "Expected: no error")
+		}
+	}
+}
+
+func TestRangeString(t *testing.T) {
+	tests := []struct {
+		testRange Range
+		expected  string
+	}{
+		{Range{First: 0, Last: 0}, "items 0-0"},
+		{Range{First: 0, Last: 0, Total: 50}, "items 0-0/50"},
+	}
+
+	for _, test := range tests {
+		result := test.testRange.String()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestRangeValid(t *testing.T) {
+	tests := []struct {
+		testRange Range
+		expected  bool
+	}{
+		{Range{First: 1, Last: 0}, false},
+		{Range{First: 0, Last: 0}, true},
+		{Range{First: 0, Last: -1}, false},
+	}
+
+	for _, test := range tests {
+		result := test.testRange.Valid()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestNewID(t *testing.T) {
+	_, err := NewID()
+	if err != nil {
+		t.Error("Expected no error:", err)
+	}
+}
+
+func TestIDFromString(t *testing.T) {
+	uid := "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+
+	id, err := IDFromString(uid)
+	if err != nil {
+		t.Error("Expected no error:", err)
+	}
+
+	if id.String() != uid {
+		t.Error("Got:", id.String(), "Expected:", uid)
+	}
+}
+
+func TestIDFromStringBadInput(t *testing.T) {
+	_, err := IDFromString("")
+	if err == nil {
+		t.Error("Expected an error")
+	}
+
+	_, err = IDFromString("fail")
 	if err == nil {
 		t.Error("Expected an error")
 	}
 }
 
-func TestNewCabbyFail(t *testing.T) {
-	cs := configs{}.parse("testdata/config/no_datastore_config.json")
-	c := cs["testing"]
+func TestIDUsingString(t *testing.T) {
+	id, err := IDUsingString("")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	_, err := newCabby(c)
+	expected := "101afa45-b9bd-5b31-8734-0a59e5cc3db3"
+	if id.String() != expected {
+		t.Error("Got:", id.String(), "Expected:", expected)
+	}
+}
+
+func TestIDIsEmpty(t *testing.T) {
+	id, err := NewID()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if id.IsEmpty() == true {
+		t.Error("Expected to NOT be empty")
+	}
+
+	emptyID := ID{}
+	if emptyID.IsEmpty() == false {
+		t.Error("Expected ID to be empty")
+	}
+}
+
+func TestNewStatus(t *testing.T) {
+	_, err := NewStatus(1)
+	if err != nil {
+		t.Error("Got:", err, "Expected: no error")
+	}
+}
+
+func TestNewStatusError(t *testing.T) {
+	_, err := NewStatus(0)
 	if err == nil {
-		t.Error("Expected an error")
+		t.Error("Expected error")
+	}
+}
+
+func TestUserDefined(t *testing.T) {
+	tests := []struct {
+		user     User
+		expected bool
+	}{
+		{user: User{Email: "foo"}, expected: true},
+		{user: User{}, expected: false},
+	}
+
+	for _, test := range tests {
+		result := test.user.Defined()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestUserValidate(t *testing.T) {
+	tests := []struct {
+		user        User
+		expectError bool
+	}{
+		{User{Email: "foo"}, true},
+		{User{}, true},
+		{User{Email: "no@no.no"}, false},
+		{User{Email: "some-person@yaoo.co.uk"}, false},
+	}
+
+	for _, test := range tests {
+		result := test.user.Validate()
+
+		if test.expectError && result == nil {
+			t.Error("Got:", result, "Expected:", test.expectError)
+		}
 	}
 }

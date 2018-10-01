@@ -4,6 +4,6 @@
   "ssl_cert": "server.crt",
   "ssl_key": "server.key",
   "data_store": {
-    "path": "db/cabby.db"
+    "path": "cabby-cli.db"
   }
 }
