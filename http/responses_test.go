@@ -13,7 +13,6 @@ func TestNoResources(t *testing.T) {
 	cr := cabby.Range{Set: true}
 
 	result := noResources(res, resources, cr)
-
 	if result != true {
 		t.Error("Expected true")
 	}
