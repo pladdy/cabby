@@ -160,16 +160,19 @@ func TestCollectionValidate(t *testing.T) {
 }
 
 func TestNewRange(t *testing.T) {
-	invalidRange := Range{First: -1, Last: -1}
+	invalidRange := Range{}
 
 	tests := []struct {
 		input       string
 		resultRange Range
 		isError     bool
 	}{
-		{"items 0-10", Range{First: 0, Last: 10}, false},
+		{"items 0-10", Range{First: 0, Last: 10, Set: true}, false},
+		{"items 10-0", Range{First: 10, Last: 0}, true},
+		{"items -4-0", invalidRange, true},
 		{"items 0 10", invalidRange, true},
 		{"items 10", invalidRange, true},
+		{"0-10", invalidRange, true},
 		{"", invalidRange, false},
 	}
 
@@ -180,7 +183,7 @@ func TestNewRange(t *testing.T) {
 		}
 
 		if err != nil && test.isError == false {
-			t.Error("Got:", err, "Expected: no error")
+			t.Error("Got:", err, "Expected: no error", "Range:", result)
 		}
 	}
 }
@@ -209,7 +212,7 @@ func TestRangeValid(t *testing.T) {
 	}{
 		{Range{First: 1, Last: 0}, false},
 		{Range{First: 0, Last: 0}, true},
-		{Range{First: 0, Last: -1}, false},
+		{Range{First: 0, Last: 3}, true},
 	}
 
 	for _, test := range tests {

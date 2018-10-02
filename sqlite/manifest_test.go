@@ -52,7 +52,7 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: -1, Last: -1}, test.filter)
+		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -81,8 +81,8 @@ func TestManifestServiceManifestRange(t *testing.T) {
 		expectedEntries int
 	}{
 		// setupSQLite() creates 1 object, 10 created above (11 total)
-		{cabby.Range{First: -1, Last: -1}, 11},
-		{cabby.Range{First: 0, Last: 5}, 6},
+		{cabby.Range{First: 0, Last: 0}, 11},
+		{cabby.Range{First: 0, Last: 5, Set: true}, 6},
 	}
 
 	for _, test := range tests {

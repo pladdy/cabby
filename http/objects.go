@@ -39,7 +39,7 @@ func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 	cr, err := cabby.NewRange(r.Header.Get("Range"))
 	if err != nil {
-		rangeNotSatisfiable(w, err)
+		rangeNotSatisfiable(w, err, cr)
 		return
 	}
 
@@ -49,8 +49,7 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(objects) <= 0 {
-		resourceNotFound(w, errors.New("No objects defined in this collection"))
+	if noResources(w, len(objects), cr) {
 		return
 	}
 
@@ -60,7 +59,7 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if cr.Valid() {
+	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
 		writePartialContent(w, cabby.StixContentType, resourceToJSON(bundle))
 	} else {

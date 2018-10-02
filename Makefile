@@ -146,7 +146,13 @@ else
 endif
 
 test-failures:
-	go test $(BUILD_TAGS) -v ./... 2>&1 | grep -A 1 FAIL
+ifdef pkg
+	go test $(BUILD_TAGS) -i ./$(pkg)
+	go test $(BUILD_TAGS) -v -cover ./$(pkg) | grep -A 1 FAIL
+else
+	go test $(BUILD_TAGS) -i ./...
+	go test $(BUILD_TAGS) -v -cover ./... | grep -A 1 FAIL
+endif
 
 test-run:
 ifdef test

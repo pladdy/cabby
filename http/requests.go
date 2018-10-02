@@ -129,16 +129,3 @@ func withTransactionID(r *http.Request) *http.Request {
 	transactionID := uuid.Must(uuid.NewV4())
 	return r.WithContext(cabby.WithTransactionID(r.Context(), transactionID))
 }
-
-// func userAuthorized(w http.ResponseWriter, r *http.Request) bool {
-// 	if !userExists(r) {
-// 		unauthorized(w, errors.New("No user specified"))
-// 		return false
-// 	}
-//
-// 	if !takeCanAdmin(r) {
-// 		forbidden(w, errors.New("Not authorized to create API Roots"))
-// 		return false
-// 	}
-// 	return true
-// }
