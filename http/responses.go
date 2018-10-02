@@ -2,11 +2,27 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 
+	"github.com/pladdy/cabby"
 	log "github.com/sirupsen/logrus"
 )
+
+func noResources(w http.ResponseWriter, resources int, cr cabby.Range) bool {
+	err := errors.New("No resources available for this request")
+
+	if cr.Set && resources <= 0 {
+		rangeNotSatisfiable(w, err, cr)
+		return true
+	}
+	if resources <= 0 {
+		resourceNotFound(w, err)
+		return true
+	}
+	return false
+}
 
 func resourceToJSON(v interface{}) string {
 	b, err := json.Marshal(v)

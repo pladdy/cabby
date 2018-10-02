@@ -53,7 +53,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 				collections.Collections = append(collections.Collections, cabby.Collection{})
 			}
 
-			cr.Total = int64(test.expected)
+			cr.Total = uint64(test.expected)
 			return collections, nil
 		}
 		h := CollectionsHandler{CollectionService: cs}
@@ -81,7 +81,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 			t.Error("Got:", len(result.Collections), "Expected:", test.expected)
 		}
 
-		ra := cabby.Range{First: int64(test.first), Last: int64(test.last), Total: int64(test.expected)}
+		ra := cabby.Range{First: uint64(test.first), Last: uint64(test.last), Total: uint64(test.expected)}
 		if res.Header().Get("Content-Range") != ra.String() {
 			t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", ra.String())
 		}
@@ -161,7 +161,7 @@ func TestCollectionsHandlerGetNoCollections(t *testing.T) {
 	}
 
 	expected := tester.ErrorResourceNotFound
-	expected.Description = "No collections defined in this API Root"
+	expected.Description = "No resources available for this request"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

@@ -286,7 +286,7 @@ type Range struct {
 
 // QueryString returns sql for paginating a range of data
 func (r *Range) QueryString() (q string, args []interface{}) {
-	if r.Valid() {
+	if r.Set && r.Valid() {
 		q = "limit ? offset ?"
 		args = []interface{}{(r.Last - r.First) + 1, r.First}
 	}

@@ -24,7 +24,7 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	cr, err := cabby.NewRange(r.Header.Get("Range"))
 	if err != nil {
-		rangeNotSatisfiable(w, err)
+		rangeNotSatisfiable(w, err, cr)
 		return
 	}
 
@@ -34,12 +34,11 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(collections.Collections) <= 0 {
-		resourceNotFound(w, errors.New("No collections defined in this API Root"))
+	if noResources(w, len(collections.Collections), cr) {
 		return
 	}
 
-	if cr.Valid() {
+	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
 		writePartialContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
 	} else {

@@ -310,30 +310,35 @@ type ObjectService interface {
 
 // Range is used for paginated requests to represent the requested data range
 type Range struct {
-	First int64
-	Last  int64
-	Total int64
+	First uint64
+	Last  uint64
+	Total uint64
+	Set   bool
 }
 
 // NewRange returns a Range given a string from the 'Range' HTTP header string
 // the Range HTTP Header is specified by the request with the syntax 'items X-Y'
 func NewRange(items string) (r Range, err error) {
-	r = Range{First: -1, Last: -1}
-
 	if items == "" {
 		return r, err
 	}
 
+	matched, _ := regexp.MatchString(`items \d+?-\d+?`, items)
+	if !matched {
+		return r, errors.New("Invalid range specified")
+	}
+
 	itemDelimiter := "-"
-	raw := strings.TrimSpace(items)
+	raw := strings.TrimSpace(strings.Replace(items, "items", "", 1))
 	tokens := strings.Split(raw, itemDelimiter)
 
 	if len(tokens) == 2 {
-		r.First, err = strconv.ParseInt(tokens[0], 10, 64)
-		r.Last, err = strconv.ParseInt(tokens[1], 10, 64)
+		r.First, _ = strconv.ParseUint(tokens[0], 10, 64)
+		r.Last, _ = strconv.ParseUint(tokens[1], 10, 64)
 	}
 
 	if r.Valid() {
+		r.Set = true
 		return r, err
 	}
 	return r, errors.New("Invalid range specified")
@@ -341,12 +346,12 @@ func NewRange(items string) (r Range, err error) {
 
 func (r *Range) String() string {
 	s := "items " +
-		strconv.FormatInt(r.First, 10) +
+		strconv.FormatUint(r.First, 10) +
 		"-" +
-		strconv.FormatInt(r.Last, 10)
+		strconv.FormatUint(r.Last, 10)
 
 	if r.Total > 0 {
-		s += "/" + strconv.FormatInt(r.Total, 10)
+		s += "/" + strconv.FormatUint(r.Total, 10)
 	}
 
 	return s
@@ -354,10 +359,6 @@ func (r *Range) String() string {
 
 // Valid returns whether the range is valid or not
 func (r *Range) Valid() bool {
-	if r.First < 0 || r.Last < 0 {
-		return false
-	}
-
 	if r.First > r.Last {
 		return false
 	}

@@ -220,7 +220,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 				objects = append(objects, cabby.Object{})
 			}
 
-			cr.Total = int64(test.expected)
+			cr.Total = uint64(test.expected)
 			return objects, nil
 		}
 		h := ObjectsHandler{ObjectService: obs}
@@ -249,7 +249,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
 		}
 
-		ra := cabby.Range{First: int64(test.first), Last: int64(test.last), Total: int64(test.expected)}
+		ra := cabby.Range{First: uint64(test.first), Last: uint64(test.last), Total: uint64(test.expected)}
 		if res.Header().Get("Content-Range") != ra.String() {
 			t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", ra.String())
 		}
@@ -330,7 +330,7 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	}
 
 	expected := tester.ErrorResourceNotFound
-	expected.Description = "No objects defined in this collection"
+	expected.Description = "No resources available for this request"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {

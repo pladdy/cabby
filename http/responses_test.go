@@ -1,10 +1,23 @@
 package http
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/pladdy/cabby"
 )
+
+func TestNoResources(t *testing.T) {
+	res := httptest.NewRecorder()
+	resources := 0
+	cr := cabby.Range{Set: true}
+
+	result := noResources(res, resources, cr)
+
+	if result != true {
+		t.Error("Expected true")
+	}
+}
 
 func TestResourceToJSON(t *testing.T) {
 	tests := []struct {

@@ -277,16 +277,24 @@ func TestFilterQueryString(t *testing.T) {
 }
 
 func TestRangeQueryString(t *testing.T) {
-	r := Range{&cabby.Range{}}
-	result, args := r.QueryString()
-	expected := "limit ? offset ?"
-
-	if result != expected {
-		t.Error("Got:", result, "Expected:", expected)
+	tests := []struct {
+		r     Range
+		query string
+		args  int
+	}{
+		{Range{&cabby.Range{}}, "", 0},
+		{Range{&cabby.Range{First: 0, Last: 0, Set: true}}, "limit ? offset ?", 2},
 	}
 
-	expectedArgs := 2
-	if len(args) != expectedArgs {
-		t.Error("Got:", len(args), "Expected:", expectedArgs)
+	for _, test := range tests {
+		result, args := test.r.QueryString()
+
+		if result != test.query {
+			t.Error("Got:", result, "Expected:", test.query)
+		}
+
+		if len(args) != test.args {
+			t.Error("Got:", len(args), "Expected:", test.args)
+		}
 	}
 }
