@@ -7,7 +7,7 @@ BUILD_PATH=build/cabby
 CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
 PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
 
-all: cabby/config.json cert dependencies
+all: config/cabby.json cert dependencies
 
 build: build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
