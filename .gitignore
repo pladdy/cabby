@@ -29,6 +29,7 @@ config/cabby.json
 *.db
 TODO.md
 coverage.txt
+cover-*
 
 # CLI
 cmd/cabby-cli/cabby-cli

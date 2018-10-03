@@ -1,5 +1,5 @@
-.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli build/debian/var/cabby/schema.sql
-.PHONY: clean clean-cli cmd/cabby-cli/cabby-cli config cover cover-html db/cabby.db reportcard run run-log
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+.PHONY: clean clean-cli cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log
 .PHONY: test test-failures test test-run
 
 BUILD_TAGS=-tags json1
@@ -7,7 +7,7 @@ BUILD_PATH=build/cabby
 CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
 PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
 
-all: config cert dependencies
+all: cabby/config.json cert dependencies
 
 build: build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
@@ -35,16 +35,16 @@ build/debian/usr/bin/cabby: build/debian/usr/bin/
 build/debian/var/cabby/:
 	mkdir -p $@
 
-build/debian/var/cabby/schema.sql: build/debian/var/cabby/
-	cp sqlite/schema.sql $@
+build/debian/var/cabby/schema.sql: sqlite/schema.sql build/debian/var/cabby/
+	cp $< $@
 
-build-debian: config build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
+build-debian: config/cabby.json build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
 	vagrant up
 	@echo Magic has happend to make a debian...
 	vagrant destroy -f
 
 clean:
-	rm -rf db/
+	rm -rf db/cabby.db
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 	rm -f build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
@@ -58,46 +58,35 @@ cert:
 cmd/cabby-cli/cabby-cli:
 	go build -o $@ $(CLI_FILES)
 
-config:
-	@for file in $(shell find config/*example.json -type f | sed 's/.example.json//'); do \
-		cp $${file}.example.json $${file}.json; \
-	done
-	@echo Configs available in config/
+config/cabby.json: config/cabby.example.json
+	cp $< $@
 
 cover:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
 	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
-	rm $(pkg).out
 else
 	@for package in $(PACKAGES); do \
 	  go test $(BUILD_TAGS) -i ./$${package}; \
 		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
-		rm $${package}.out; \
 	done
 endif
 
 cover-html:
 ifdef pkg
-	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
-	go tool cover -func=$(pkg).out
+	$(MAKE) cover pkg=$(pkg)
 	go tool cover -html=$(pkg).out
-	rm $(pkg).out
 else
+	$(MAKE) cover
 	@for package in $(PACKAGES); do \
-	  go test $(BUILD_TAGS) -i ./$${package}; \
-		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
-		go tool cover -func=$${package}.out; \
 		go tool cover -html=$${package}.out; \
-		rm $${package}.out; \
 	done
 endif
 
 cover-cabby.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./
+	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./ ./
 
 cover-http.txt:
 	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
@@ -106,8 +95,8 @@ cover-sqlite.txt:
 	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
 
 coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
-	@cat cover-cabby.txt cover-http.txt cover-sqlite.txt > $@
-	@rm -f cover-cabby.txt cover-http.txt cover-sqlite.txt
+	@cat $^ > $@
+	@rm -f $^
 
 db/cabby.db: cmd/cabby-cli/cabby-cli
 	scripts/setup-cabby
@@ -147,11 +136,9 @@ endif
 
 test-failures:
 ifdef pkg
-	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -cover ./$(pkg) | grep -A 1 FAIL
+	$(MAKE) test pkg=$(pkg) | grep -A 1 FAIL
 else
-	go test $(BUILD_TAGS) -i ./...
-	go test $(BUILD_TAGS) -v -cover ./... | grep -A 1 FAIL
+	$(MAKE) test | grep -A 1 FAIL
 endif
 
 test-run:
