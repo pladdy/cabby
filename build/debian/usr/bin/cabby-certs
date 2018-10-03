@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 adduser --system --group cabby
 
