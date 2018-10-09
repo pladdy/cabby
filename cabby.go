@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/pladdy/stones"
@@ -33,6 +34,9 @@ const (
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
 	// TaxiiVersion notes the supported version of the server
 	TaxiiVersion = "taxii-2.0"
+
+	// UnsetUnixNano is the value returned from an unset time.Time{}.UnixNano() call
+	UnsetUnixNano = -6795364578871345152
 )
 
 // APIRoot resource
@@ -312,8 +316,12 @@ type ObjectService interface {
 type Range struct {
 	First uint64
 	Last  uint64
-	Total uint64
-	Set   bool
+	// Used for setting X-TAXII-Date-Added-First
+	MinimumAddedAfter time.Time
+	// Used for setting X-TAXII-Date-Added-Last
+	MaximumAddedAfter time.Time
+	Set               bool
+	Total             uint64
 }
 
 // NewRange returns a Range given a string from the 'Range' HTTP header string
@@ -342,6 +350,33 @@ func NewRange(items string) (r Range, err error) {
 		return r, err
 	}
 	return r, errors.New("Invalid range specified")
+}
+
+// AddedAfterFirst returns the first added after as a string
+func (r *Range) AddedAfterFirst() string {
+	return r.MinimumAddedAfter.Format(time.RFC3339Nano)
+}
+
+// AddedAfterLast returns the last added after as a string
+func (r *Range) AddedAfterLast() string {
+	return r.MaximumAddedAfter.Format(time.RFC3339Nano)
+}
+
+// SetAddedAfters only takes one date string and uses it to update the minimum and maximum added after fields
+func (r *Range) SetAddedAfters(date string) {
+	t, err := time.Parse(time.RFC3339Nano, date)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to parse date")
+		return
+	}
+
+	if r.MinimumAddedAfter.UnixNano() == UnsetUnixNano || t.UnixNano() < r.MinimumAddedAfter.UnixNano() {
+		r.MinimumAddedAfter = t
+	}
+
+	if t.UnixNano() > r.MaximumAddedAfter.UnixNano() {
+		r.MaximumAddedAfter = t
+	}
 }
 
 func (r *Range) String() string {

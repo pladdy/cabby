@@ -128,13 +128,17 @@ func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cab
 
 func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
 	sql := `with data as (
-						select rowid, id, type, created, modified, object, collection_id, 1 count
+						select rowid, id, type, created, modified, object, collection_id, created_at date_added, 1 count
 						from stix_objects_data
 						where
 							collection_id = ?
 							and $filter
 					)
-					select id, type, created, modified, object, collection_id, (select sum(count) from data) total
+					select -- collection fields
+					       id, type, created, modified, object, collection_id,
+								 -- range fields
+								 date_added,
+								 (select sum(count) from data) total
 					from data
 					$paginate`
 
@@ -152,13 +156,15 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 		return objects, err
 	}
 	defer rows.Close()
+	var dateAdded string
 
 	for rows.Next() {
 		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &cr.Total); err != nil {
+		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &dateAdded, &cr.Total); err != nil {
 			return objects, err
 		}
 		objects = append(objects, o)
+		cr.SetAddedAfters(dateAdded)
 	}
 
 	err = rows.Err()
