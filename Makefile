@@ -5,7 +5,7 @@
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
 CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
-PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
+PACKAGES=./ sqlite http cmd/cabby-cli
 
 all: config/cabby.json cert dependencies
 
