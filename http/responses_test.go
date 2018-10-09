@@ -7,6 +7,20 @@ import (
 	"github.com/pladdy/cabby"
 )
 
+// func TestMinMaxDates(t *testing.T) {
+//   tests := []struct {
+//     testFile string
+// 		expectedMin string
+// 		expectedMax string
+// 	} {
+//     {"testdata/malware_bundle.json"},
+// 	}
+//
+// 	for _, test := range tests {
+//
+// 	}
+// }
+
 func TestNoResources(t *testing.T) {
 	res := httptest.NewRecorder()
 	resources := 0
