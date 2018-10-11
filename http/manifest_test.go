@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
@@ -32,6 +33,26 @@ func TestManifestHandlerGet(t *testing.T) {
 	passed := tester.CompareManifestEntry(result.Objects[0], expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestManifestHandlerGetHeaders(t *testing.T) {
+	h := ManifestHandler{ManifestService: mockManifestService()}
+	req := newRequest("GET", testManifestURL, nil)
+
+	res := httptest.NewRecorder()
+	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+
+	tm := time.Time{}
+
+	if res.Header().Get("Content-Type") != cabby.TaxiiContentType {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.TaxiiContentType)
+	}
+	if res.Header().Get("X-Taxii-Date-Added-First") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
+	}
+	if res.Header().Get("X-Taxii-Date-Added-Last") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
 	}
 }
 

@@ -59,6 +59,9 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("X-TAXII-Date-Added-First", cr.AddedAfterFirst())
+	w.Header().Set("X-TAXII-Date-Added-Last", cr.AddedAfterLast())
+
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
 		writePartialContent(w, cabby.StixContentType, resourceToJSON(bundle))

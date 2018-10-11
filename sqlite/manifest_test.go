@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
@@ -14,9 +15,11 @@ func TestManifestServiceManifest(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ManifestService()
 
+	cr := cabby.Range{}
 	expected := tester.ManifestEntry
+	expectedTime := time.Now()
 
-	result, err := s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	result, err := s.Manifest(context.Background(), tester.CollectionID, &cr, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -24,6 +27,14 @@ func TestManifestServiceManifest(t *testing.T) {
 	passed := tester.CompareManifestEntry(result.Objects[0], expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+
+	if cr.MinimumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", cr.MinimumAddedAfter, "Expected >=:", expectedTime.UnixNano())
+	}
+
+	if cr.MaximumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", cr.MaximumAddedAfter, "Expected NOT:", expectedTime.UnixNano())
 	}
 }
 

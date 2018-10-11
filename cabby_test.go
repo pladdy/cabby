@@ -1,14 +1,24 @@
 package cabby
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 	log "github.com/sirupsen/logrus"
 )
+
+type errorLog struct {
+	Error string
+	Level string
+	Msg   string
+}
 
 func TestAPIRootValidate(t *testing.T) {
 	tests := []struct {
@@ -185,6 +195,121 @@ func TestNewRange(t *testing.T) {
 		if err != nil && test.isError == false {
 			t.Error("Got:", err, "Expected: no error", "Range:", result)
 		}
+	}
+}
+
+func TestRangeAddedAfterFirst(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		cr       Range
+		expected string
+	}{
+		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
+		{Range{MinimumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+	}
+
+	for _, test := range tests {
+		result := test.cr.AddedAfterFirst()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestRangeAddedAfterLast(t *testing.T) {
+	now := time.Now()
+
+	tests := []struct {
+		cr       Range
+		expected string
+	}{
+		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
+		{Range{MaximumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+	}
+
+	for _, test := range tests {
+		result := test.cr.AddedAfterLast()
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestRangeSetAddedAfters(t *testing.T) {
+	r := Range{}
+
+	// a range is mutated when setting a date
+	// it will be used as a returned data set is iterated over
+
+	// the first date passed to a range should set min and max times
+	first, _ := time.Parse(time.RFC3339Nano, "2016-02-01T00:00:01.123Z")
+	r.SetAddedAfters(first.Format(time.RFC3339Nano))
+
+	if r.MinimumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	}
+	if r.MaximumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	}
+
+	// the second date is a duplicate, it won't change anything
+	second, _ := time.Parse(time.RFC3339Nano, "2016-02-01T00:00:01.123Z")
+	r.SetAddedAfters(second.Format(time.RFC3339Nano))
+
+	if r.MinimumAddedAfter.UnixNano() != second.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
+	}
+	if r.MaximumAddedAfter.UnixNano() != second.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
+	}
+
+	third, _ := time.Parse(time.RFC3339Nano, "2017-02-01T00:00:01.123Z")
+	r.SetAddedAfters(third.Format(time.RFC3339Nano))
+
+	if r.MinimumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	}
+	if r.MaximumAddedAfter.UnixNano() != third.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
+	}
+
+	fourth, _ := time.Parse(time.RFC3339Nano, "2015-02-01T00:00:01.123Z")
+	r.SetAddedAfters(fourth.Format(time.RFC3339Nano))
+
+	if r.MinimumAddedAfter.UnixNano() != fourth.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", fourth.UnixNano())
+	}
+	if r.MaximumAddedAfter.UnixNano() != third.UnixNano() {
+		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
+	}
+}
+
+func TestRangeSetAddedAftersFail(t *testing.T) {
+	// redirect log output for test
+	var buf bytes.Buffer
+
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(&buf)
+
+	defer func() {
+		log.SetFormatter(&log.TextFormatter{})
+		log.SetOutput(os.Stderr)
+	}()
+
+	r := Range{}
+	r.SetAddedAfters("fail")
+
+	// parse log into struct
+	var result errorLog
+	err := json.Unmarshal([]byte(strings.TrimSpace(buf.String())), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	level := "error"
+	if result.Level != level {
+		t.Error("Got:", result.Level, "Expected:", level)
 	}
 }
 

@@ -186,6 +186,9 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		{cabby.Filter{AddedAfter: versions[0]}, 5},
 	}
 
+	cr := cabby.Range{}
+	expectedTime := time.Now()
+
 	for _, test := range tests {
 		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
@@ -195,6 +198,14 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		if len(results) != test.expectedObjects {
 			t.Error("Got:", len(results), "Expected:", test.expectedObjects, "Filter:", test.filter)
 		}
+	}
+
+	if cr.MinimumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", cr.MinimumAddedAfter, "Expected >=:", expectedTime.UnixNano())
+	}
+
+	if cr.MaximumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", cr.MaximumAddedAfter, "Expected NOT:", expectedTime.UnixNano())
 	}
 }
 

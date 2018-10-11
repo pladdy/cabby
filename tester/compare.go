@@ -2,6 +2,7 @@ package tester
 
 import (
 	"strings"
+	"time"
 
 	"github.com/pladdy/cabby"
 )
@@ -121,8 +122,10 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 		Error.Println("Got:", result.ID, "Expected:", expected.ID)
 		passed = false
 	}
-	if result.DateAdded != expected.DateAdded {
-		Error.Println("Got:", result.DateAdded, "Expected:", expected.DateAdded)
+
+	t := time.Time{}
+	if result.DateAdded == t.Format(time.RFC3339Nano) {
+		Error.Println("Got:", result.DateAdded, "Expected:", t.Format(time.RFC3339Nano))
 		passed = false
 	}
 

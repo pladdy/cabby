@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/pladdy/cabby"
 )
@@ -74,7 +75,7 @@ var (
 	// ManifestEntry mock
 	ManifestEntry = cabby.ManifestEntry{
 		ID:         ObjectID,
-		DateAdded:  objectCreated,
+		DateAdded:  time.Now().Format(time.RFC3339Nano),
 		Versions:   []string{objectCreated},
 		MediaTypes: []string{cabby.StixContentType}}
 	// Object mock

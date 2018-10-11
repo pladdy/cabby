@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
@@ -83,31 +84,26 @@ func TestObjectsHandlerGet(t *testing.T) {
 	if !passed {
 		t.Error("Comparison failed")
 	}
+}
 
-	// call handler for objects
-	req = newRequest("GET", testObjectsURL, nil)
+func TestObjectsHandlerGetHeaders(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	req := newRequest("GET", testObjectsURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
-	status, body, _ = callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
-	if status != http.StatusOK {
-		t.Error("Got:", status, "Expected:", http.StatusOK)
+	res := httptest.NewRecorder()
+	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+
+	tm := time.Time{}
+
+	if res.Header().Get("Content-Type") != cabby.StixContentType {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.StixContentType)
 	}
-
-	// parse the bundle for objects
-	err = json.Unmarshal([]byte(body), &bundle)
-	if err != nil {
-		t.Fatal(err)
+	if res.Header().Get("X-Taxii-Date-Added-First") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
 	}
-
-	// parse the first object
-	err = json.Unmarshal(bundle.Objects[0], &object)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	passed = tester.CompareObject(object, expected)
-	if !passed {
-		t.Error("Comparison failed")
+	if res.Header().Get("X-Taxii-Date-Added-Last") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
 	}
 }
 

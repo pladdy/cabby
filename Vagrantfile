@@ -34,20 +34,7 @@ Vagrant.configure("2") do |config|
       cp -r /vagrant/* $SRC_DIR
       cd $SRC_DIR
 
-      make && make test && make build
-      fpm -f \
-        -s dir \
-        -t deb \
-        -n cabby \
-        -m "Matt Pladna" \
-        --description "A TAXII 2.0 server" \
-        --after-install scripts/postinst \
-        --deb-user cabby \
-        --deb-group cabby \
-        --deb-pre-depends make \
-        --deb-pre-depends jq \
-        --deb-pre-depends sqlite \
-        -C build/debian .
+      make cabby.deb
 
       if [ $? -eq 0 ]; then
         cp *.deb /vagrant

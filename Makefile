@@ -5,17 +5,14 @@
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
 CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
-PACKAGES=./ sqlite/... http/... cmd/cabby-cli/...
+PACKAGES=./ sqlite http cmd/cabby-cli
 
 all: config/cabby.json cert dependencies
 
-build: build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+build: dependencies build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
 build/debian/etc/cabby/:
 	mkdir -p $@
-
-build/debian/etc/cabby/cabby.json: build/debian/etc/cabby/
-	cp config/cabby.json build/debian/etc/cabby/
 
 build/debian/etc/systemd/:
 	mkdir -p $@
@@ -29,7 +26,7 @@ build/debian/usr/bin/:
 build/debian/usr/bin/cabby-cli: build/debian/usr/bin/
 	go build -o $@ $(CLI_FILES)
 
-build/debian/usr/bin/cabby: build/debian/usr/bin/
+build/debian/usr/bin/cabby: build/debian/usr/bin/ build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
 	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
 
 build/debian/var/cabby/:
@@ -38,10 +35,26 @@ build/debian/var/cabby/:
 build/debian/var/cabby/schema.sql: sqlite/schema.sql build/debian/var/cabby/
 	cp $< $@
 
-build-debian: config/cabby.json build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
+build-debian:
 	vagrant up
 	@echo Magic has happend to make a debian...
 	vagrant destroy -f
+
+cabby.deb: build
+	fpm -f \
+		-s dir \
+		-t deb \
+		-n cabby \
+		-p $@ \
+		-m "Matt Pladna" \
+		--description "A TAXII 2.0 server" \
+		--after-install scripts/postinst \
+		--deb-user cabby \
+		--deb-group cabby \
+		--deb-pre-depends make \
+		--deb-pre-depends jq \
+		--deb-pre-depends sqlite \
+		-C build/debian .
 
 clean:
 	rm -rf db/cabby.db

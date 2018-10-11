@@ -27,7 +27,7 @@ func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *
 
 func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	sql := `with data as (
-						select rowid, id, min(created) date_added, group_concat(modified) versions, 1 count
+						select rowid, id, min(created_at) date_added, group_concat(modified) versions, 1 count
 						-- media_types omitted...should that be in this table?
 						from stix_objects_data
 						where
@@ -61,6 +61,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 			return m, err
 		}
 
+		cr.SetAddedAfters(me.DateAdded)
 		me.MediaTypes = []string{cabby.StixContentType}
 		me.Versions = strings.Split(string(versions), ",")
 		m.Objects = append(m.Objects, me)
