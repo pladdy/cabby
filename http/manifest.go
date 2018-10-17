@@ -38,13 +38,14 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
+		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(manifest))
 	} else {
-		writeContent(w, cabby.TaxiiContentType, resourceToJSON(manifest))
+		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(manifest))
 	}
 }
 
 // Post handles post request
 func (h ManifestHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "Get, Head")
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

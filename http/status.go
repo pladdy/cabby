@@ -25,10 +25,11 @@ func (h StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(status))
 }
 
 // Post handles post request
 func (h StatusHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "Get, Head")
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

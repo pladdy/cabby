@@ -61,6 +61,7 @@ func TestRequestHandlerRouteRequest(t *testing.T) {
 	}{
 		{"CUSTOM", testDiscoveryURL, http.StatusMethodNotAllowed},
 		{"GET", testDiscoveryURL, http.StatusOK},
+		{"HEAD", testDiscoveryURL, http.StatusOK},
 		{"POST", testDiscoveryURL, http.StatusOK},
 	}
 

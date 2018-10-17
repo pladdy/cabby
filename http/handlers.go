@@ -31,7 +31,11 @@ func RouteRequest(h RequestHandler) http.HandlerFunc {
 			h.Get(w, r)
 		case http.MethodPost:
 			h.Post(w, r)
+		case http.MethodHead:
+			// for HEAD requests send to GET, it will omit response
+			h.Get(w, r)
 		default:
+			w.Header().Set("Allow", "Get, Head, Post")
 			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 			return
 		}

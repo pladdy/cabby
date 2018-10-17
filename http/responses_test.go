@@ -1,25 +1,13 @@
 package http
 
 import (
+	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/pladdy/cabby"
 )
-
-// func TestMinMaxDates(t *testing.T) {
-//   tests := []struct {
-//     testFile string
-// 		expectedMin string
-// 		expectedMax string
-// 	} {
-//     {"testdata/malware_bundle.json"},
-// 	}
-//
-// 	for _, test := range tests {
-//
-// 	}
-// }
 
 func TestNoResources(t *testing.T) {
 	res := httptest.NewRecorder()
@@ -65,5 +53,27 @@ func TestResourceToJSONFail(t *testing.T) {
 
 	if recovered != true {
 		t.Error("Got:", result, "Expected: 'recovered' to be true")
+	}
+}
+
+func TestWrite(t *testing.T) {
+	content := "foo"
+
+	tests := []struct {
+		r        *http.Request
+		expected string
+	}{
+		{httptest.NewRequest("GET", testDiscoveryURL, nil), content},
+		{httptest.NewRequest("HEAD", testDiscoveryURL, nil), ""},
+	}
+
+	for _, test := range tests {
+		w := httptest.NewRecorder()
+		write(w, test.r, content)
+		result, _ := ioutil.ReadAll(w.Body)
+
+		if string(result) != test.expected {
+			t.Error("Got:", string(result), "Expected:", test.expected)
+		}
 	}
 }

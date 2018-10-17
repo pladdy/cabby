@@ -37,13 +37,21 @@ func withHSTS(w http.ResponseWriter) http.ResponseWriter {
 	return w
 }
 
-func writeContent(w http.ResponseWriter, contentType, content string) {
-	w.Header().Set("Content-Type", contentType)
-	io.WriteString(w, content)
+func write(w http.ResponseWriter, r *http.Request, content string) {
+	if r.Method == http.MethodHead {
+		io.WriteString(w, "")
+	} else {
+		io.WriteString(w, content)
+	}
 }
 
-func writePartialContent(w http.ResponseWriter, contentType, content string) {
+func writeContent(w http.ResponseWriter, r *http.Request, contentType, content string) {
+	w.Header().Set("Content-Type", contentType)
+	write(w, r, content)
+}
+
+func writePartialContent(w http.ResponseWriter, r *http.Request, contentType, content string) {
 	w.Header().Set("Content-Type", contentType)
 	w.WriteHeader(http.StatusPartialContent)
-	io.WriteString(w, content)
+	write(w, r, content)
 }
