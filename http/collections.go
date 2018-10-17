@@ -40,13 +40,14 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
+		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(collections))
 	} else {
-		writeContent(w, cabby.TaxiiContentType, resourceToJSON(collections))
+		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(collections))
 	}
 }
 
 // Post handles post request
 func (h CollectionsHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "Get, Head")
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

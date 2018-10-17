@@ -28,12 +28,14 @@ func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if apiRoot.Title == "" {
 		resourceNotFound(w, fmt.Errorf("API Root not found"))
-	} else {
-		writeContent(w, cabby.TaxiiContentType, resourceToJSON(apiRoot))
+		return
 	}
+
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(apiRoot))
 }
 
 // Post handles post request
 func (h APIRootHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "Get, Head")
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

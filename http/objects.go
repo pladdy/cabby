@@ -64,9 +64,9 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, cabby.StixContentType, resourceToJSON(bundle))
+		writePartialContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
 	} else {
-		writeContent(w, cabby.StixContentType, resourceToJSON(bundle))
+		writeContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
 	}
 }
 
@@ -88,7 +88,7 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, cabby.StixContentType, resourceToJSON(bundle))
+	writeContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
 }
 
 /* Post */
@@ -96,6 +96,13 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 // Post handles post request
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
+
+	// due to how the routing logic works, a post can go to a url with an object on the path.  technically a path with
+	// an object id can only receive a get method
+	if takeObjectID(r) != "" {
+		handlePostToObjectURL(w, r)
+		return
+	}
 
 	if !h.validPost(w, r) {
 		return
@@ -126,9 +133,10 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// write header before status or header won't be set
 	w.Header().Set("Content-Type", cabby.TaxiiContentType)
 	w.WriteHeader(http.StatusAccepted)
-	writeContent(w, cabby.TaxiiContentType, resourceToJSON(status))
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(status))
 
 	go h.ObjectService.CreateBundle(r.Context(), bundle, takeCollectionID(r), status, h.StatusService)
 }
@@ -182,6 +190,12 @@ func greaterThan(r, m int64) bool {
 		return true
 	}
 	return false
+}
+
+func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"object id": takeObjectID(r)}).Error("Invalid method for object")
+	w.Header().Set("Allow", "Get, Head")
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 func objectsToBundle(objects []cabby.Object) (stones.Bundle, error) {

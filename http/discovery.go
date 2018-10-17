@@ -34,13 +34,15 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if discovery.Title == "" {
 		resourceNotFound(w, errors.New("Discovery not defined"))
-	} else {
-		writeContent(w, cabby.TaxiiContentType, resourceToJSON(discovery))
+		return
 	}
+
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(discovery))
 }
 
 // Post handles post request
 func (h DiscoveryHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", "Get, Head")
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 

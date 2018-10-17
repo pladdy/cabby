@@ -349,7 +349,7 @@ func TestObjectsHandlerPost(t *testing.T) {
 	bundle, _ := ioutil.ReadAll(bundleFile)
 	b := bytes.NewBuffer(bundle)
 
-	req := newPostRequest(testObjectURL, b)
+	req := newPostRequest(testObjectsURL, b)
 	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusAccepted {
@@ -464,6 +464,31 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestObjectsHandlerPostToObjectURL(t *testing.T) {
+	osv := mockObjectService()
+	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		tester.Info.Println("mock call of CreateBundle")
+	}
+
+	ssv := mockStatusService()
+	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: osv, StatusService: ssv}
+
+	bundleFile, _ := os.Open("testdata/malware_bundle.json")
+	bundle, _ := ioutil.ReadAll(bundleFile)
+	b := bytes.NewBuffer(bundle)
+
+	req := newPostRequest(testObjectURL, b)
+	status, _, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+
+	if headers.Get("allow") != "Get, Head" {
+		t.Error("Got:", headers["content-type"], "Expected:", "Get, Head")
 	}
 }
 
