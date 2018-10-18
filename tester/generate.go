@@ -5,9 +5,10 @@ import (
 	"github.com/pladdy/stones"
 )
 
+// GenerateObject generates a STIX object given a type
 func GenerateObject(objectType string) cabby.Object {
 	obj := Object
-	id, _ := stones.NewStixID(objectType)
+	id, _ := stones.NewIdentifier(objectType)
 	obj.ID = stones.ID(id.String())
 	return obj
 }

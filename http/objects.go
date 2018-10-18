@@ -173,7 +173,7 @@ func bundleFromBytes(b []byte) (stones.Bundle, error) {
 		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
 	}
 
-	valid, errs := bundle.Validate()
+	valid, errs := bundle.Valid()
 	if !valid {
 		errString := "Invalid bundle:"
 		for _, e := range errs {
