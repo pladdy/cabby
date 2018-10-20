@@ -54,7 +54,7 @@ func TestObjectServiceCreateObject(t *testing.T) {
 		t.Error("Got:", err)
 	}
 
-	results, err := s.Object(context.Background(), test.CollectionID.String(), string(test.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), test.CollectionID.String(), test.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -72,7 +72,7 @@ func TestObjectServiceObject(t *testing.T) {
 
 	expected := tester.Object
 
-	results, err := s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), expected.CollectionID.String(), expected.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -142,7 +142,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	_, err = s.Object(context.Background(), expected.CollectionID.String(), expected.ID.String(), cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -154,15 +154,15 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	s := ds.ObjectService()
 
 	// create more objects to ensure not paged by default
-	ids := []cabby.ID{}
+	ids := []stones.Identifier{}
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		ids = append(ids, id)
 		createObject(ds, id.String())
 	}
 
 	// create an object with multiple versions
-	id, _ := cabby.NewID()
+	id, _ := stones.NewIdentifier("malware")
 	objectID := "malware--" + id.String()
 	versions := []string{}
 
@@ -216,7 +216,7 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 
 	// create more objects to ensure not paged by default
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		createObject(ds, id.String())
 	}
 
@@ -305,7 +305,7 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 		expected, _ := bytesToObject(object)
 		expected.CollectionID = tester.Collection.ID
 
-		results, _ := osv.Object(context.Background(), tester.CollectionID, string(expected.ID), cabby.Filter{})
+		results, _ := osv.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 
 		passed := tester.CompareObject(results[0], expected)
 		if !passed {

@@ -9,6 +9,6 @@ import (
 func GenerateObject(objectType string) cabby.Object {
 	obj := Object
 	id, _ := stones.NewIdentifier(objectType)
-	obj.ID = stones.ID(id.String())
+	obj.ID = id
 	return obj
 }

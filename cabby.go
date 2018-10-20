@@ -296,10 +296,10 @@ type ManifestService interface {
 // Object for STIX 2 object data
 // TODO: this should be in stones; needs validation too (in stones)
 type Object struct {
-	ID           stones.ID `json:"id"`
-	Type         string    `json:"type"`
-	Created      string    `json:"created"`
-	Modified     string    `json:"modified"`
+	ID           stones.Identifier `json:"id"`
+	Type         string            `json:"type"`
+	Created      string            `json:"created"`
+	Modified     string            `json:"modified"`
 	Object       []byte
 	CollectionID ID
 }

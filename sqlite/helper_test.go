@@ -9,12 +9,18 @@ import (
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	testDBPath = "testdata/tester.db"
 	schema     = "schema.sql"
 )
+
+func init() {
+	// reduce logging spam during testing
+	log.SetLevel(log.WarnLevel)
+}
 
 /* helpers */
 
@@ -51,7 +57,8 @@ func createDiscovery(ds *DataStore) {
 
 func createObject(ds *DataStore, id string) {
 	o := tester.Object
-	o.ID = stones.ID(id)
+	sid, _ := stones.IdentifierFromString(id)
+	o.ID = sid
 
 	err := ds.ObjectService().CreateObject(context.Background(), o)
 	if err != nil {
@@ -61,7 +68,8 @@ func createObject(ds *DataStore, id string) {
 
 func createObjectVersion(ds *DataStore, id, version string) {
 	o := tester.Object
-	o.ID = stones.ID(id)
+	sid, _ := stones.IdentifierFromString(id)
+	o.ID = sid
 	o.Modified = version
 	o.Created = time.Now().UTC().Format(time.RFC3339Nano)
 
@@ -102,7 +110,7 @@ func setupSQLite() {
 	createDiscovery(ds)
 	createAPIRoot(ds)
 	createCollection(ds, tester.Collection.ID.String())
-	createObject(ds, string(tester.Object.ID))
+	createObject(ds, string(tester.Object.ID.String()))
 }
 
 func testDataStore() *DataStore {

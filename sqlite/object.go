@@ -47,8 +47,8 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 			continue
 		}
 
-		log.WithFields(log.Fields{"id": o.ID}).Info("Sending to data store")
-		toWrite <- []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, collectionID}
+		log.WithFields(log.Fields{"id": o.ID.String()}).Info("Sending to data store")
+		toWrite <- []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Object, collectionID}
 	}
 	close(toWrite)
 
@@ -66,7 +66,7 @@ func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) er
 
 func (s ObjectService) createObject(o cabby.Object) error {
 	sql := createObjectSQL
-	args := []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID}
+	args := []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Object, o.CollectionID}
 
 	err := s.DataStore.write(createObjectSQL, args...)
 	if err != nil {
@@ -107,9 +107,16 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 
 	for rows.Next() {
 		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+		var id string
+		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
 			return objects, err
 		}
+
+		o.ID, err = stones.IdentifierFromString(id)
+		if err != nil {
+			return objects, err
+		}
+
 		objects = append(objects, o)
 	}
 
@@ -160,9 +167,17 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 
 	for rows.Next() {
 		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &dateAdded, &cr.Total); err != nil {
+		var id string
+
+		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &dateAdded, &cr.Total); err != nil {
 			return objects, err
 		}
+
+		o.ID, err = stones.IdentifierFromString(id)
+		if err != nil {
+			return objects, err
+		}
+
 		objects = append(objects, o)
 		cr.SetAddedAfters(dateAdded)
 	}
@@ -180,7 +195,7 @@ func bytesToObject(b []byte) (cabby.Object, error) {
 		return o, err
 	}
 
-	if o.ID == "" {
+	if valid, _ := o.ID.Valid(); !valid {
 		err = errors.New("Invalid ID")
 	}
 

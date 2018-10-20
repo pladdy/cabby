@@ -8,6 +8,7 @@ import (
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
+	"github.com/pladdy/stones"
 )
 
 func TestManifestServiceManifest(t *testing.T) {
@@ -44,9 +45,9 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	s := ds.ManifestService()
 
 	// create more objects to ensure not paged by default
-	ids := []cabby.ID{}
+	ids := []stones.Identifier{}
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		ids = append(ids, id)
 		createObject(ds, id.String())
 	}
@@ -81,7 +82,7 @@ func TestManifestServiceManifestRange(t *testing.T) {
 
 	// create more objects to ensure not paged by default
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		createObject(ds, id.String())
 	}
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 )
 
 const (
@@ -113,8 +114,10 @@ func newContext() context.Context {
 }
 
 func object() cabby.Object {
+	id, _ := stones.IdentifierFromString(ObjectID)
+
 	o := cabby.Object{
-		ID:       ObjectID,
+		ID:       id,
 		Type:     "malware",
 		Created:  objectCreated,
 		Modified: objectCreated,
