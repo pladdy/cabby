@@ -8,6 +8,7 @@ import (
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
+	"github.com/pladdy/stones"
 )
 
 func TestManifestServiceManifest(t *testing.T) {
@@ -44,9 +45,9 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	s := ds.ManifestService()
 
 	// create more objects to ensure not paged by default
-	ids := []cabby.ID{}
+	ids := []stones.Identifier{}
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		ids = append(ids, id)
 		createObject(ds, id.String())
 	}
@@ -63,7 +64,7 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -81,7 +82,7 @@ func TestManifestServiceManifestRange(t *testing.T) {
 
 	// create more objects to ensure not paged by default
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		createObject(ds, id.String())
 	}
 
@@ -97,7 +98,7 @@ func TestManifestServiceManifestRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}

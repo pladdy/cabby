@@ -49,12 +49,12 @@ func TestObjectServiceCreateObject(t *testing.T) {
 
 	test := tester.GenerateObject("malware")
 
-	err := s.CreateObject(context.Background(), test)
+	err := s.CreateObject(context.Background(), tester.CollectionID, test)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	results, err := s.Object(context.Background(), test.CollectionID.String(), string(test.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), tester.CollectionID, test.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -72,7 +72,7 @@ func TestObjectServiceObject(t *testing.T) {
 
 	expected := tester.Object
 
-	results, err := s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	results, err := s.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -115,11 +115,8 @@ func TestObjectServiceObjectFilter(t *testing.T) {
 		{cabby.Filter{Versions: versions[2]}, 1},
 	}
 
-	// use for collectionID
-	expected := tester.Object
-
 	for _, test := range tests {
-		results, err := s.Object(context.Background(), expected.CollectionID.String(), objectID, test.filter)
+		results, err := s.Object(context.Background(), tester.CollectionID, objectID, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error", "Filter:", test.filter)
 		}
@@ -142,7 +139,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Object(context.Background(), expected.CollectionID.String(), string(expected.ID), cabby.Filter{})
+	_, err = s.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -154,15 +151,15 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	s := ds.ObjectService()
 
 	// create more objects to ensure not paged by default
-	ids := []cabby.ID{}
+	ids := []stones.Identifier{}
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		ids = append(ids, id)
 		createObject(ds, id.String())
 	}
 
 	// create an object with multiple versions
-	id, _ := cabby.NewID()
+	id, _ := stones.NewIdentifier("malware")
 	objectID := "malware--" + id.String()
 	versions := []string{}
 
@@ -190,7 +187,10 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	expectedTime := time.Now()
 
 	for _, test := range tests {
-		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
+		results, err := s.Objects(
+			context.Background(),
+			tester.CollectionID,
+			&cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -216,7 +216,7 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 
 	// create more objects to ensure not paged by default
 	for i := 0; i < 10; i++ {
-		id, _ := cabby.NewID()
+		id, _ := stones.NewIdentifier("malware")
 		createObject(ds, id.String())
 	}
 
@@ -232,7 +232,7 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Objects(context.Background(), tester.CollectionID, &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -257,9 +257,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := tester.Object
-
-	_, err = s.Objects(context.Background(), expected.CollectionID.String(), &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -303,9 +301,8 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 	// check objects were saved
 	for _, object := range bundle.Objects {
 		expected, _ := bytesToObject(object)
-		expected.CollectionID = tester.Collection.ID
 
-		results, _ := osv.Object(context.Background(), tester.CollectionID, string(expected.ID), cabby.Filter{})
+		results, _ := osv.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 
 		passed := tester.CompareObject(results[0], expected)
 		if !passed {

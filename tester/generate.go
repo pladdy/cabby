@@ -1,13 +1,13 @@
 package tester
 
 import (
-	"github.com/pladdy/cabby"
 	"github.com/pladdy/stones"
 )
 
-func GenerateObject(objectType string) cabby.Object {
+// GenerateObject generates a STIX object given a type
+func GenerateObject(objectType string) stones.Object {
 	obj := Object
-	id, _ := stones.NewStixID(objectType)
-	obj.ID = stones.ID(id.String())
+	id, _ := stones.NewIdentifier(objectType)
+	obj.ID = id
 	return obj
 }

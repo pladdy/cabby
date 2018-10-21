@@ -188,9 +188,9 @@ func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *
 type ObjectService struct {
 	MaxContentLength int64
 	CreateBundleFn   func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
-	CreateObjectFn   func(ctx context.Context, object cabby.Object) error
-	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error)
-	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error)
+	CreateObjectFn   func(ctx context.Context, collectionID string, object stones.Object) error
+	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error)
+	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error)
 }
 
 // CreateBundle is a mock implementation
@@ -199,17 +199,17 @@ func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collec
 }
 
 // CreateObject is a mock implementation
-func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) error {
-	return s.CreateObjectFn(ctx, object)
+func (s ObjectService) CreateObject(ctx context.Context, collectionID string, object stones.Object) error {
+	return s.CreateObjectFn(ctx, collectionID, object)
 }
 
 // Object is a mock implementation
-func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 	return s.ObjectFn(ctx, collectionID, objectID, f)
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
 	return s.ObjectsFn(ctx, collectionID, cr, f)
 }
 

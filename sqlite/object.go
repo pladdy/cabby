@@ -47,8 +47,8 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 			continue
 		}
 
-		log.WithFields(log.Fields{"id": o.ID}).Info("Sending to data store")
-		toWrite <- []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, collectionID}
+		log.WithFields(log.Fields{"id": o.ID.String()}).Info("Sending to data store")
+		toWrite <- []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Source, collectionID}
 	}
 	close(toWrite)
 
@@ -56,17 +56,17 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 }
 
 // CreateObject will read from the data store and return the resource
-func (s ObjectService) CreateObject(ctx context.Context, object cabby.Object) error {
+func (s ObjectService) CreateObject(ctx context.Context, collectionID string, object stones.Object) error {
 	resource, action := "Object", "create"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	err := s.createObject(object)
+	err := s.createObject(collectionID, object)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return err
 }
 
-func (s ObjectService) createObject(o cabby.Object) error {
+func (s ObjectService) createObject(collectionID string, o stones.Object) error {
 	sql := createObjectSQL
-	args := []interface{}{o.ID, o.Type, o.Created, o.Modified, o.Object, o.CollectionID}
+	args := []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Source, collectionID}
 
 	err := s.DataStore.write(createObjectSQL, args...)
 	if err != nil {
@@ -76,7 +76,7 @@ func (s ObjectService) createObject(o cabby.Object) error {
 }
 
 // Object will read from the data store and return the resource
-func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Object(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 	resource, action := "Object", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.object(collectionID, objectID, f)
@@ -84,8 +84,8 @@ func (s ObjectService) Object(ctx context.Context, collectionID, objectID string
 	return result, err
 }
 
-func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
-	sql := `select id, type, created, modified, object, collection_id
+func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
+	sql := `select id, type, created, modified, object
 	        from stix_objects_data
 					where
 					  collection_id = ?
@@ -95,7 +95,7 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 	args := []interface{}{collectionID, objectID}
 	sql, args = applyFiltering(sql, f, args)
 
-	objects := []cabby.Object{}
+	objects := []stones.Object{}
 	var err error
 
 	rows, err := s.DB.Query(sql, args...)
@@ -106,10 +106,17 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 	defer rows.Close()
 
 	for rows.Next() {
-		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID); err != nil {
+		var o stones.Object
+		var id string
+		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Source); err != nil {
 			return objects, err
 		}
+
+		o.ID, err = stones.IdentifierFromString(id)
+		if err != nil {
+			return objects, err
+		}
+
 		objects = append(objects, o)
 	}
 
@@ -118,7 +125,7 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 }
 
 // Objects will read from the data store and return the resource
-func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
 	resource, action := "Objects", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
 	result, err := s.objects(collectionID, cr, f)
@@ -126,16 +133,16 @@ func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cab
 	return result, err
 }
 
-func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
+func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
 	sql := `with data as (
-						select rowid, id, type, created, modified, object, collection_id, created_at date_added, 1 count
+						select rowid, id, type, created, modified, collection_id, object, created_at date_added, 1 count
 						from stix_objects_data
 						where
 							collection_id = ?
 							and $filter
 					)
 					select -- collection fields
-					       id, type, created, modified, object, collection_id,
+					       id, type, created, modified, object,
 								 -- range fields
 								 date_added,
 								 (select sum(count) from data) total
@@ -147,7 +154,7 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 	sql, args = applyFiltering(sql, f, args)
 	sql, args = applyPaging(sql, cr, args)
 
-	objects := []cabby.Object{}
+	objects := []stones.Object{}
 	var err error
 
 	rows, err := s.DB.Query(sql, args...)
@@ -159,10 +166,18 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 	var dateAdded string
 
 	for rows.Next() {
-		var o cabby.Object
-		if err := rows.Scan(&o.ID, &o.Type, &o.Created, &o.Modified, &o.Object, &o.CollectionID, &dateAdded, &cr.Total); err != nil {
+		var o stones.Object
+		var id string
+
+		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Source, &dateAdded, &cr.Total); err != nil {
 			return objects, err
 		}
+
+		o.ID, err = stones.IdentifierFromString(id)
+		if err != nil {
+			return objects, err
+		}
+
 		objects = append(objects, o)
 		cr.SetAddedAfters(dateAdded)
 	}
@@ -173,18 +188,18 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 
 /* helpers */
 
-func bytesToObject(b []byte) (cabby.Object, error) {
-	var o cabby.Object
+func bytesToObject(b []byte) (stones.Object, error) {
+	var o stones.Object
 	err := json.Unmarshal(b, &o)
 	if err != nil {
 		return o, err
 	}
 
-	if o.ID == "" {
+	if valid, _ := o.ID.Valid(); !valid {
 		err = errors.New("Invalid ID")
 	}
 
-	o.Object = b
+	o.Source = b
 	return o, err
 }
 
