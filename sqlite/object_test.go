@@ -49,12 +49,12 @@ func TestObjectServiceCreateObject(t *testing.T) {
 
 	test := tester.GenerateObject("malware")
 
-	err := s.CreateObject(context.Background(), test)
+	err := s.CreateObject(context.Background(), tester.CollectionID, test)
 	if err != nil {
 		t.Error("Got:", err)
 	}
 
-	results, err := s.Object(context.Background(), test.CollectionID.String(), test.ID.String(), cabby.Filter{})
+	results, err := s.Object(context.Background(), tester.CollectionID, test.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err)
 	}
@@ -72,7 +72,7 @@ func TestObjectServiceObject(t *testing.T) {
 
 	expected := tester.Object
 
-	results, err := s.Object(context.Background(), expected.CollectionID.String(), expected.ID.String(), cabby.Filter{})
+	results, err := s.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -115,11 +115,8 @@ func TestObjectServiceObjectFilter(t *testing.T) {
 		{cabby.Filter{Versions: versions[2]}, 1},
 	}
 
-	// use for collectionID
-	expected := tester.Object
-
 	for _, test := range tests {
-		results, err := s.Object(context.Background(), expected.CollectionID.String(), objectID, test.filter)
+		results, err := s.Object(context.Background(), tester.CollectionID, objectID, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error", "Filter:", test.filter)
 		}
@@ -142,7 +139,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 
 	expected := tester.Object
 
-	_, err = s.Object(context.Background(), expected.CollectionID.String(), expected.ID.String(), cabby.Filter{})
+	_, err = s.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -190,7 +187,10 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	expectedTime := time.Now()
 
 	for _, test := range tests {
-		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
+		results, err := s.Objects(
+			context.Background(),
+			tester.CollectionID,
+			&cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -232,7 +232,7 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Objects(context.Background(), tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Objects(context.Background(), tester.CollectionID, &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -257,9 +257,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := tester.Object
-
-	_, err = s.Objects(context.Background(), expected.CollectionID.String(), &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -303,7 +301,6 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 	// check objects were saved
 	for _, object := range bundle.Objects {
 		expected, _ := bytesToObject(object)
-		expected.CollectionID = tester.Collection.ID
 
 		results, _ := osv.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
 

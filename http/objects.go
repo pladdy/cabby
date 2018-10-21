@@ -198,14 +198,14 @@ func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
-func objectsToBundle(objects []cabby.Object) (stones.Bundle, error) {
+func objectsToBundle(objects []stones.Object) (stones.Bundle, error) {
 	bundle, err := stones.NewBundle()
 	if err != nil {
 		return bundle, err
 	}
 
 	for _, o := range objects {
-		bundle.Objects = append(bundle.Objects, o.Object)
+		bundle.AddObject(string(o.Source))
 	}
 
 	if len(bundle.Objects) == 0 {

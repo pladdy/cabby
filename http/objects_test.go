@@ -63,9 +63,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 	}
 
 	expected := tester.Object
-	// objects are returned as bundles; collection ids are not defined in the bundle
-	expected.CollectionID = cabby.ID{}
-	expected.Object = nil
+	expected.Source = nil
 
 	// parse the bundle for an object
 	var bundle stones.Bundle
@@ -74,7 +72,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var object cabby.Object
+	var object stones.Object
 	err = json.Unmarshal(bundle.Objects[0], &object)
 	if err != nil {
 		t.Fatal(err)
@@ -127,8 +125,8 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
-		return []cabby.Object{}, errors.New(expected.Description)
+	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
+		return []stones.Object{}, errors.New(expected.Description)
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -152,8 +150,8 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]cabby.Object, error) {
-		return []cabby.Object{}, nil
+	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
+		return []stones.Object{}, nil
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -210,10 +208,10 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 	for _, test := range tests {
 		// set up mock service
 		obs := mockObjectService()
-		obs.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
-			objects := []cabby.Object{}
+		obs.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+			objects := []stones.Object{}
 			for i := 0; i < test.expected; i++ {
-				objects = append(objects, cabby.Object{})
+				objects = append(objects, tester.GenerateObject("malware"))
 			}
 
 			cr.Total = uint64(test.expected)
@@ -283,8 +281,8 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
-		return []cabby.Object{}, errors.New(expected.Description)
+	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+		return []stones.Object{}, errors.New(expected.Description)
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -308,8 +306,8 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 
 func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]cabby.Object, error) {
-		return []cabby.Object{}, nil
+	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+		return []stones.Object{}, nil
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
@@ -520,7 +518,7 @@ func TestObjectsPostValidPost(t *testing.T) {
 }
 
 func TestObjectsToBundleError(t *testing.T) {
-	_, err := objectsToBundle([]cabby.Object{})
+	_, err := objectsToBundle([]stones.Object{})
 	if err == nil {
 		t.Error("Expected error")
 	}

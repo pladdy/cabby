@@ -293,23 +293,12 @@ type ManifestService interface {
 	Manifest(ctx context.Context, collectionID string, cr *Range, f Filter) (Manifest, error)
 }
 
-// Object for STIX 2 object data
-// TODO: this should be in stones; needs validation too (in stones)
-type Object struct {
-	ID           stones.Identifier `json:"id"`
-	Type         string            `json:"type"`
-	Created      string            `json:"created"`
-	Modified     string            `json:"modified"`
-	Object       []byte
-	CollectionID ID
-}
-
 // ObjectService provides Object data
 type ObjectService interface {
 	CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, s Status, ss StatusService)
-	CreateObject(ctx context.Context, o Object) error
-	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]Object, error)
-	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]Object, error)
+	CreateObject(ctx context.Context, collectionID string, o stones.Object) error
+	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]stones.Object, error)
+	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]stones.Object, error)
 }
 
 // Range is used for paginated requests to represent the requested data range

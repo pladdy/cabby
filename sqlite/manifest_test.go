@@ -64,7 +64,7 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -98,7 +98,7 @@ func TestManifestServiceManifestRange(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Object.CollectionID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &test.cabbyRange, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}

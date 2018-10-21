@@ -82,7 +82,7 @@ var (
 	// Object mock
 	Object = object()
 	// Objects mock
-	Objects = []cabby.Object{object()}
+	Objects = []stones.Object{object()}
 	// Status mock
 	Status = status()
 	// User mock
@@ -113,18 +113,17 @@ func newContext() context.Context {
 	return ctx
 }
 
-func object() cabby.Object {
+func object() stones.Object {
 	id, _ := stones.IdentifierFromString(ObjectID)
 
-	o := cabby.Object{
+	o := stones.Object{
 		ID:       id,
 		Type:     "malware",
 		Created:  objectCreated,
 		Modified: objectCreated,
 	}
 
-	o.CollectionID, _ = cabby.IDFromString(CollectionID)
-	o.Object = []byte(`{
+	o.Source = []byte(`{
 	      "type": "malware",
 	      "id": "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc",
 	      "created": "2016-04-06T20:07:09.000Z",
@@ -145,6 +144,7 @@ func status() cabby.Status {
 func userCollectionList() cabby.UserCollectionList {
 	ucl := cabby.UserCollectionList{Email: UserEmail}
 	id, _ := cabby.IDFromString(CollectionID)
-	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{id: cabby.CollectionAccess{ID: id, CanRead: true, CanWrite: true}}
+	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{
+		id: cabby.CollectionAccess{ID: id, CanRead: true, CanWrite: true}}
 	return ucl
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 )
 
 // CompareAPIRoot compares two APIRoots
@@ -147,7 +148,7 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 }
 
 // CompareObject compares two objects
-func CompareObject(result, expected cabby.Object) bool {
+func CompareObject(result, expected stones.Object) bool {
 	passed := true
 
 	if result.ID != expected.ID {
@@ -167,15 +168,10 @@ func CompareObject(result, expected cabby.Object) bool {
 		passed = false
 	}
 
-	rObject := string(result.Object)
-	eObject := string(expected.Object)
+	rObject := string(result.Source)
+	eObject := string(expected.Source)
 	if rObject != eObject {
 		Error.Println("Got:", rObject, "Expected:", eObject)
-		passed = false
-	}
-
-	if result.CollectionID.String() != expected.CollectionID.String() {
-		Error.Println("Got:", result.CollectionID.String(), "Expected:", expected.CollectionID.String())
 		passed = false
 	}
 
