@@ -37,6 +37,7 @@ build/debian/var/cabby/schema.sql: sqlite/schema.sql build/debian/var/cabby/
 
 build-debian:
 	vagrant up
+	vagrant provision --provision-with build-cabby
 	@echo Magic has happend to make a debian...
 	vagrant destroy -f
 

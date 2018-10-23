@@ -9,7 +9,8 @@ Vagrant.configure("2") do |config|
     v.memory = 2048
   end
 
-  config.vm.network "forwarded_port", guest: 1234, host: 1234, auto_correct: true
+  config.vm.network "forwarded_port", guest: 1234, host: 1234, auto_correct: true # cabby
+  config.vm.network "forwarded_port", guest: 8888, host: 8888, auto_correct: true # chronograf
 
   # avoid 'Innapropriate ioctl for device' messages
   # see vagrant config doc for more info: https://www.vagrantup.com/docs/vagrantfile/ssh_settings.html
@@ -19,12 +20,25 @@ Vagrant.configure("2") do |config|
   config.vm.provision "dependencies", type: "shell" do |s|
     s.inline = <<-OUT
       apt-get update
-      apt-get install -y build-essential golang-1.10 jq make ruby-dev sqlite
+      apt-get install -y build-essential golang-1.10 jq make ruby-dev sqlite # sendmail
       gem install --no-ri --no-doc fpm
     OUT
   end
 
-  config.vm.provision "build-cabby", type: "shell" do |s|
+  config.vm.provision "tick", type: "shell" do |s|
+    s.inline = <<-OUT
+      curl -sL https://repos.influxdata.com/influxdb.key | sudo apt-key add -
+      source /etc/lsb-release
+      echo "deb https://repos.influxdata.com/${DISTRIB_ID,,} ${DISTRIB_CODENAME} stable" | sudo tee /etc/apt/sources.list.d/influxdb.list
+
+      apt-get update
+      apt-get install telegraf influxdb chronograf kapacitor
+      systemctl enable influxdb && systemctl start influxdb
+      systemctl enable kapacitor && systemctl start kapacitor
+    OUT
+  end
+
+  config.vm.provision "build-cabby", type: "shell", run: "never" do |s|
     s.inline = <<-OUT
       export GOPATH=/opt/go
       export PATH=/usr/lib/go-1.10/bin/:$PATH

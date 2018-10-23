@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# helper script used to set up a local sqlite db for cabby
+
 set -euo pipefail
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 

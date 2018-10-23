@@ -5,7 +5,7 @@ PRAGMA foreign_keys = ON;
 drop table if exists stix_objects;
 
 create table stix_objects (
-  id            text not null,
+  id            text not null check(id like '________-____-____-____-____________'),
   type          text not null,
   created       text not null,
   modified      text not null,
