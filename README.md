@@ -36,6 +36,9 @@ sudo journalctl -u cabby -f
 sudo journalctl -u cabby | less
 ```
 
+## Metrics/Logs on the VM (TICK Stack)
+- https://github.com/influxdata/telegraf/blob/release-1.8/plugins/inputs/syslog/README.md
+
 ### References
 - Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
 - Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408

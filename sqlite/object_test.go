@@ -65,6 +65,23 @@ func TestObjectServiceCreateObject(t *testing.T) {
 	}
 }
 
+func TestObjectServiceCreateObjectFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ObjectService()
+
+	_, err := ds.DB.Exec("drop table stix_objects")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := tester.GenerateObject("malware")
+	err = s.CreateObject(context.Background(), tester.CollectionID, obj)
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
 func TestObjectServiceObject(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
@@ -263,22 +280,22 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 	}
 }
 
-func TestObjectServiceObjectsInvalidID(t *testing.T) {
-	setupSQLite()
-	ds := testDataStore()
-	s := ds.ObjectService()
-
-	_, err := ds.DB.Exec(`insert into stix_objects (id, type, created, modified, object, collection_id)
-	                     values ('fail', 'fail', 'fail', 'fail', '{"fail": true}', 'fail')`)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
-	if err == nil {
-		t.Error("Got:", err, "Expected an error")
-	}
-}
+// func TestObjectServiceObjectsInvalidID(t *testing.T) {
+// 	setupSQLite()
+// 	ds := testDataStore()
+// 	s := ds.ObjectService()
+//
+// 	_, err := ds.DB.Exec(`insert into stix_objects (id, type, created, modified, object, collection_id)
+// 	                     values ('fail', 'fail', 'fail', 'fail', '{"fail": true}', 'fail')`)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+//
+// 	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
+// 	if err == nil {
+// 		t.Error("Got:", err, "Expected an error")
+// 	}
+// }
 
 func TestObjectServiceCreateBundle(t *testing.T) {
 	setupSQLite()

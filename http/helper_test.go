@@ -17,6 +17,7 @@ import (
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -43,7 +44,7 @@ type requestLog struct {
 /* helper functions */
 
 func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
-	tester.Info.Println("Requesting", r.URL, "from test server")
+	log.Debug("Requesting", r.URL, "from test server")
 	MaxTries := 3
 
 	for i := 0; i < MaxTries; i++ {
@@ -52,7 +53,7 @@ func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 			return res, err
 		}
 
-		tester.Warn.Println("  Web server for test not responding, waiting...")
+		log.Warn("  Web server for test not responding, waiting...")
 		time.Sleep(time.Duration(i+1) * time.Second)
 	}
 
@@ -217,7 +218,7 @@ func mockManifestService() tester.ManifestService {
 func mockObjectService() tester.ObjectService {
 	osv := tester.ObjectService{}
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		tester.Info.Println("mock Creating Bundle")
+		log.Debug("mock Creating Bundle")
 	}
 	osv.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 		return tester.Objects, nil

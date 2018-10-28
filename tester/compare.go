@@ -6,6 +6,7 @@ import (
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 // CompareAPIRoot compares two APIRoots
@@ -13,19 +14,19 @@ func CompareAPIRoot(result, expected cabby.APIRoot) bool {
 	passed := true
 
 	if result.Path != expected.Path {
-		Error.Println("Got:", result.Path, "Expected:", expected.Path)
+		log.Error("Got:", result.Path, "Expected:", expected.Path)
 	}
 	if result.Title != expected.Title {
-		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		log.Error("Got:", result.Title, "Expected:", expected.Title)
 	}
 	if result.Description != expected.Description {
-		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		log.Error("Got:", result.Description, "Expected:", expected.Description)
 	}
 	if strings.Join(result.Versions, ",") != strings.Join(expected.Versions, ",") {
-		Error.Println("Got:", strings.Join(result.Versions, ","), "Expected:", strings.Join(expected.Versions, ","))
+		log.Error("Got:", strings.Join(result.Versions, ","), "Expected:", strings.Join(expected.Versions, ","))
 	}
 	if result.MaxContentLength != expected.MaxContentLength {
-		Error.Println("Got:", result.MaxContentLength, "Expected:", expected.MaxContentLength)
+		log.Error("Got:", result.MaxContentLength, "Expected:", expected.MaxContentLength)
 	}
 
 	return passed
@@ -36,27 +37,27 @@ func CompareCollection(result, expected cabby.Collection) bool {
 	passed := true
 
 	if result.ID.String() != expected.ID.String() {
-		Error.Println("Got:", result.ID.String(), "Expected:", expected.ID.String())
+		log.Error("Got:", result.ID.String(), "Expected:", expected.ID.String())
 		passed = false
 	}
 	if result.Title != expected.Title {
-		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		log.Error("Got:", result.Title, "Expected:", expected.Title)
 		passed = false
 	}
 	if result.Description != expected.Description {
-		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		log.Error("Got:", result.Description, "Expected:", expected.Description)
 		passed = false
 	}
 	if result.CanRead != expected.CanRead {
-		Error.Println("Got:", result.CanRead, "Expected:", expected.CanRead)
+		log.Error("Got:", result.CanRead, "Expected:", expected.CanRead)
 		passed = false
 	}
 	if result.CanWrite != expected.CanWrite {
-		Error.Println("Got:", result.CanWrite, "Expected:", expected.CanWrite)
+		log.Error("Got:", result.CanWrite, "Expected:", expected.CanWrite)
 		passed = false
 	}
 	if strings.Join(result.MediaTypes, ",") != strings.Join(expected.MediaTypes, ",") {
-		Error.Println("Got:", strings.Join(result.MediaTypes, ","), "Expected:", strings.Join(expected.MediaTypes, ","))
+		log.Error("Got:", strings.Join(result.MediaTypes, ","), "Expected:", strings.Join(expected.MediaTypes, ","))
 		passed = false
 	}
 
@@ -68,26 +69,26 @@ func CompareDiscovery(result, expected cabby.Discovery) bool {
 	passed := true
 
 	if result.Title != expected.Title {
-		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		log.Error("Got:", result.Title, "Expected:", expected.Title)
 		passed = false
 	}
 	if result.Description != expected.Description {
-		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		log.Error("Got:", result.Description, "Expected:", expected.Description)
 		passed = false
 	}
 	if result.Contact != expected.Contact {
-		Error.Println("Got:", result.Contact, "Expected:", expected.Contact)
+		log.Error("Got:", result.Contact, "Expected:", expected.Contact)
 		passed = false
 	}
 
 	if result.Default != expected.Default {
-		Error.Println("Got:", result.Default, "Expected:", expected.Default)
+		log.Error("Got:", result.Default, "Expected:", expected.Default)
 		passed = false
 	}
 
 	for _, apiRoot := range result.APIRoots {
 		if apiRoot != apiRoot {
-			Error.Println("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
+			log.Error("Got:", result.APIRoots[0], "Expected:", expected.APIRoots[0])
 			passed = false
 		}
 	}
@@ -100,15 +101,15 @@ func CompareError(result, expected cabby.Error) bool {
 	passed := true
 
 	if result.Title != expected.Title {
-		Error.Println("Got:", result.Title, "Expected:", expected.Title)
+		log.Error("Got:", result.Title, "Expected:", expected.Title)
 		passed = false
 	}
 	if result.Description != expected.Description {
-		Error.Println("Got:", result.Description, "Expected:", expected.Description)
+		log.Error("Got:", result.Description, "Expected:", expected.Description)
 		passed = false
 	}
 	if result.HTTPStatus != expected.HTTPStatus {
-		Error.Println("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
+		log.Error("Got:", result.HTTPStatus, "Expected:", expected.HTTPStatus)
 		passed = false
 	}
 
@@ -120,27 +121,27 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 	passed := true
 
 	if result.ID != expected.ID {
-		Error.Println("Got:", result.ID, "Expected:", expected.ID)
+		log.Error("Got:", result.ID, "Expected:", expected.ID)
 		passed = false
 	}
 
 	t := time.Time{}
 	if result.DateAdded == t.Format(time.RFC3339Nano) {
-		Error.Println("Got:", result.DateAdded, "Expected:", t.Format(time.RFC3339Nano))
+		log.Error("Got:", result.DateAdded, "Expected:", t.Format(time.RFC3339Nano))
 		passed = false
 	}
 
 	rVersions := strings.Join(result.Versions, ",")
 	eVersions := strings.Join(expected.Versions, ",")
 	if rVersions != eVersions {
-		Error.Println("Got:", rVersions, "Expected:", eVersions)
+		log.Error("Got:", rVersions, "Expected:", eVersions)
 		passed = false
 	}
 
 	rMediaTypes := strings.Join(result.MediaTypes, ",")
 	eMediaTypes := strings.Join(expected.MediaTypes, ",")
 	if rMediaTypes != eMediaTypes {
-		Error.Println("Got:", rMediaTypes, "Expected:", eMediaTypes)
+		log.Error("Got:", rMediaTypes, "Expected:", eMediaTypes)
 		passed = false
 	}
 
@@ -152,26 +153,26 @@ func CompareObject(result, expected stones.Object) bool {
 	passed := true
 
 	if result.ID != expected.ID {
-		Error.Println("Got:", result.ID, "Expected:", expected.ID)
+		log.Error("Got:", result.ID, "Expected:", expected.ID)
 		passed = false
 	}
 	if result.Type != expected.Type {
-		Error.Println("Got:", result.Type, "Expected:", expected.Type)
+		log.Error("Got:", result.Type, "Expected:", expected.Type)
 		passed = false
 	}
 	if result.Created != expected.Created {
-		Error.Println("Got:", result.Created, "Expected:", expected.Created)
+		log.Error("Got:", result.Created, "Expected:", expected.Created)
 		passed = false
 	}
 	if result.Modified != expected.Modified {
-		Error.Println("Got:", result.Modified, "Expected:", expected.Modified)
+		log.Error("Got:", result.Modified, "Expected:", expected.Modified)
 		passed = false
 	}
 
 	rObject := string(result.Source)
 	eObject := string(expected.Source)
 	if rObject != eObject {
-		Error.Println("Got:", rObject, "Expected:", eObject)
+		log.Error("Got:", rObject, "Expected:", eObject)
 		passed = false
 	}
 
@@ -183,19 +184,19 @@ func CompareStatus(result, expected cabby.Status) bool {
 	passed := true
 
 	if result.ID.String() != expected.ID.String() {
-		Error.Println("Got:", result.ID.String(), "Expected:", expected.ID.String())
+		log.Error("Got:", result.ID.String(), "Expected:", expected.ID.String())
 		passed = false
 	}
 	if result.Status != expected.Status {
-		Error.Println("Got:", result.Status, "Expected:", expected.Status)
+		log.Error("Got:", result.Status, "Expected:", expected.Status)
 		passed = false
 	}
 	if result.RequestTimestamp != expected.RequestTimestamp {
-		Error.Println("Got:", result.RequestTimestamp, "Expected:", expected.RequestTimestamp)
+		log.Error("Got:", result.RequestTimestamp, "Expected:", expected.RequestTimestamp)
 		passed = false
 	}
 	if result.TotalCount != expected.TotalCount {
-		Error.Println("Got:", result.TotalCount, "Expected:", expected.TotalCount)
+		log.Error("Got:", result.TotalCount, "Expected:", expected.TotalCount)
 		passed = false
 	}
 
@@ -210,11 +211,11 @@ func CompareUser(result, expected cabby.User) bool {
 	passed := true
 
 	if result.Email != expected.Email {
-		Error.Println("Got:", result.Email, "Expected:", expected.Email)
+		log.Error("Got:", result.Email, "Expected:", expected.Email)
 		passed = false
 	}
 	if result.CanAdmin != expected.CanAdmin {
-		Error.Println("Got:", result.CanAdmin, "Expected:", expected.CanAdmin)
+		log.Error("Got:", result.CanAdmin, "Expected:", expected.CanAdmin)
 		passed = false
 	}
 
@@ -225,13 +226,13 @@ func CompareUser(result, expected cabby.User) bool {
 
 func compareFailures(result, expected cabby.Status, passed bool) bool {
 	if result.FailureCount != expected.FailureCount {
-		Error.Println("Got:", result.FailureCount, "Expected:", expected.FailureCount)
+		log.Error("Got:", result.FailureCount, "Expected:", expected.FailureCount)
 		passed = false
 	}
 
 	for i := 0; i < len(result.Failures); i++ {
 		if result.Failures[i] != expected.Failures[i] {
-			Error.Println("Got:", result.Failures[i], "Expected:", expected.Failures[i])
+			log.Error("Got:", result.Failures[i], "Expected:", expected.Failures[i])
 			passed = false
 		}
 	}
@@ -241,13 +242,13 @@ func compareFailures(result, expected cabby.Status, passed bool) bool {
 
 func comparePendings(result, expected cabby.Status, passed bool) bool {
 	if result.PendingCount != expected.PendingCount {
-		Error.Println("Got:", result.PendingCount, "Expected:", expected.PendingCount)
+		log.Error("Got:", result.PendingCount, "Expected:", expected.PendingCount)
 		passed = false
 	}
 
 	for i := 0; i < len(result.Pendings); i++ {
 		if result.Pendings[i] != expected.Pendings[i] {
-			Error.Println("Got:", result.Pendings[i], "Expected:", expected.Pendings[i])
+			log.Error("Got:", result.Pendings[i], "Expected:", expected.Pendings[i])
 			passed = false
 		}
 	}
@@ -257,13 +258,13 @@ func comparePendings(result, expected cabby.Status, passed bool) bool {
 
 func compareSuccesses(result, expected cabby.Status, passed bool) bool {
 	if result.SuccessCount != expected.SuccessCount {
-		Error.Println("Got:", result.SuccessCount, "Expected:", expected.SuccessCount)
+		log.Error("Got:", result.SuccessCount, "Expected:", expected.SuccessCount)
 		passed = false
 	}
 
 	for i := 0; i < len(result.Successes); i++ {
 		if result.Successes[i] != expected.Successes[i] {
-			Error.Println("Got:", result.Successes[i], "Expected:", expected.Successes[i])
+			log.Error("Got:", result.Successes[i], "Expected:", expected.Successes[i])
 			passed = false
 		}
 	}
