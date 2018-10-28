@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "dependencies", type: "shell" do |s|
     s.inline = <<-OUT
       apt-get update
-      apt-get install -y build-essential golang-1.10 jq make ruby-dev sqlite # sendmail
+      apt-get install -y build-essential golang-1.10 jq make ruby-dev sqlite rsyslog
       gem install --no-ri --no-doc fpm
     OUT
   end
@@ -35,8 +35,18 @@ Vagrant.configure("2") do |config|
       apt-get install telegraf influxdb chronograf kapacitor
       systemctl enable influxdb && systemctl start influxdb
       systemctl enable kapacitor && systemctl start kapacitor
+
+      # enable syslog input in telegraf for cabby
+      cp /vagrant/vagrant/etc/telegraf/telegraf.d/10-cabby.conf /etc/telegraf/telegraf.d/
+      systemctl restart telegraf
+
+      # have rsyslog forward syslogs to telegraf (so it can forward to influxdb)
+      cp /vagrant/vagrant/etc/rsyslog.d/50-telegraf.conf /etc/rsyslog.d/
+      systemctl restart rsyslog
     OUT
   end
+
+  # nevers; run on request only
 
   config.vm.provision "build-cabby", type: "shell", run: "never" do |s|
     s.inline = <<-OUT
@@ -53,6 +63,30 @@ Vagrant.configure("2") do |config|
       if [ $? -eq 0 ]; then
         cp *.deb /vagrant
       fi
+    OUT
+  end
+
+  config.vm.provision "install-cabby", type: "shell", run: "never" do |s|
+    s.inline = <<-OUT
+      systemctl stop cabby
+      dpkg -r cabby
+      dpkg -i /vagrant/cabby.deb
+
+      cp /vagrant/vagrant/etc/rsyslog.d/40-cabby.conf /etc/rsyslog.d/
+      systemctl restart rsyslog
+
+      /vagrant/vagrant/setup-cabby
+      systemctl restart cabby
+    OUT
+  end
+
+  config.vm.provision "restart", type: "shell", run: "never" do |s|
+    s.inline = <<-OUT
+      systemctl restart telegraf
+      systemctl restart influxdb
+      systemctl restart chronograf
+      systemctl restart kapacitor
+      systemctl restart cabby
     OUT
   end
 end

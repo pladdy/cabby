@@ -21,7 +21,20 @@ To run all tests: `make test`
 tests verbose into a DRY'er format.
 
 ## Building
-Building debian package for a vagrant VM running ubuntu: `make debian-build`
+Cabby uses sqlite3 as it's data store.  The library in golang being used requires C extensions/bindings and as such
+doesn't build on a Mac for a Ubuntu OS.  Therefore vagrant vm is used to build a debian for ubuntu (i know...gross).
+
+Building debian package for a vagrant VM running ubuntu: `make build-debian`
+
+## Troubleshooting on the VM
+Reference: https://www.digitalocean.com/community/tutorials/how-to-use-journalctl-to-view-and-manipulate-systemd-logs
+```sh
+# tail the log for cabby
+sudo journalctl -u cabby -f
+
+# pipe it to less
+sudo journalctl -u cabby | less
+```
 
 ### References
 - Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/

@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+# ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
+
+# install TICK stack for time series data for metrics/monitoring
+#   Downloads: https://portal.influxdata.com/downloads
+#   Platform: https://www.influxdata.com/time-series-platform/
+#   T: https://www.influxdata.com/time-series-platform/telegraf/
+#      https://docs.influxdata.com/telegraf/v1.8/
+#   I: https://www.influxdata.com/time-series-platform/influxdb/
+#   C: https://www.influxdata.com/time-series-platform/chronograf/
+#   K: https://www.influxdata.com/time-series-platform/kapacitor/
+
+# uninstall: sudo dpkg -r telegraf (for example)
+
+DOWNLOAD_URL="https://dl.influxdata.com/"
+
+TELEGRAF_PKG="telegraf_1.8.2-1_amd64.deb"
+TELEGRAF_PTH="telegraf/releases/"
+TELEGRAF_SHA="32c30ff635fe3882bdafe95328a947891bfb7f6148f6bf786711679275169dc9"
+
+INFLUXDB_PKG="influxdb_1.6.4_amd64.deb"
+INFLUXDB_PTH="influxdb/releases/"
+INFLUXDB_SHA="d6040af9c0e620ff4dc092f325157b1ffc4858c757db31d1671354972fe422a6"
+
+CHRONOGRAF_PKG="chronograf_1.6.2_amd64.deb"
+CHRONOGRAF_PTH="chronograf/releases/"
+CHRONOGRAF_SHA="b71834ed3dcdc62d8eb80266caa7b9e7e508c1f53651a390075510127c5cb1cb"
+
+KAPACITOR_PKG="kapacitor_1.5.1_amd64.deb"
+KAPACITOR_PTH="kapacitor/releases/"
+KAPACITOR_SHA="5139015ab8ebb4714ce8c826f8691da0a7d87bb59d8928a3b38de1cf54aecf1f"
+
+download_pkg() {
+  pkg=$1
+  pth=$2
+  wget "$DOWNLOAD_URL$2$pkg"
+}
+
+install_pkg() {
+  pkg=$1
+  pth=$2
+  checksum=$3
+
+  download_pkg $1 $2
+  echo "$3 $1" | sha256sum -c -
+  sudo dpkg -i $1
+}
+
+install_pkg $TELEGRAF_PKG $TELEGRAF_PTH $TELEGRAF_SHA
+install_pkg $INFLUXDB_PKG $INFLUXDB_PTH $INFLUXDB_SHA
+install_pkg $CHRONOGRAF_PKG $CHRONOGRAF_PTH $CHRONOGRAF_SHA
+install_pkg $KAPACITOR_PKG $KAPACITOR_PTH $KAPACITOR_SHA
+
+sudo systemctl enable influxdb
+sudo systemctl start influxdb
+sudo systemctl enable kapacitor
+sudo systemctl start kapacitor
