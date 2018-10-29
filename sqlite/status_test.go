@@ -35,7 +35,7 @@ func TestStatusServiceCreateStatusFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.StatusService()
 
-	_, err := ds.DB.Exec("drop table taxii_status")
+	_, err := ds.DB.Exec("drop table status")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestStatusServiceStatusQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.StatusService()
 
-	_, err := ds.DB.Exec("drop table taxii_status")
+	_, err := ds.DB.Exec("drop table status")
 	if err != nil {
 		t.Fatal(err)
 	}

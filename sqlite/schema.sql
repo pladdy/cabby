@@ -1,7 +1,165 @@
 PRAGMA foreign_keys = ON;
 
-drop table if exists schema_version;
+/* stix */
 
+
+
+/* taxii */
+
+drop table if exists api_root;
+
+create table api_root (
+  id                 integer not null primary key,
+  discovery_id       integer check(discovery_id = 1) default 1,
+  api_root_path      text    check(api_root_path != "") not null,
+  title              text    not null,
+  description        text,
+  versions           text,
+  max_content_length integer not null,
+  created_at         text,
+  updated_at         text,
+
+  unique(api_root_path) on conflict fail
+);
+
+  create trigger api_root_ai_created_at after insert on api_root
+    begin
+      update api_root set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update api_root set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger api_root_au_updated_at after update on api_root
+    begin
+      update api_root set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+drop table if exists collection;
+
+create table collection (
+  id            text not null primary key,
+  api_root_path text not null,
+  title         text,
+  description   text,
+  media_types   text default '',
+  created_at    text,
+  updated_at    text
+);
+
+  create trigger collection_ai_created_at after insert on collection
+    begin
+      update collection set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger collection_au_updated_at after update on collection
+    begin
+      update collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+drop table if exists discovery;
+
+create table discovery (
+  id          text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
+  title       text not null,
+  description text,
+  contact     text,
+  default_url text,
+  created_at  text,
+  updated_at  text
+);
+
+  create trigger discovery_ai_created_at after insert on discovery
+    begin
+      update discovery set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update discovery set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger discovery_au_updated_at after update on discovery
+    begin
+      update discovery set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger discovery_bi_count before insert on discovery
+    begin
+      select
+        case
+          when (select count(*) from discovery) > 0
+            then raise(abort, 'Only one discovery can be defined')
+        end;
+    end;
+
+drop table if exists objects;
+
+create table objects (
+  id            text not null,
+  type          text not null,
+  created       text not null,
+  modified      text not null,
+  object        text not null,
+  collection_id text not null,
+  created_at    text,
+  updated_at    text,
+
+  constraint valid_id check(id like '%--________-____-____-____-____________'),
+  constraint valid_json check(json_valid(object) = 1),
+
+  primary key (id, modified)
+);
+
+  create trigger objects_ai_created_at after insert on objects
+    begin
+      update objects set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update objects set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger objects_au_updated_at after update on objects
+    begin
+      update objects set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create index objects_id on objects (id);
+  create index objects_type on objects (type);
+  create index objects_version on objects (id, type, modified);
+
+  drop view if exists objects_id_aggregate;
+
+  create view objects_id_aggregate as
+    select rowid,
+           id,
+           type,
+           collection_id,
+           min(modified) first,
+           max(modified) last
+    from objects
+    group by id,
+             type,
+             collection_id;
+
+  drop view if exists objects_data;
+
+  create view objects_data as
+    select
+      so.rowid,
+      so.id,
+      so.type,
+      so.created,
+      so.modified,
+      so.object,
+      so.collection_id,
+      case when so.modified = sa.first and so.modified = sa.last then 'only'
+           when so.modified = sa.last then 'last'
+           when so.modified = sa.first then 'first'
+      end version,
+      so.created_at,
+      so.updated_at
+    from
+      objects so
+      left join objects_id_aggregate sa
+        on so.id = sa.id
+        and so.collection_id = sa.collection_id;
+
+drop table if exists schema_version;
+  
 create table if not exists schema_version (
   id         text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
   version    integer not null,
@@ -31,165 +189,9 @@ create table if not exists schema_version (
 
 insert into schema_version(version) values(1);
 
-/* stix */
+drop table if exists status;
 
-drop table if exists stix_objects;
-
-create table stix_objects (
-  id            text not null,
-  type          text not null,
-  created       text not null,
-  modified      text not null,
-  object        text not null,
-  collection_id text not null,
-  created_at    text,
-  updated_at    text,
-
-  constraint valid_stix_id check(id like '%--________-____-____-____-____________'),
-  constraint valid_json check(json_valid(object) = 1),
-
-  primary key (id, modified)
-);
-
-  create trigger stix_objects_ai_created_at after insert on stix_objects
-    begin
-      update stix_objects set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-      update stix_objects set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create trigger stix_objects_au_updated_at after update on stix_objects
-    begin
-      update stix_objects set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create index stix_objects_id on stix_objects (id);
-  create index stix_objects_type on stix_objects (type);
-  create index stix_objects_version on stix_objects (id, type, modified);
-
-  drop view if exists stix_objects_id_aggregate;
-
-  create view stix_objects_id_aggregate as
-    select rowid,
-           id,
-           type,
-           collection_id,
-           min(modified) first,
-           max(modified) last
-    from stix_objects
-    group by id,
-             type,
-             collection_id;
-
-  drop view if exists stix_objects_data;
-
-  create view stix_objects_data as
-    select
-      so.rowid,
-      so.id,
-      so.type,
-      so.created,
-      so.modified,
-      so.object,
-      so.collection_id,
-      case when so.modified = sa.first and so.modified = sa.last then 'only'
-           when so.modified = sa.last then 'last'
-           when so.modified = sa.first then 'first'
-      end version,
-      so.created_at,
-      so.updated_at
-    from
-      stix_objects so
-      left join stix_objects_id_aggregate sa
-        on so.id = sa.id
-        and so.collection_id = sa.collection_id;
-
-/* taxii */
-
-drop table if exists taxii_api_root;
-
-create table taxii_api_root (
-  id                 integer not null primary key,
-  discovery_id       integer check(discovery_id = 1) default 1,
-  api_root_path      text    check(api_root_path != "") not null,
-  title              text    not null,
-  description        text,
-  versions           text,
-  max_content_length integer not null,
-  created_at         text,
-  updated_at         text,
-
-  unique(api_root_path) on conflict fail
-);
-
-  create trigger taxii_api_root_ai_created_at after insert on taxii_api_root
-    begin
-      update taxii_api_root set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-      update taxii_api_root set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create trigger taxii_api_root_au_updated_at after update on taxii_api_root
-    begin
-      update taxii_api_root set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-drop table if exists taxii_collection;
-
-create table taxii_collection (
-  id            text not null primary key,
-  api_root_path text not null,
-  title         text,
-  description   text,
-  media_types   text default '',
-  created_at    text,
-  updated_at    text
-);
-
-  create trigger taxii_collection_ai_created_at after insert on taxii_collection
-    begin
-      update taxii_collection set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-      update taxii_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create trigger taxii_collection_au_updated_at after update on taxii_collection
-    begin
-      update taxii_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-drop table if exists taxii_discovery;
-
-create table taxii_discovery (
-  id          text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
-  title       text not null,
-  description text,
-  contact     text,
-  default_url text,
-  created_at  text,
-  updated_at  text
-);
-
-  create trigger taxii_discovery_ai_created_at after insert on taxii_discovery
-    begin
-      update taxii_discovery set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-      update taxii_discovery set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create trigger taxii_discovery_au_updated_at after update on taxii_discovery
-    begin
-      update taxii_discovery set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-    end;
-
-  create trigger taxii_discovery_bi_count before insert on taxii_discovery
-    begin
-      select
-        case
-          when (select count(*) from taxii_discovery) > 0
-            then raise(abort, 'Only one discovery can be defined')
-        end;
-    end;
-
-drop table if exists taxii_status;
-
-create table taxii_status (
+create table status (
   id                text not null,
   status            text not null,
   request_timestamp text,
@@ -205,47 +207,47 @@ create table taxii_status (
   updated_at    text
 );
 
-  create trigger taxii_status_ai_created_at after insert on taxii_status
+  create trigger status_ai_created_at after insert on status
     begin
-      update taxii_status set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
-      update taxii_status set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update status set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update status set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
     end;
 
-  create trigger taxii_status_au_updated_at after update on taxii_status
+  create trigger status_au_updated_at after update on status
     begin
-      update taxii_status set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update status set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
     end;
 
-  create index taxii_status_taxii_id on taxii_status (id);
+  create index status_id on status (id);
 
-drop table if exists taxii_user;
+drop table if exists user;
 
-create table taxii_user (
+create table user (
   email      text not null primary key,
   can_admin  integer check(can_admin in (1, 0)) default 0 not null,
   created_at text,
   updated_at text
 );
 
-  create trigger taxii_user_ai_created_at after insert on taxii_user
+  create trigger user_ai_created_at after insert on user
     begin
-      update taxii_user set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
-      update taxii_user set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;
 
-  create trigger taxii_user_bi_email before insert on taxii_user
+  create trigger user_bi_email before insert on user
     begin
       select case when new.email not like '%_@__%.__%' then raise(abort, 'Invalid email address, expecting <username>@<domain>.<tld>') end;
     end;
 
-  create trigger taxii_user_au_updated_at after update on taxii_user
+  create trigger user_au_updated_at after update on user
     begin
-      update taxii_user set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;
 
-drop table if exists taxii_user_collection;
+drop table if exists user_collection;
 
-create table taxii_user_collection (
+create table user_collection (
   id            integer primary key not null,
   email         text    not null,
   collection_id text    not null,
@@ -255,23 +257,23 @@ create table taxii_user_collection (
   updated_at    text,
 
   unique (email, collection_id) on conflict ignore,
-  foreign key (email) references taxii_user(email) on delete cascade
+  foreign key (email) references user(email) on delete cascade
 );
 
-  create trigger taxii_user_collection_ai_created_at after insert on taxii_user_collection
+  create trigger user_collection_ai_created_at after insert on user_collection
     begin
-      update taxii_user_collection set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
-      update taxii_user_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_collection set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;
 
-  create trigger taxii_user_collection_au_updated_at after update on taxii_user_collection
+  create trigger user_collection_au_updated_at after update on user_collection
     begin
-      update taxii_user_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_collection set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;
 
-drop table if exists taxii_user_pass;
+drop table if exists user_pass;
 
-create table taxii_user_pass (
+create table user_pass (
   id         integer not null primary key,
   email      text not null,
   -- check password is not empty string or sha256 of empty string
@@ -283,16 +285,16 @@ create table taxii_user_pass (
   updated_at text,
 
   unique(email) on conflict ignore,
-  foreign key (email) references taxii_user(email) on delete cascade
+  foreign key (email) references user(email) on delete cascade
 );
 
-  create trigger taxii_user_pass_ai_created_at after insert on taxii_user_pass
+  create trigger user_pass_ai_created_at after insert on user_pass
     begin
-      update taxii_user_pass set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
-      update taxii_user_pass set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_pass set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_pass set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;
 
-  create trigger taxii_user_pass_au_updated_at after update on taxii_user_pass
+  create trigger user_pass_au_updated_at after update on user_pass
     begin
-      update taxii_user_pass set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
+      update user_pass set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where email = new.email;
     end;

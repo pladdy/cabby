@@ -31,7 +31,7 @@ func TestCollectionServiceCollectionQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -128,7 +128,7 @@ func TestCollectionsServiceCollectionsInAPIRootQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +153,7 @@ func TestCollectionServiceCreateCollection(t *testing.T) {
 		t.Error("Got:", err)
 	}
 
-	rows, _ := ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	rows, _ := ds.DB.Query("select id from collection where id = ?", expected.ID.String())
 	defer rows.Close()
 
 	var result string
@@ -182,7 +182,7 @@ func TestCollectionServiceCreateCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -207,7 +207,7 @@ func TestCollectionServiceDeleteCollection(t *testing.T) {
 		t.Error("Got:", err)
 	}
 
-	rows, _ := ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	rows, _ := ds.DB.Query("select id from collection where id = ?", expected.ID.String())
 	defer rows.Close()
 
 	var result string
@@ -225,7 +225,7 @@ func TestCollectionServiceDeleteCollection(t *testing.T) {
 		t.Error("Got:", err)
 	}
 
-	rows, _ = ds.DB.Query("select id from taxii_collection where id = ?", expected.ID.String())
+	rows, _ = ds.DB.Query("select id from collection where id = ?", expected.ID.String())
 	defer rows.Close()
 
 	result = ""
@@ -243,7 +243,7 @@ func TestCollectionServiceDeleteCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -276,7 +276,7 @@ func TestCollectionServiceUpdateCollection(t *testing.T) {
 		t.Error("Got:", err)
 	}
 
-	rows, _ := ds.DB.Query("select title, description from taxii_collection where id = ?", expected.ID.String())
+	rows, _ := ds.DB.Query("select title, description from collection where id = ?", expected.ID.String())
 	defer rows.Close()
 
 	var title string
@@ -309,7 +309,7 @@ func TestCollectionServiceUpdateCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.CollectionService()
 
-	_, err := ds.DB.Exec("drop table taxii_collection")
+	_, err := ds.DB.Exec("drop table collection")
 	if err != nil {
 		t.Fatal(err)
 	}

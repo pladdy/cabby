@@ -70,7 +70,7 @@ func TestObjectServiceCreateObjectFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ObjectService()
 
-	_, err := ds.DB.Exec("drop table stix_objects")
+	_, err := ds.DB.Exec("drop table objects")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestObjectServiceObjectQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ObjectService()
 
-	_, err := ds.DB.Exec("drop table stix_objects")
+	_, err := ds.DB.Exec("drop table objects")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -269,7 +269,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ObjectService()
 
-	_, err := ds.DB.Exec("drop table stix_objects")
+	_, err := ds.DB.Exec("drop table objects")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -318,7 +318,7 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 	ssv := ds.StatusService()
 
 	// clear out any objects
-	_, err := ds.DB.Exec("delete from stix_objects")
+	_, err := ds.DB.Exec("delete from objects")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,13 +349,13 @@ func TestObjectServiceInvalidIDs(t *testing.T) {
 	s := ds.ObjectService()
 
 	// change the underlying view the service depends on to return bad ids
-	_, err := ds.DB.Exec(`drop view stix_objects_data`)
+	_, err := ds.DB.Exec(`drop view objects_data`)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	_, err = ds.DB.Exec(
-		`create view stix_objects_data as select
+		`create view objects_data as select
 		   1 rowid,
 			 'fail' id,
 			 'fail' type,

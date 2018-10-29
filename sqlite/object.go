@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	createObjectSQL = `insert into stix_objects (id, type, created, modified, object, collection_id)
+	createObjectSQL = `insert into objects (id, type, created, modified, object, collection_id)
 				             values (?, ?, ?, ?, ?, ?)`
 	batchBufferSize = 50
 )
@@ -86,7 +86,7 @@ func (s ObjectService) Object(ctx context.Context, collectionID, objectID string
 
 func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 	sql := `select id, type, created, modified, object
-	        from stix_objects_data
+	        from objects_data
 					where
 					  collection_id = ?
 						and id = ?
@@ -136,7 +136,7 @@ func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cab
 func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
 	sql := `with data as (
 						select rowid, id, type, created, modified, collection_id, object, created_at date_added, 1 count
-						from stix_objects_data
+						from objects_data
 						where
 							collection_id = ?
 							and $filter
@@ -205,7 +205,7 @@ func bytesToObject(b []byte) (stones.Object, error) {
 
 func updateStatus(ctx context.Context, st cabby.Status, errs chan error, ss cabby.StatusService) {
 	failures := int64(0)
-	for _ = range errs {
+	for range errs {
 		failures++
 	}
 

@@ -38,7 +38,7 @@ func (s UserService) CreateUser(ctx context.Context, user cabby.User, password s
 }
 
 func (s UserService) createUser(u cabby.User, password string) error {
-	sql := `insert into taxii_user (email, can_admin) values (?, ?)`
+	sql := `insert into user (email, can_admin) values (?, ?)`
 	args := []interface{}{u.Email, u.CanAdmin}
 
 	err := s.DataStore.write(sql, args...)
@@ -47,7 +47,7 @@ func (s UserService) createUser(u cabby.User, password string) error {
 		return err
 	}
 
-	sql = `insert into taxii_user_pass (email, pass) values (?, ?)`
+	sql = `insert into user_pass (email, pass) values (?, ?)`
 	args = []interface{}{u.Email, hash(password)}
 
 	err = s.DataStore.write(sql, args...)
@@ -74,7 +74,7 @@ func (s UserService) CreateUserCollection(ctx context.Context, user string, ca c
 }
 
 func (s UserService) createUserCollection(user string, ca cabby.CollectionAccess) error {
-	sql := `insert into taxii_user_collection (email, collection_id, can_read, can_write)
+	sql := `insert into user_collection (email, collection_id, can_read, can_write)
 				  values (?, ?, ?, ?)`
 	args := []interface{}{user, ca.ID.String(), ca.CanRead, ca.CanWrite}
 
@@ -95,7 +95,7 @@ func (s UserService) DeleteUserCollection(ctx context.Context, user, id string) 
 }
 
 func (s UserService) deleteUserCollection(user, id string) error {
-	sql := `delete from taxii_user_collection where email = ? and collection_id = ?`
+	sql := `delete from user_collection where email = ? and collection_id = ?`
 	args := []interface{}{user, id}
 
 	_, err := s.DB.Exec(sql, args...)
@@ -115,7 +115,7 @@ func (s UserService) DeleteUser(ctx context.Context, user string) error {
 }
 
 func (s UserService) deleteUser(user string) error {
-	sql := `delete from taxii_user where email = ?`
+	sql := `delete from user where email = ?`
 	args := []interface{}{user}
 
 	_, err := s.DB.Exec(sql, args...)
@@ -124,7 +124,7 @@ func (s UserService) deleteUser(user string) error {
 		return err
 	}
 
-	sql = `delete from taxii_user_pass where email = ?`
+	sql = `delete from user_pass where email = ?`
 	_, err = s.DB.Exec(sql, args...)
 	if err != nil {
 		logSQLError(sql, args, err)
@@ -149,7 +149,7 @@ func (s UserService) UpdateUser(ctx context.Context, user cabby.User) error {
 }
 
 func (s UserService) updateUser(u cabby.User) error {
-	sql := `update taxii_user set can_admin = ? where email = ?`
+	sql := `update user set can_admin = ? where email = ?`
 	args := []interface{}{u.CanAdmin, u.Email}
 
 	err := s.DataStore.write(sql, args...)
@@ -176,7 +176,7 @@ func (s UserService) UpdateUserCollection(ctx context.Context, user string, ca c
 }
 
 func (s UserService) updateUserCollection(user string, ca cabby.CollectionAccess) error {
-	sql := `update taxii_user_collection set can_read = ?, can_write = ? where email = ?`
+	sql := `update user_collection set can_read = ?, can_write = ? where email = ?`
 	args := []interface{}{ca.CanRead, ca.CanWrite, user}
 
 	err := s.DataStore.write(sql, args...)
@@ -198,8 +198,8 @@ func (s UserService) User(ctx context.Context, user, password string) (cabby.Use
 func (s UserService) user(user, password string) (cabby.User, error) {
 	sql := `select tu.email, tu.can_admin
           from
-            taxii_user tu
-            inner join taxii_user_pass tup
+            user tu
+            inner join user_pass tup
               on tu.email = tup.email
           where tu.email = ? and tup.pass = ?`
 	args := []interface{}{user, hash(password)}
@@ -235,8 +235,8 @@ func (s UserService) UserCollections(ctx context.Context, user string) (cabby.Us
 func (s UserService) userCollections(user string) (cabby.UserCollectionList, error) {
 	sql := `select tuc.collection_id, tuc.can_read, tuc.can_write
 					from
-						taxii_user tu
-						inner join taxii_user_collection tuc
+						user tu
+						inner join user_collection tuc
 							on tu.email = tuc.email
 					where tu.email = ?`
 	args := []interface{}{user}

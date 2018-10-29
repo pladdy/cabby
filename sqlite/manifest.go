@@ -29,7 +29,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 	sql := `with data as (
 						select rowid, id, min(created_at) date_added, group_concat(modified) versions, 1 count
 						-- media_types omitted...should that be in this table?
-						from stix_objects_data
+						from objects_data
 						where
 							collection_id = ?
 							and $filter

@@ -118,7 +118,7 @@ func TestManifestServiceManifestQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ManifestService()
 
-	_, err := ds.DB.Exec("drop table stix_objects")
+	_, err := ds.DB.Exec("drop table objects")
 	if err != nil {
 		t.Fatal(err)
 	}
