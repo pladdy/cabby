@@ -1,5 +1,36 @@
 PRAGMA foreign_keys = ON;
 
+drop table if exists schema_version;
+
+create table if not exists schema_version (
+  id         text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
+  version    integer not null,
+  created_at text,
+  updated_at text
+);
+
+  create trigger schema_version_ai_created_at after insert on schema_version
+    begin
+      update schema_version set created_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+      update schema_version set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger schema_version_au_updated_at after update on schema_version
+    begin
+      update schema_version set updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') where id = new.id;
+    end;
+
+  create trigger schema_version_bi_count before insert on schema_version
+    begin
+      select
+        case
+          when (select count(*) from schema_version) > 0
+            then raise(abort, 'Only one version can be set')
+        end;
+    end;
+
+insert into schema_version(version) values(1);
+
 /* stix */
 
 drop table if exists stix_objects;
@@ -9,10 +40,13 @@ create table stix_objects (
   type          text not null,
   created       text not null,
   modified      text not null,
-  object        text not null check(json_valid(object) = 1),
+  object        text not null,
   collection_id text not null,
   created_at    text,
   updated_at    text,
+
+  constraint valid_stix_id check(id like '%--________-____-____-____-____________'),
+  constraint valid_json check(json_valid(object) = 1),
 
   primary key (id, modified)
 );

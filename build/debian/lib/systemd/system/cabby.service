@@ -3,12 +3,13 @@ Description=Cabby TAXII 2 Server
 ConditionPathExists=/usr/bin/cabby
 
 [Service]
-Type=simple
-User=cabby
+ExecStart=/usr/bin/cabby
 Group=cabby
 Restart=on-failure
 RestartSec=5
-ExecStart=/usr/bin/cabby
+SyslogIdentifier=cabby
+Type=simple
+User=cabby
 
 [Install]
 WantedBy=multi-user.target

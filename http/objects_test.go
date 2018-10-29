@@ -16,6 +16,7 @@ import (
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
@@ -337,7 +338,7 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 func TestObjectsHandlerPost(t *testing.T) {
 	osv := mockObjectService()
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		tester.Info.Println("mock call of CreateBundle")
+		log.Debug("mock call of CreateBundle")
 	}
 
 	ssv := mockStatusService()
@@ -468,7 +469,7 @@ func TestObjectsPostStatusFail(t *testing.T) {
 func TestObjectsHandlerPostToObjectURL(t *testing.T) {
 	osv := mockObjectService()
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		tester.Info.Println("mock call of CreateBundle")
+		log.Debug("mock call of CreateBundle")
 	}
 
 	ssv := mockStatusService()

@@ -1,6 +1,6 @@
 .PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 .PHONY: clean clean-cli cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log
-.PHONY: test test-failures test test-run
+.PHONY: test test-failures test test-run vagrant
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
@@ -37,6 +37,7 @@ build/debian/var/cabby/schema.sql: sqlite/schema.sql build/debian/var/cabby/
 
 build-debian:
 	vagrant up
+	vagrant provision --provision-with build-cabby
 	@echo Magic has happend to make a debian...
 	vagrant destroy -f
 
@@ -48,7 +49,7 @@ cabby.deb: build
 		-p $@ \
 		-m "Matt Pladna" \
 		--description "A TAXII 2.0 server" \
-		--after-install scripts/postinst \
+		--after-install build/debian/postinst \
 		--deb-user cabby \
 		--deb-group cabby \
 		--deb-pre-depends make \
@@ -112,7 +113,7 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@rm -f $^
 
 db/cabby.db: cmd/cabby-cli/cabby-cli
-	scripts/setup-cabby
+	cmd/local-db
 
 dependencies:
 	go get -t -v  ./...
@@ -161,3 +162,6 @@ ifdef test
 else
 	@echo Syntax is 'make $@ test=<test name>'
 endif
+
+vagrant:
+	vagrant up
