@@ -12,25 +12,9 @@ set -euo pipefail
 #   C: https://www.influxdata.com/time-series-platform/chronograf/
 #   K: https://www.influxdata.com/time-series-platform/kapacitor/
 
-# uninstall: sudo dpkg -r telegraf (for example)
+# uninstall: sudo dpkg -r telegraf (for example), or vagrant destroy [-f]
 
 DOWNLOAD_URL="https://dl.influxdata.com/"
-
-TELEGRAF_PKG="telegraf_1.8.2-1_amd64.deb"
-TELEGRAF_PTH="telegraf/releases/"
-TELEGRAF_SHA="32c30ff635fe3882bdafe95328a947891bfb7f6148f6bf786711679275169dc9"
-
-INFLUXDB_PKG="influxdb_1.6.4_amd64.deb"
-INFLUXDB_PTH="influxdb/releases/"
-INFLUXDB_SHA="d6040af9c0e620ff4dc092f325157b1ffc4858c757db31d1671354972fe422a6"
-
-CHRONOGRAF_PKG="chronograf_1.6.2_amd64.deb"
-CHRONOGRAF_PTH="chronograf/releases/"
-CHRONOGRAF_SHA="b71834ed3dcdc62d8eb80266caa7b9e7e508c1f53651a390075510127c5cb1cb"
-
-KAPACITOR_PKG="kapacitor_1.5.1_amd64.deb"
-KAPACITOR_PTH="kapacitor/releases/"
-KAPACITOR_SHA="5139015ab8ebb4714ce8c826f8691da0a7d87bb59d8928a3b38de1cf54aecf1f"
 
 download_pkg() {
   pkg=$1
@@ -48,10 +32,11 @@ install_pkg() {
   sudo dpkg -i $1
 }
 
-install_pkg $TELEGRAF_PKG $TELEGRAF_PTH $TELEGRAF_SHA
-install_pkg $INFLUXDB_PKG $INFLUXDB_PTH $INFLUXDB_SHA
-install_pkg $CHRONOGRAF_PKG $CHRONOGRAF_PTH $CHRONOGRAF_SHA
-install_pkg $KAPACITOR_PKG $KAPACITOR_PTH $KAPACITOR_SHA
+install_pkg "telegraf_1.8.2-1_amd64.deb" "telegraf/releases/" "32c30ff635fe3882bdafe95328a947891bfb7f6148f6bf786711679275169dc9"
+install_pkg "influxdb_1.6.4_amd64.deb" "influxdb/releases/" "d6040af9c0e620ff4dc092f325157b1ffc4858c757db31d1671354972fe422a6"
+install_pkg "chronograf_1.6.2_amd64.deb" "chronograf/releases/" "b71834ed3dcdc62d8eb80266caa7b9e7e508c1f53651a390075510127c5cb1cb"
+# kapacitor download gives an md5, for simplicity i downloaded, checked md5, then got the sha256 to use
+install_pkg "kapacitor_1.5.1_amd64.deb" "kapacitor/releases/" "5139015ab8ebb4714ce8c826f8691da0a7d87bb59d8928a3b38de1cf54aecf1f"
 
 sudo systemctl enable influxdb
 sudo systemctl start influxdb
