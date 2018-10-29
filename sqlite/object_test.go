@@ -280,23 +280,6 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 	}
 }
 
-// func TestObjectServiceObjectsInvalidID(t *testing.T) {
-// 	setupSQLite()
-// 	ds := testDataStore()
-// 	s := ds.ObjectService()
-//
-// 	_, err := ds.DB.Exec(`insert into stix_objects (id, type, created, modified, object, collection_id)
-// 	                     values ('fail', 'fail', 'fail', 'fail', '{"fail": true}', 'fail')`)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-//
-// 	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
-// 	if err == nil {
-// 		t.Error("Got:", err, "Expected an error")
-// 	}
-// }
-
 func TestObjectServiceCreateBundle(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
@@ -357,6 +340,44 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 	expected := 2
 	if len(result) != expected {
 		t.Error("Got:", len(result), "Expected:", expected)
+	}
+}
+
+func TestObjectServiceInvalidIDs(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ObjectService()
+
+	// change the underlying view the service depends on to return bad ids
+	_, err := ds.DB.Exec(`drop view stix_objects_data`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = ds.DB.Exec(
+		`create view stix_objects_data as select
+		   1 rowid,
+			 'fail' id,
+			 'fail' type,
+			 'fail' created,
+			 'fail' modified,
+			 'fail' collection_id,
+			 'fail' object,
+			 'fail' created_at,
+			 1 count`,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+
+	_, err = s.Object(context.Background(), "fail", "fail", cabby.Filter{})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
 	}
 }
 
