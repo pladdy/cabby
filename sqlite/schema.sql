@@ -1,11 +1,5 @@
 PRAGMA foreign_keys = ON;
 
-/* stix */
-
-
-
-/* taxii */
-
 drop table if exists api_root;
 
 create table api_root (
@@ -159,7 +153,7 @@ create table objects (
         and so.collection_id = sa.collection_id;
 
 drop table if exists schema_version;
-  
+
 create table if not exists schema_version (
   id         text check(id = 1) default 1 primary key, /* can only be one, see trigger below */
   version    integer not null,

@@ -15,6 +15,7 @@ type DataStore struct {
 	CollectionServiceFn func() CollectionService
 	DiscoveryServiceFn  func() DiscoveryService
 	ManifestServiceFn   func() ManifestService
+	MigrationServiceFn  func() MigrationService
 	ObjectServiceFn     func() ObjectService
 	StatusServiceFn     func() StatusService
 	UserServiceFn       func() UserService
@@ -48,6 +49,11 @@ func (s DataStore) DiscoveryService() cabby.DiscoveryService {
 // ManifestService mock
 func (s DataStore) ManifestService() cabby.ManifestService {
 	return s.ManifestServiceFn()
+}
+
+// MigrationService mock
+func (s DataStore) MigrationService() cabby.MigrationService {
+	return s.MigrationServiceFn()
 }
 
 // ObjectService mock
@@ -182,6 +188,22 @@ type ManifestService struct {
 // Manifest is a mock implementation
 func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	return s.ManifestFn(ctx, collectionID, cr, f)
+}
+
+// MigrationService is a mock implementation
+type MigrationService struct {
+	CurrentVersionFn func() (int, error)
+	UpFn             func() error
+}
+
+// CurrentVersion is a mock implementation
+func (s MigrationService) CurrentVersion() (int, error) {
+	return s.CurrentVersionFn()
+}
+
+// Up is a mock implementation
+func (s MigrationService) Up() error {
+	return s.UpFn()
 }
 
 // ObjectService is a mock implementation

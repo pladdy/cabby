@@ -2,7 +2,6 @@ package sqlite
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"time"
 
@@ -90,18 +89,8 @@ func setupSQLite() {
 	tearDownSQLite()
 	log.Debug("Setting up test sqlite db:", testDBPath)
 
-	f, err := os.Open(schema)
-	if err != nil {
-		log.Fatal("Couldn't open schema file: ", err)
-	}
-
-	schema, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Fatal("Couldn't read schema file: ", err)
-	}
-
 	ds := testDataStore()
-	_, err = ds.DB.Exec(string(schema))
+	err := ds.MigrationService().Up()
 	if err != nil {
 		log.Fatal("Couldn't load schema: ", err)
 	}

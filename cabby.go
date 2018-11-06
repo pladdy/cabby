@@ -186,6 +186,7 @@ type DataStore interface {
 	CollectionService() CollectionService
 	DiscoveryService() DiscoveryService
 	ManifestService() ManifestService
+	MigrationService() MigrationService
 	ObjectService() ObjectService
 	Open() error
 	StatusService() StatusService
@@ -291,6 +292,12 @@ type ManifestEntry struct {
 // ManifestService provides manifest data
 type ManifestService interface {
 	Manifest(ctx context.Context, collectionID string, cr *Range, f Filter) (Manifest, error)
+}
+
+// MigrationService for performing database migrations
+type MigrationService interface {
+	CurrentVersion() (int, error)
+	Up() error
 }
 
 // ObjectService provides Object data

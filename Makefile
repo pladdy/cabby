@@ -1,6 +1,6 @@
 .PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 .PHONY: clean clean-cli cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log
-.PHONY: test test-failures test test-run vagrant
+.PHONY: test test test-run vagrant
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
@@ -78,12 +78,12 @@ config/cabby.json: config/cabby.example.json
 cover:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -coverprofile=$(pkg).out ./$(pkg)
+	go test $(BUILD_TAGS) -v -failfast -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 else
 	@for package in $(PACKAGES); do \
 	  go test $(BUILD_TAGS) -i ./$${package}; \
-		go test $(BUILD_TAGS) -v -coverprofile=$${package}.out ./$${package}; \
+		go test $(BUILD_TAGS) -v -failfast -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 	done
 endif
@@ -100,13 +100,13 @@ else
 endif
 
 cover-cabby.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./ ./
+	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./ ./
 
 cover-http.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./http/...
+	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./http/...
 
 cover-sqlite.txt:
-	go test -v $(BUILD_TAGS) -coverprofile=$@ -covermode=atomic ./sqlite/...
+	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./sqlite/...
 
 coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@cat $^ > $@
@@ -142,23 +142,16 @@ run-log:
 test:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -cover ./$(pkg)
+	go test $(BUILD_TAGS) -v -failfast -cover ./$(pkg)
 else
 	go test $(BUILD_TAGS) -i ./...
-	go test $(BUILD_TAGS) -v -cover ./...
-endif
-
-test-failures:
-ifdef pkg
-	$(MAKE) test pkg=$(pkg) | grep -A 1 FAIL
-else
-	$(MAKE) test | grep -A 1 FAIL
+	go test $(BUILD_TAGS) -v -failfast -cover ./...
 endif
 
 test-run:
 ifdef test
 	go test $(BUILD_TAGS) -i ./...
-	go test $(BUILD_TAGS) -v ./... -run $(test)
+	go test $(BUILD_TAGS) -v -failfast ./... -run $(test)
 else
 	@echo Syntax is 'make $@ test=<test name>'
 endif

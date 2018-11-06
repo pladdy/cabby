@@ -60,6 +60,13 @@ func (s *DataStore) ManifestService() cabby.ManifestService {
 	return ManifestService{DB: s.DB}
 }
 
+// MigrationService returns service to database mgirations
+func (s *DataStore) MigrationService() cabby.MigrationService {
+	ms := NewMigrationService()
+	ms.DB = s.DB
+	return ms
+}
+
 // ObjectService returns a service for object resources
 func (s *DataStore) ObjectService() cabby.ObjectService {
 	return ObjectService{DB: s.DB, DataStore: s}
