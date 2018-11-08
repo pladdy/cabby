@@ -32,9 +32,12 @@ func TestMigrationServiceCurrentVersion(t *testing.T) {
 }
 
 func TestMigrationServiceCurrentVersionFail(t *testing.T) {
-	tearDownSQLite()
+	setupSQLite()
 	ds := testDataStore()
 	s := ds.MigrationService()
+
+	ds.DB.Exec("drop table schema_version")
+	ds.DB.Exec("create table schema_version (id int)")
 
 	_, err := s.CurrentVersion()
 	if err == nil {

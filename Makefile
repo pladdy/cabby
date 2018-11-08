@@ -24,7 +24,7 @@ build/debian/usr/bin/:
 	mkdir -p $@
 
 build/debian/usr/bin/cabby-cli: build/debian/usr/bin/
-	go build -o $@ $(CLI_FILES)
+	go build $(BUILD_TAGS) -o $@ $(CLI_FILES)
 
 build/debian/usr/bin/cabby: build/debian/usr/bin/ build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
 	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
@@ -70,7 +70,7 @@ cert:
 	chmod 600 server.key
 
 cmd/cabby-cli/cabby-cli:
-	go build -o $@ $(CLI_FILES)
+	go build $(BUILD_TAGS) -o $@ $(CLI_FILES)
 
 config/cabby.json: config/cabby.example.json
 	cp $< $@

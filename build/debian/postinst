@@ -13,7 +13,8 @@ CABBY_SCHEMA="$CABBY_ROOT/schema.sql"
 CONFIG_PATH="/etc/cabby/cabby.json"
 DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
 mkdir -p "$(dirname $DB_PATH)"
-sqlite3 "$DB_PATH" ".read $CABBY_SCHEMA"
+touch $DB_PATH
+cabby-cli migrate up
 
 # change ownership
 chown cabby:cabby -R $CABBY_ROOT

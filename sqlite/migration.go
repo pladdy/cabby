@@ -8,8 +8,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// list of migrations to maintain
-// each version should have a .go file in the migrations dir with an Up and Down function defined
+// add migrations here to the below far
+// each struct has the version number associated to it and it's functions for migration up and down
 var migrationsToSetup = []migrationList{
 	migrationList{1, migrations.Up1, migrations.Down1}}
 
@@ -25,9 +25,9 @@ type migrationFn func() string
 type MigrationService struct {
 	DataStore *DataStore
 	DB        *sql.DB
+	Versions  []int
 	downs     map[int]migrationFn
 	ups       map[int]migrationFn
-	versions  []int
 }
 
 // NewMigrationService returns a service for migrations
@@ -41,6 +41,10 @@ func NewMigrationService() MigrationService {
 
 // CurrentVersion returns current version of the database
 func (s MigrationService) CurrentVersion() (version int, err error) {
+	if !s.schemaIsVersioned() {
+		return 0, nil
+	}
+
 	sql := `select max(version) from schema_version`
 
 	rows, err := s.DB.Query(sql)
@@ -64,8 +68,8 @@ func (s MigrationService) CurrentVersion() (version int, err error) {
 func (s MigrationService) Up() (err error) {
 	cv, _ := s.CurrentVersion()
 
-	for i := cv; i < len(s.versions); i++ {
-		version := s.versions[i]
+	for i := cv; i < len(s.Versions); i++ {
+		version := s.Versions[i]
 		migration := s.ups[version]
 
 		log.WithFields(log.Fields{"migration": version}).Info("Running migration")
@@ -83,11 +87,36 @@ func (s MigrationService) registerMigration(version int, up, down migrationFn) {
 	s.downs[version] = down
 }
 
+func (s MigrationService) schemaIsVersioned() bool {
+	sql := `select name from sqlite_master where type = 'table' and name = 'schema_version'`
+
+	rows, err := s.DB.Query(sql)
+	if err != nil {
+		logSQLError(sql, []interface{}{}, err)
+		return false
+	}
+	defer rows.Close()
+
+	var table string
+	for rows.Next() {
+		if err := rows.Scan(&table); err != nil {
+			return false
+		}
+	}
+	err = rows.Err()
+
+	if table == "" || err != nil {
+		log.Warn("schema is not versioned...")
+		return false
+	}
+	return true
+}
+
 func (s *MigrationService) setup() {
 	for _, list := range migrationsToSetup {
 		s.registerMigration(list.version, list.upFn, list.downFn)
 	}
-	s.versions = sortVersions(s.ups)
+	s.Versions = sortVersions(s.ups)
 }
 
 /* helpers */

@@ -22,6 +22,7 @@ var (
 	discoveryDescription   string
 	discoveryTitle         string
 	maxContentLength       int64
+	migrateVersion         int
 	userAdmin              bool
 	userCollectionCanRead  bool
 	userCollectionCanWrite bool
@@ -41,6 +42,14 @@ func cmdDelete() *cobra.Command {
 	return &cobra.Command{
 		Use:   "delete [command/resource]",
 		Short: "Delete a resource",
+		Args:  cobra.MinimumNArgs(1),
+	}
+}
+
+func cmdMigrate() *cobra.Command {
+	return &cobra.Command{
+		Use:   "migrate [up]",
+		Short: "Migrate database up",
 		Args:  cobra.MinimumNArgs(1),
 	}
 }
@@ -68,8 +77,9 @@ func main() {
 
 	cmdCreate := cmdCreate()
 	cmdDelete := cmdDelete()
+	cmdMigrate := cmdMigrate()
 	cmdUpdate := cmdUpdate()
-	rootCmd.AddCommand(cmdCreate, cmdDelete, cmdUpdate)
+	rootCmd.AddCommand(cmdCreate, cmdDelete, cmdMigrate, cmdUpdate)
 
 	cmdCreate.AddCommand(
 		cmdCreateAPIRoot(),
@@ -84,6 +94,9 @@ func main() {
 		cmdDeleteDiscovery(),
 		cmdDeleteUser(),
 		cmdDeleteUserCollection())
+
+	cmdMigrate.AddCommand(
+		cmdMigrateUp())
 
 	cmdUpdate.AddCommand(
 		cmdUpdateAPIRoot(),
