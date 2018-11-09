@@ -1,13 +1,12 @@
-.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
-.PHONY: clean clean-cli cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log
-.PHONY: test test test-run vagrant
+.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli clean clean-cli
+.PHONY: cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log test test-run vagrant
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
 CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
 PACKAGES=./ sqlite http cmd/cabby-cli
 
-all: config/cabby.json cert dependencies
+all: config/cabby.json cert dependencies dev-db
 
 build: dependencies build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
 
@@ -23,17 +22,14 @@ build/debian/lib/systemd/system/cabby.service.d/:
 build/debian/usr/bin/:
 	mkdir -p $@
 
-build/debian/usr/bin/cabby-cli: build/debian/usr/bin/
-	go build $(BUILD_TAGS) -o $@ $(CLI_FILES)
+build/debian/usr/bin/cabby-cli: build/debian/usr/bin/ cmd/cabby-cli/cabby-cli
+	cp cmd/cabby-cli/cabby-cli $@
 
-build/debian/usr/bin/cabby: build/debian/usr/bin/ build/debian/etc/cabby/cabby.json build/debian/var/cabby/schema.sql
+build/debian/usr/bin/cabby: build/debian/usr/bin/ build/debian/etc/cabby/cabby.json
 	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
 
 build/debian/var/cabby/:
 	mkdir -p $@
-
-build/debian/var/cabby/schema.sql: sqlite/schema.sql build/debian/var/cabby/
-	cp $< $@
 
 build-debian:
 	vagrant up
@@ -113,6 +109,7 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@rm -f $^
 
 db/cabby.db: cmd/cabby-cli/cabby-cli
+	rm $@
 	cmd/local-db
 
 dependencies:

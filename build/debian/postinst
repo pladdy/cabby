@@ -7,17 +7,17 @@ set -euo pipefail
 /usr/sbin/adduser --system --group cabby
 chmod 775 /usr/bin/cabby-certs
 
-# create db
+# create db dir
 CABBY_ROOT=/var/cabby
-CABBY_SCHEMA="$CABBY_ROOT/schema.sql"
+mkdir -p $CABBY_ROOT
+chown cabby:cabby -R $CABBY_ROOT
+
+# create db and migrate it
+sudo -u cabby cabby-cli migrate up
+
+# change perm of db path
 CONFIG_PATH="/etc/cabby/cabby.json"
 DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
-mkdir -p "$(dirname $DB_PATH)"
-touch $DB_PATH
-cabby-cli migrate up
-
-# change ownership
-chown cabby:cabby -R $CABBY_ROOT
 chmod 664 $DB_PATH
 
 # warn the user
