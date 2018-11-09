@@ -215,6 +215,19 @@ func mockManifestService() tester.ManifestService {
 	return ms
 }
 
+func mockMigrationService() tester.MigrationService {
+	ms := tester.MigrationService{}
+
+	ms.CurrentVersionFn = func() (int, error) {
+		return 0, nil
+	}
+
+	ms.UpFn = func() error {
+		return nil
+	}
+	return ms
+}
+
 func mockObjectService() tester.ObjectService {
 	osv := tester.ObjectService{}
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
@@ -254,6 +267,7 @@ func mockDataStore() tester.DataStore {
 	md.CollectionServiceFn = func() tester.CollectionService { return mockCollectionService() }
 	md.DiscoveryServiceFn = func() tester.DiscoveryService { return mockDiscoveryService() }
 	md.ManifestServiceFn = func() tester.ManifestService { return mockManifestService() }
+	md.MigrationServiceFn = func() tester.MigrationService { return mockMigrationService() }
 	md.ObjectServiceFn = func() tester.ObjectService { return mockObjectService() }
 	md.StatusServiceFn = func() tester.StatusService { return mockStatusService() }
 	md.UserServiceFn = func() tester.UserService { return mockUserService() }

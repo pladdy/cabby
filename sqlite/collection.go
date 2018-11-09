@@ -30,8 +30,8 @@ func (s CollectionService) Collection(ctx context.Context, apiRootPath, collecti
 func (s CollectionService) collection(user, apiRootPath, collectionID string) (cabby.Collection, error) {
 	sql := `select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
 					from
-						taxii_collection c
-						inner join taxii_user_collection uc
+						collection c
+						inner join user_collection uc
 							on c.id = uc.collection_id
 					where uc.email = ? and c.api_root_path = ? and c.id = ? and uc.can_read = 1`
 	args := []interface{}{user, apiRootPath, collectionID}
@@ -74,8 +74,8 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 					  from (
 						  select c.id, c.title, c.description, uc.can_read, uc.can_write, c.media_types
 						  from
-							  taxii_collection c
-							  inner join taxii_user_collection uc
+							  collection c
+							  inner join user_collection uc
 								  on c.id = uc.collection_id
 						  where
 						 	 uc.email = ?
@@ -126,7 +126,7 @@ func (s CollectionService) CollectionsInAPIRoot(ctx context.Context, apiRootPath
 }
 
 func (s CollectionService) collectionsInAPIRoot(apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
-	sql := `select c.api_root_path, c.id from taxii_collection c where c.api_root_path = ?`
+	sql := `select c.api_root_path, c.id from collection c where c.api_root_path = ?`
 	args := []interface{}{apiRootPath}
 
 	ac := cabby.CollectionsInAPIRoot{}
@@ -169,7 +169,7 @@ func (s CollectionService) CreateCollection(ctx context.Context, c cabby.Collect
 }
 
 func (s CollectionService) createCollection(c cabby.Collection) error {
-	sql := `insert into taxii_collection (id, api_root_path, title, description, media_types)
+	sql := `insert into collection (id, api_root_path, title, description, media_types)
 					values (?, ?, ?, ?, ?)`
 	args := []interface{}{c.ID.String(), c.APIRootPath, c.Title, c.Description, strings.Join(c.MediaTypes, ",")}
 
@@ -190,7 +190,7 @@ func (s CollectionService) DeleteCollection(ctx context.Context, id string) erro
 }
 
 func (s CollectionService) deleteCollection(id string) error {
-	sql := `delete from taxii_collection where id = ?`
+	sql := `delete from collection where id = ?`
 	args := []interface{}{id}
 
 	_, err := s.DB.Exec(sql, args...)
@@ -217,7 +217,7 @@ func (s CollectionService) UpdateCollection(ctx context.Context, c cabby.Collect
 }
 
 func (s CollectionService) updateCollection(c cabby.Collection) error {
-	sql := `update taxii_collection set api_root_path = ?, title = ?, description = ? where id = ?`
+	sql := `update collection set api_root_path = ?, title = ?, description = ? where id = ?`
 	args := []interface{}{c.APIRootPath, c.Title, c.Description, c.ID.String()}
 
 	err := s.DataStore.write(sql, args...)

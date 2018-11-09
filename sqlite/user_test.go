@@ -53,7 +53,7 @@ func TestUserServiceCreateUserQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table user")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestUserServiceCreateUserPasswordQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user_pass")
+	_, err := ds.DB.Exec("drop table user_pass")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,7 +126,7 @@ func TestUserServiceDeleteUserQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table user")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestUserServiceDeleteUserPasswordQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user_pass")
+	_, err := ds.DB.Exec("drop table user_pass")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestUserServiceUpdateUserQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table user")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +264,7 @@ func TestUserServiceCreateUserCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	_, err := ds.DB.Exec("drop table user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +303,7 @@ func TestUserServiceDeleteUserCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	_, err := ds.DB.Exec("drop table user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestUserServiceUpdateUserCollectionQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user_collection")
+	_, err := ds.DB.Exec("drop table user_collection")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -405,7 +405,7 @@ func TestUserServiceUserQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table user")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -444,7 +444,7 @@ func TestUserServiceUserCollectionsQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.UserService()
 
-	_, err := ds.DB.Exec("drop table taxii_user")
+	_, err := ds.DB.Exec("drop table user")
 	if err != nil {
 		t.Fatal(err)
 	}

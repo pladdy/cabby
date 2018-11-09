@@ -49,7 +49,7 @@ func TestUserServiceCreateDiscoveryQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.DiscoveryService()
 
-	_, err := ds.DB.Exec("drop table taxii_discovery")
+	_, err := ds.DB.Exec("drop table discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +99,7 @@ func TestUserServiceDeleteDiscoveryQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.DiscoveryService()
 
-	_, err := ds.DB.Exec("drop table taxii_discovery")
+	_, err := ds.DB.Exec("drop table discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -133,7 +133,7 @@ func TestDiscoveryServiceDiscoveryQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.DiscoveryService()
 
-	_, err := ds.DB.Exec("drop table taxii_discovery")
+	_, err := ds.DB.Exec("drop table discovery")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestUserServiceUpdateDiscoveryQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.DiscoveryService()
 
-	_, err := ds.DB.Exec("drop table taxii_discovery")
+	_, err := ds.DB.Exec("drop table discovery")
 	if err != nil {
 		t.Fatal(err)
 	}

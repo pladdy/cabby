@@ -27,7 +27,7 @@ func (s StatusService) CreateStatus(ctx context.Context, status cabby.Status) er
 }
 
 func (s StatusService) createStatus(st cabby.Status) error {
-	sql := `insert into taxii_status (id, status, total_count, success_count, failure_count, pending_count)
+	sql := `insert into status (id, status, total_count, success_count, failure_count, pending_count)
 					values (?, ?, ?, ?, ?, ?)`
 	args := []interface{}{st.ID, st.Status, st.TotalCount, st.SuccessCount, st.FailureCount, st.PendingCount}
 
@@ -49,7 +49,7 @@ func (s StatusService) Status(ctx context.Context, statusID string) (cabby.Statu
 
 func (s StatusService) status(statusID string) (cabby.Status, error) {
 	sql := `select id, status, total_count, success_count, pending_count, failure_count
-					from taxii_status where id = ?`
+					from status where id = ?`
 
 	st := cabby.Status{}
 	var err error
@@ -82,7 +82,7 @@ func (s StatusService) UpdateStatus(ctx context.Context, status cabby.Status) er
 }
 
 func (s StatusService) updateStatus(st cabby.Status) error {
-	sql := `update taxii_status
+	sql := `update status
           set status = ?, total_count = ?, success_count = ?, failure_count = ?, pending_count = ?
           where id = ?`
 

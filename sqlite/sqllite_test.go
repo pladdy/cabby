@@ -40,7 +40,7 @@ func TestSQLiteBatchWriteSmall(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	sql := `insert into taxii_collection (id, api_root_path, title, description, media_types)
+	sql := `insert into collection (id, api_root_path, title, description, media_types)
 					values (?, ?, ?, ?, ?)`
 
 	go ds.batchWrite(sql, toWrite, errs)
@@ -52,7 +52,7 @@ func TestSQLiteBatchWriteSmall(t *testing.T) {
 	}
 
 	var id string
-	err := ds.DB.QueryRow(`select id from taxii_collection where id = 'test'`).Scan(&id)
+	err := ds.DB.QueryRow(`select id from collection where id = 'test'`).Scan(&id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestSQLiteBatchWriteExecuteLarge(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	sql := `insert into taxii_collection (id, api_root_path, title, description)
+	sql := `insert into collection (id, api_root_path, title, description)
 					values (?, ?, ?, ?)`
 
 	go ds.batchWrite(sql, toWrite, errs)
@@ -118,7 +118,7 @@ func TestSQLiteBatchWriteExecuteError(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	sql := `insert into taxii_collection (id, api_root_path, title, description)
+	sql := `insert into collection (id, api_root_path, title, description)
 					values (?, ?, ?, ?)`
 
 	go ds.batchWrite(sql, toWrite, errs)
@@ -149,7 +149,7 @@ func TestSQLiteBatchWriteCommitError(t *testing.T) {
 	toWrite := make(chan interface{}, 10)
 	errs := make(chan error, 10)
 
-	go ds.batchWrite("insert into stix_objects (id, object) values (?, ?)", toWrite, errs)
+	go ds.batchWrite("insert into objects (id, object) values (?, ?)", toWrite, errs)
 	toWrite <- []interface{}{"fail"}
 	close(toWrite)
 
@@ -178,7 +178,7 @@ func TestDataStoreExecuteError(t *testing.T) {
 	ds := testDataStore()
 
 	tx, _ := ds.DB.Begin()
-	stmt, _ := tx.Prepare("select * from stix_objects")
+	stmt, _ := tx.Prepare("select * from objects")
 
 	err := ds.execute(stmt, "fail")
 	if err == nil {

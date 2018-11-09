@@ -34,7 +34,7 @@ func (s DiscoveryService) CreateDiscovery(ctx context.Context, d cabby.Discovery
 }
 
 func (s DiscoveryService) createDiscovery(d cabby.Discovery) error {
-	sql := `insert into taxii_discovery (title, description, contact, default_url) values (?, ?, ?, ?)`
+	sql := `insert into discovery (title, description, contact, default_url) values (?, ?, ?, ?)`
 	args := []interface{}{d.Title, d.Description, d.Contact, d.Default}
 
 	err := s.DataStore.write(sql, args...)
@@ -54,7 +54,7 @@ func (s DiscoveryService) DeleteDiscovery(ctx context.Context) error {
 }
 
 func (s DiscoveryService) deleteDiscovery() error {
-	sql := `delete from taxii_discovery`
+	sql := `delete from discovery`
 	args := []interface{}{}
 
 	_, err := s.DB.Exec(sql, args...)
@@ -79,8 +79,8 @@ func (s DiscoveryService) discovery() (cabby.Discovery, error) {
 							 when tar.api_root_path is null then 'No API Roots defined' else tar.api_root_path
 						 end discovery_path
 					 from
-						 taxii_discovery td
-						 left join taxii_api_root tar
+						 discovery td
+						 left join api_root tar
 							 on td.id = tar.discovery_id`
 	args := []interface{}{}
 
@@ -126,7 +126,7 @@ func (s DiscoveryService) UpdateDiscovery(ctx context.Context, d cabby.Discovery
 }
 
 func (s DiscoveryService) updateDiscovery(d cabby.Discovery) error {
-	sql := `update taxii_discovery
+	sql := `update discovery
 					set title = ?, description = ?, contact = ?, default_url = ?`
 	args := []interface{}{d.Title, d.Description, d.Contact, d.Default}
 

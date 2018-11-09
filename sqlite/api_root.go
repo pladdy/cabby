@@ -29,7 +29,7 @@ func (s APIRootService) APIRoot(ctx context.Context, path string) (cabby.APIRoot
 
 func (s APIRootService) apiRoot(path string) (cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
-				  from taxii_api_root
+				  from api_root
 				  where api_root_path = ?`
 	args := []interface{}{path}
 
@@ -65,7 +65,7 @@ func (s APIRootService) APIRoots(ctx context.Context) ([]cabby.APIRoot, error) {
 
 func (s APIRootService) apiRoots() ([]cabby.APIRoot, error) {
 	sql := `select api_root_path, title, description, versions, max_content_length
-				  from taxii_api_root`
+				  from api_root`
 	args := []interface{}{}
 
 	as := []cabby.APIRoot{}
@@ -109,7 +109,7 @@ func (s APIRootService) CreateAPIRoot(ctx context.Context, a cabby.APIRoot) erro
 }
 
 func (s APIRootService) createAPIRoot(a cabby.APIRoot) error {
-	sql := `insert into taxii_api_root (api_root_path, title, description, versions, max_content_length)
+	sql := `insert into api_root (api_root_path, title, description, versions, max_content_length)
 					values (?, ?, ?, ?, ?)`
 	args := []interface{}{a.Path, a.Title, a.Description, strings.Join(a.Versions, ","), a.MaxContentLength}
 
@@ -130,7 +130,7 @@ func (s APIRootService) DeleteAPIRoot(ctx context.Context, id string) error {
 }
 
 func (s APIRootService) deleteAPIRoot(path string) error {
-	sql := `delete from taxii_api_root where api_root_path = ?`
+	sql := `delete from api_root where api_root_path = ?`
 	args := []interface{}{path}
 
 	_, err := s.DB.Exec(sql, args...)
@@ -157,7 +157,7 @@ func (s APIRootService) UpdateAPIRoot(ctx context.Context, a cabby.APIRoot) erro
 }
 
 func (s APIRootService) updateAPIRoot(a cabby.APIRoot) error {
-	sql := `update taxii_api_root
+	sql := `update api_root
 				  set title = ?, description = ?, versions = ?, max_content_length = ?
 				  where api_root_path = ?`
 	args := []interface{}{a.Title, a.Description, strings.Join(a.Versions, ","), a.MaxContentLength, a.Path}

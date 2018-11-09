@@ -31,7 +31,7 @@ func TestAPIRootServiceAPIRootQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	_, err := ds.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestAPIRootsServiceAPIRootsQueryErr(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	_, err := ds.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -120,7 +120,7 @@ func TestUserServiceCreateAPIRootQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	_, err := ds.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,7 +159,7 @@ func TestUserServiceDeleteAPIRootQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	_, err := ds.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestUserServiceUpdateAPIRootQueryFail(t *testing.T) {
 	ds := testDataStore()
 	s := ds.APIRootService()
 
-	_, err := ds.DB.Exec("drop table taxii_api_root")
+	_, err := ds.DB.Exec("drop table api_root")
 	if err != nil {
 		t.Fatal(err)
 	}
