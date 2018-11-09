@@ -109,7 +109,7 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@rm -f $^
 
 db/cabby.db: cmd/cabby-cli/cabby-cli
-	rm $@
+	rm -f $@
 	cmd/local-db
 
 dependencies:
