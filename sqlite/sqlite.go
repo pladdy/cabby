@@ -42,7 +42,10 @@ func (s *DataStore) APIRootService() cabby.APIRootService {
 
 // Close connection to datastore
 func (s *DataStore) Close() {
-	s.DB.Close()
+	err := s.DB.Close()
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to close the database connection")
+	}
 }
 
 // CollectionService returns a service for collection resources
@@ -116,7 +119,12 @@ func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan
 
 		i++
 		if i >= maxWritesPerBatch {
-			tx.Commit() // on commit a statement is closed, create a new transaction for next batch
+			err := tx.Commit() // on commit a statement is closed, create a new transaction for next batch
+			if err != nil {
+				errs <- err
+				return
+			}
+
 			tx, stmt, err = s.writeOperation(query)
 			if err != nil {
 				errs <- err
@@ -125,7 +133,7 @@ func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan
 			i = 0
 		}
 	}
-	tx.Commit()
+	errs <- tx.Commit()
 }
 
 func (s *DataStore) write(query string, args ...interface{}) error {

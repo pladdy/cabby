@@ -65,8 +65,11 @@ func (s MigrationService) CurrentVersion() (version int, err error) {
 }
 
 // Up migrates the database up if necessary
-func (s MigrationService) Up() (err error) {
-	cv, _ := s.CurrentVersion()
+func (s MigrationService) Up() error {
+	cv, err := s.CurrentVersion()
+	if err != nil {
+		return err
+	}
 
 	for i := cv; i < len(s.Versions); i++ {
 		version := s.Versions[i]
@@ -79,7 +82,7 @@ func (s MigrationService) Up() (err error) {
 			break
 		}
 	}
-	return
+	return err
 }
 
 func (s MigrationService) registerMigration(version int, up, down migrationFn) {

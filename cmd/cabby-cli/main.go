@@ -73,7 +73,11 @@ func main() {
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.DefaultProductionConfig, "path to cabby config file")
-	rootCmd.MarkFlagRequired("config")
+
+	err := rootCmd.MarkFlagRequired("config")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "config"}).Error("Unable to mark flag as required")
+	}
 
 	cmdCreate := cmdCreate()
 	cmdDelete := cmdDelete()
@@ -105,5 +109,8 @@ func main() {
 		cmdUpdateUser(),
 		cmdUpdateUserCollection())
 
-	rootCmd.Execute()
+	err = rootCmd.Execute()
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Panic("Unable to execute command")
+	}
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/pladdy/cabby"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -24,25 +25,37 @@ func withAPIRootDescriptionFlag(cmd *cobra.Command) *cobra.Command {
 
 func withAPIRootMaxContentLengthFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().Int64VarP(&maxContentLength, "max_content_length", "m", eightMB, "max content length of requests supported")
-	cmd.MarkFlagRequired("max_content_length")
+	err := cmd.MarkFlagRequired("max_content_length")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "max_content_length"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
 func withAPIRootPathFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&apiRootPath, "api_root_path", "a", "", "path for the api root")
-	cmd.MarkFlagRequired("api_root_path")
+	err := cmd.MarkFlagRequired("api_root_path")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "api_root_path"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
 func withAPIRootTitleFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&apiRootTitle, "title", "t", "", "title of api root")
-	cmd.MarkFlagRequired("title")
+	err := cmd.MarkFlagRequired("title")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "title"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
 func withAPIRootVersionsFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&apiRootVersions, "versions", "v", cabby.TaxiiVersion, "versions api root supports")
-	cmd.MarkFlagRequired("versions")
+	err := cmd.MarkFlagRequired("versions")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "versions"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
@@ -62,13 +75,19 @@ func withCollectionDescriptionFlag(cmd *cobra.Command) *cobra.Command {
 
 func withCollectionIDFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&collectionID, "id", "i", "", "collection id")
-	cmd.MarkFlagRequired("id")
+	err := cmd.MarkFlagRequired("id")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "id"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
 func withCollectionTitleFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&collectionTitle, "title", "t", "", "collection title")
-	cmd.MarkFlagRequired("title")
+	err := cmd.MarkFlagRequired("title")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "title"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
@@ -91,7 +110,10 @@ func withDiscoveryDescriptionFlag(cmd *cobra.Command) *cobra.Command {
 
 func withDiscoveryTitleFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&discoveryTitle, "title", "t", "", "title of the server")
-	cmd.MarkFlagRequired("title")
+	err := cmd.MarkFlagRequired("title")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "title"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
@@ -104,7 +126,10 @@ func withAdminFlag(cmd *cobra.Command) *cobra.Command {
 
 func withPasswordFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&userPassword, "password", "p", "", "user's password")
-	cmd.MarkFlagRequired("password")
+	err := cmd.MarkFlagRequired("password")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "password"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }
 
@@ -116,6 +141,9 @@ func withReadWriteFlags(cmd *cobra.Command) *cobra.Command {
 
 func withUserFlag(cmd *cobra.Command) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&userName, "user", "u", "", "user's name")
-	cmd.MarkFlagRequired("user")
+	err := cmd.MarkFlagRequired("user")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "user"}).Error("Unable to mark flag as required")
+	}
 	return cmd
 }

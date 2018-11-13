@@ -179,6 +179,7 @@ func TestNewRange(t *testing.T) {
 	}{
 		{"items 0-10", Range{First: 0, Last: 10, Set: true}, false},
 		{"items 10-0", Range{First: 10, Last: 0}, true},
+		{"items a-z", Range{First: 0, Last: 0}, true},
 		{"items -4-0", invalidRange, true},
 		{"items 0 10", invalidRange, true},
 		{"items 10", invalidRange, true},
