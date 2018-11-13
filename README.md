@@ -2,13 +2,14 @@
 [![Code Coverage](https://codecov.io/gh/pladdy/cabby/branch/master/graph/badge.svg)](https://codecov.io/gh/pladdy/cabby)
 [![Build Status](https://travis-ci.org/pladdy/cabby.svg?branch=master)](https://travis-ci.org/pladdy/cabby)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/pladdy/cabby)
+[![Go City](https://img.shields.io/badge/go--city-view-blue.svg)](https://go-city.github.io/#/github.com/pladdy/cabby)
 [![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/pladdy/cabby/releases/latest)
 
 # cabby
 TAXII 2.0 server in Golang.
 
 ## Dependencies
-- Golang 1.9.x
+- Golang 1.10 or 1.11
 - SQLite
 
 ## Setup
@@ -20,13 +21,18 @@ To run all tests: `make test`
 "Helper" functions are in `test_helper_test.go`.  The goal with this file was to put repetitive code that make the
 tests verbose into a DRY'er format.
 
+### GoSec
+Security checking tool: https://github.com/securego/gosec
+`make sec` to run security tests
+`make sec pkg=<package>` to run against a specific package.  Example: `make sec pkg=sqlite` to run it against sqlite package
+
 ## Building
 Cabby uses sqlite3 as it's data store.  The library in golang being used requires C extensions/bindings and as such
 doesn't build on a Mac for a Ubuntu OS.  Therefore vagrant vm is used to build a debian for ubuntu (i know...gross).
 
 Building debian package for a vagrant VM running ubuntu: `make build-debian`
 
-## Troubleshooting on the VM
+### Building: Troubleshooting on the VM
 Reference: https://www.digitalocean.com/community/tutorials/how-to-use-journalctl-to-view-and-manipulate-systemd-logs
 ```sh
 # tail the log for cabby
@@ -36,10 +42,10 @@ sudo journalctl -u cabby -f
 sudo journalctl -u cabby | less
 ```
 
-## Metrics/Logs on the VM (TICK Stack)
+### Building: Metrics/Logs on the VM (TICK Stack)
 - https://github.com/influxdata/telegraf/blob/release-1.8/plugins/inputs/syslog/README.md
 
-### References
+### Building: References
 - Example: https://fabianlee.org/2017/05/21/golang-running-a-go-binary-as-a-systemd-service-on-ubuntu-16-04/
 - Prod config for linux: https://serverfault.com/questions/413397/how-to-set-environment-variable-in-systemd-service#413408
 - Debian Policy Manual: https://www.debian.org/doc/debian-policy/#debian-policy-manual

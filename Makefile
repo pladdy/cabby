@@ -1,5 +1,4 @@
-.PHONY: all build build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli clean clean-cli
-.PHONY: cmd/cabby-cli/cabby-cli cover cover-html db/cabby.db reportcard run run-log test test-run vagrant
+.PHONY: all build clean cover cover-html db/cabby.db nosec reportcard run run-log sec test test-run vagrant
 
 BUILD_TAGS=-tags json1
 BUILD_PATH=build/cabby
@@ -8,7 +7,7 @@ PACKAGES=./ sqlite http cmd/cabby-cli
 
 all: config/cabby.json cert dependencies dev-db
 
-build: dependencies build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
+build: dependencies build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli build/debian/etc/cabby/cabby.json
 
 build/debian/etc/cabby/:
 	mkdir -p $@
@@ -25,8 +24,8 @@ build/debian/usr/bin/:
 build/debian/usr/bin/cabby-cli: build/debian/usr/bin/ cmd/cabby-cli/cabby-cli
 	cp cmd/cabby-cli/cabby-cli $@
 
-build/debian/usr/bin/cabby: build/debian/usr/bin/ build/debian/etc/cabby/cabby.json
-	go build $(BUILD_TAGS) -o $@ cmd/cabby/main.go
+build/debian/usr/bin/cabby: cmd/cabby/main.go build/debian/usr/bin/
+	go build $(BUILD_TAGS) -o $@ $<
 
 build/debian/var/cabby/:
 	mkdir -p $@
@@ -57,15 +56,14 @@ clean:
 	rm -rf db/cabby.db
 	rm -f server.key server.crt *.log cover.out config/cabby.json
 	rm -f build/debian/usr/bin/cabby build/debian/usr/bin/cabby-cli
-
-clean-cli:
-	rm -f build/debian/usr/bin/cabby-cli
+	find ./ -name '*.out' | xargs rm -f
+	rm -f *.deb
 
 cert:
 	openssl req -x509 -newkey rsa:4096 -nodes -keyout server.key -out server.crt -days 365 -subj "/C=US/O=Cabby TAXII 2.0/CN=pladdy"
 	chmod 600 server.key
 
-cmd/cabby-cli/cabby-cli:
+cmd/cabby-cli/cabby-cli: $(CLI_FILES)
 	go build $(BUILD_TAGS) -o $@ $(CLI_FILES)
 
 config/cabby.json: config/cabby.example.json
@@ -116,11 +114,15 @@ dependencies:
 	go get -t -v  ./...
 	go get github.com/fzipp/gocyclo
 	go get golang.org/x/lint/golint
+	go get github.com/securego/gosec/cmd/gosec/...
 
 dev-db: db/cabby.db
 
 fmt:
 	go fmt -x
+
+nosec:
+	gosec -nosec=true ./...
 
 reportcard: fmt
 	gocyclo -over 10 .
@@ -135,6 +137,13 @@ run-cli:
 
 run-log:
 	go run $(BUILD_TAGS) cmd/cabby/main.go 2>&1 | tee cabby.log
+
+sec:
+ifdef pkg
+	gosec ./$(pkg)
+else
+	gosec ./...
+endif
 
 test:
 ifdef pkg
