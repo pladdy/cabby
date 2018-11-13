@@ -27,7 +27,6 @@ config/cabby.json
 *.key
 *.swp
 *.db
-TODO.md
 coverage.txt
 cover-*
 
