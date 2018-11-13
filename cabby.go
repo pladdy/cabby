@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -166,7 +167,12 @@ type Config struct {
 }
 
 // Parse takes a path to a config file and converts to Configs
+/* #nosec G304 */
 func (c Config) Parse(file string) (initializedConfig Config) {
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		log.WithFields(log.Fields{"file": file, "error": err}).Panic("File does not exist")
+	}
+
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		log.WithFields(log.Fields{"file": file, "error": err}).Panic("Can't parse config file")
@@ -327,7 +333,12 @@ func NewRange(items string) (r Range, err error) {
 		return r, err
 	}
 
-	matched, _ := regexp.MatchString(`items \d+?-\d+?`, items)
+	items = strings.TrimSpace(items)
+
+	matched, err := regexp.MatchString(`^items \d+?-\d+?$`, items)
+	if err != nil {
+		return r, err
+	}
 	if !matched {
 		return r, errors.New("Invalid range specified")
 	}
@@ -337,8 +348,14 @@ func NewRange(items string) (r Range, err error) {
 	tokens := strings.Split(raw, itemDelimiter)
 
 	if len(tokens) == 2 {
-		r.First, _ = strconv.ParseUint(tokens[0], 10, 64)
-		r.Last, _ = strconv.ParseUint(tokens[1], 10, 64)
+		r.First, err = strconv.ParseUint(tokens[0], 10, 64)
+		if err != nil {
+			return r, err
+		}
+		r.Last, err = strconv.ParseUint(tokens[1], 10, 64)
+		if err != nil {
+			return r, err
+		}
 	}
 
 	if r.Valid() {

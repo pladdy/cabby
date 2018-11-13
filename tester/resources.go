@@ -8,6 +8,7 @@ import (
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -103,7 +104,11 @@ func collection() cabby.Collection {
 		CanRead:     true,
 		CanWrite:    true}
 
-	c.ID, _ = cabby.IDFromString(CollectionID)
+	var err error
+	c.ID, err = cabby.IDFromString(CollectionID)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "input": CollectionID}).Error("Failed to create an id from provided string")
+	}
 	return c
 }
 
@@ -114,7 +119,10 @@ func newContext() context.Context {
 }
 
 func object() stones.Object {
-	id, _ := stones.IdentifierFromString(ObjectID)
+	id, err := stones.IdentifierFromString(ObjectID)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "input": ObjectID}).Error("Failed to create an id from provided string")
+	}
 
 	o := stones.Object{
 		ID:       id,
@@ -137,13 +145,22 @@ func object() stones.Object {
 
 func status() cabby.Status {
 	s := cabby.Status{TotalCount: 3, PendingCount: 3}
-	s.ID, _ = cabby.IDFromString(StatusID)
+
+	var err error
+	s.ID, err = cabby.IDFromString(StatusID)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "input": StatusID}).Error("Failed to create an id from provided string")
+	}
 	return s
 }
 
 func userCollectionList() cabby.UserCollectionList {
 	ucl := cabby.UserCollectionList{Email: UserEmail}
-	id, _ := cabby.IDFromString(CollectionID)
+	id, err := cabby.IDFromString(CollectionID)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "input": CollectionID}).Error("Failed to create an id from provided string")
+	}
+
 	ucl.CollectionAccessList = map[cabby.ID]cabby.CollectionAccess{
 		id: cabby.CollectionAccess{ID: id, CanRead: true, CanWrite: true}}
 	return ucl

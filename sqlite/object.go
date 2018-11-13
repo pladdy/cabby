@@ -211,5 +211,8 @@ func updateStatus(ctx context.Context, st cabby.Status, errs chan error, ss cabb
 
 	st.FailureCount = failures
 	st.SuccessCount = st.TotalCount - failures
-	ss.UpdateStatus(ctx, st)
+	err := ss.UpdateStatus(ctx, st)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "status": st}).Error("An error occured when updating the status")
+	}
 }

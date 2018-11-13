@@ -48,7 +48,9 @@ func TestSQLiteBatchWriteSmall(t *testing.T) {
 	close(toWrite)
 
 	for e := range errs {
-		t.Fatal(e)
+		if e != nil {
+			t.Fatal(e)
+		}
 	}
 
 	var id string
@@ -155,7 +157,9 @@ func TestSQLiteBatchWriteCommitError(t *testing.T) {
 
 	var lastError error
 	for e := range errs {
-		lastError = e
+		if e != nil {
+			lastError = e
+		}
 	}
 
 	if lastError == nil {

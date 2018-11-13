@@ -24,7 +24,13 @@ func errorStatus(w http.ResponseWriter, title string, err error, status int) {
 
 	w.Header().Set("Content-Type", cabby.TaxiiContentType)
 	w.WriteHeader(status)
-	io.WriteString(w, resourceToJSON(te))
+
+	bytes, e := io.WriteString(w, resourceToJSON(te))
+	if e != nil {
+		log.WithFields(log.Fields{"bytes": bytes, "error": e, "resource": te}).Error(
+			"Error trying to write resource to the response",
+		)
+	}
 }
 
 func badRequest(w http.ResponseWriter, err error) {

@@ -89,7 +89,11 @@ func cmdUpdateUser() *cobra.Command {
 
 	cmd = withUserFlag(cmd)
 	cmd = withAdminFlag(cmd)
-	cmd.MarkFlagRequired("admin")
+	err := cmd.MarkFlagRequired("admin")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "flag": "admin"}).Error("Unable to mark flag as required")
+	}
+
 	return cmd
 }
 

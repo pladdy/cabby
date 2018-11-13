@@ -38,10 +38,19 @@ func withHSTS(w http.ResponseWriter) http.ResponseWriter {
 }
 
 func write(w http.ResponseWriter, r *http.Request, content string) {
+	var bytes int
+	var err error
+
 	if r.Method == http.MethodHead {
-		io.WriteString(w, "")
+		bytes, err = io.WriteString(w, "")
 	} else {
-		io.WriteString(w, content)
+		bytes, err = io.WriteString(w, content)
+	}
+
+	if err != nil {
+		log.WithFields(log.Fields{"bytes": bytes, "content": content, "error": err}).Error(
+			"Error trying to write resource to the response",
+		)
 	}
 }
 
