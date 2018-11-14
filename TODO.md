@@ -19,7 +19,7 @@ update cli
 
 #### tech debt
 - should backend return some generic object with it's data and take a generic input?
-  - ServiceRequest{} & ServiceResponse{]?
+  - ServiceRequest{} & ServiceResponse{}?
 - sql tables are using a uuid for an id, use 'id integer not null primary key' <- auto incrementing id
 - for any error handler (unauthorized, etc.) send the request object and get the context into the log
 - should i move api roots and collections back to config file? https://gist.github.com/pladdy/954ea6f01794e51c1c7d8d217e6f9fdd

@@ -10,12 +10,24 @@ import (
 type Key int
 
 const (
+	// KeyBytes stores the bytes written for a response
+	KeyBytes Key = iota
+
 	// KeyTransactionID to track a request from http request to response (including service calls)
-	KeyTransactionID Key = 0
+	KeyTransactionID
 
 	// KeyUser for storing a User struct
-	KeyUser Key = 1
+	KeyUser
 )
+
+// TakeBytes returns the bytes stored in a context
+func TakeBytes(ctx context.Context) int {
+	bytes, ok := ctx.Value(KeyBytes).(int)
+	if !ok {
+		return 0
+	}
+	return bytes
+}
 
 // TakeTransactionID returns the transaction id stored in a context
 func TakeTransactionID(ctx context.Context) uuid.UUID {
@@ -35,14 +47,17 @@ func TakeUser(ctx context.Context) User {
 	return u
 }
 
+// WithBytes decorates a context with bytes written
+func WithBytes(ctx context.Context, bytes int) context.Context {
+	return context.WithValue(ctx, KeyBytes, bytes)
+}
+
 // WithTransactionID decorates a context with a transaction id
 func WithTransactionID(ctx context.Context, transactionID uuid.UUID) context.Context {
-	ctx = context.WithValue(ctx, KeyTransactionID, transactionID)
-	return ctx
+	return context.WithValue(ctx, KeyTransactionID, transactionID)
 }
 
 // WithUser decorates a context with values from the user struct
 func WithUser(ctx context.Context, u User) context.Context {
-	ctx = context.WithValue(ctx, KeyUser, u)
-	return ctx
+	return context.WithValue(ctx, KeyUser, u)
 }

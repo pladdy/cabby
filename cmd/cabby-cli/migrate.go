@@ -14,13 +14,10 @@ func cmdMigrateUp() *cobra.Command {
 			log.SetLevel(log.InfoLevel)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
-			err = ds.MigrationService().Up()
+			err := ds.MigrationService().Up()
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("Failed to create")
 			}

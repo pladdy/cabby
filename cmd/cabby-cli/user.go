@@ -14,14 +14,11 @@ func cmdCreateUser() *cobra.Command {
 		Short: "Create a user",
 		Long:  `create user is used to create a user that will access the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newUser := cabby.User{Email: userName, CanAdmin: userAdmin}
-			err = ds.UserService().CreateUser(context.Background(), newUser, userPassword)
+			err := ds.UserService().CreateUser(context.Background(), newUser, userPassword)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "user": newUser}).Error("Failed to create")
 			}
@@ -45,13 +42,10 @@ func cmdDeleteUser() *cobra.Command {
 		Short: "Delete a user",
 		Long:  `delete user is used to delete a user from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
-			err = ds.UserService().DeleteUser(context.Background(), userName)
+			err := ds.UserService().DeleteUser(context.Background(), userName)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "user": userName}).Error("Failed to delete")
 			}
@@ -70,14 +64,11 @@ func cmdUpdateUser() *cobra.Command {
 		Short: "Update a user",
 		Long:  `update user is used to update a users properties`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newUser := cabby.User{Email: userName, CanAdmin: userAdmin}
-			err = ds.UserService().UpdateUser(context.Background(), newUser)
+			err := ds.UserService().UpdateUser(context.Background(), newUser)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "user": newUser}).Error("Failed to create")
 			}
@@ -89,11 +80,8 @@ func cmdUpdateUser() *cobra.Command {
 
 	cmd = withUserFlag(cmd)
 	cmd = withAdminFlag(cmd)
-	err := cmd.MarkFlagRequired("admin")
-	if err != nil {
-		log.WithFields(log.Fields{"error": err, "flag": "admin"}).Error("Unable to mark flag as required")
-	}
-
+	/* #nosec G104 */
+	cmd.MarkFlagRequired("admin")
 	return cmd
 }
 
@@ -103,10 +91,7 @@ func cmdCreateUserCollection() *cobra.Command {
 		Short: "Create a user/collection assocation",
 		Long:  `create UserCollection associates a user to a collection`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			id, err := cabby.IDFromString(collectionID)
@@ -141,13 +126,10 @@ func cmdDeleteUserCollection() *cobra.Command {
 		Short: "Delete a user/collection association",
 		Long:  `delete a collection from a users collection access list`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
-			err = ds.UserService().DeleteUserCollection(context.Background(), userName, collectionID)
+			err := ds.UserService().DeleteUserCollection(context.Background(), userName, collectionID)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "user": userName}).Error("Failed to delete")
 			}
@@ -169,10 +151,7 @@ func cmdUpdateUserCollection() *cobra.Command {
 		Short: "Update a user/collection assocation",
 		Long:  `update a collection access for a user`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			id, err := cabby.IDFromString(collectionID)

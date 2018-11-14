@@ -91,7 +91,7 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 	})
 }
 
-func withRequestLogging(h http.Handler) http.Handler {
+func withLogging(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		milliSecondOfNanoSeconds := int64(1000000)
 
@@ -111,6 +111,7 @@ func withRequestLogging(h http.Handler) http.Handler {
 		elapsed := time.Since(start)
 
 		log.WithFields(log.Fields{
+			"bytes":          cabby.TakeBytes(r.Context()),
 			"elapsed_ms":     float64(elapsed.Nanoseconds()) / float64(milliSecondOfNanoSeconds),
 			"end_ms":         end.UnixNano() / milliSecondOfNanoSeconds,
 			"method":         r.Method,

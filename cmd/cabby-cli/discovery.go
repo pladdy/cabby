@@ -14,10 +14,7 @@ func cmdCreateDiscovery() *cobra.Command {
 		Short: "Create the discovery resource",
 		Long:  `create discovery is used to create the discovery resource on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newDiscovery := cabby.Discovery{
@@ -26,7 +23,7 @@ func cmdCreateDiscovery() *cobra.Command {
 				Contact:     discoveryContact,
 				Default:     discoveryDefault}
 
-			err = ds.DiscoveryService().CreateDiscovery(context.Background(), newDiscovery)
+			err := ds.DiscoveryService().CreateDiscovery(context.Background(), newDiscovery)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "discovery": newDiscovery}).Error("Failed to create")
 			}
@@ -48,13 +45,10 @@ func cmdDeleteDiscovery() *cobra.Command {
 		Short: "Delete the discovery resource",
 		Long:  `delete discovery is used to delete the discovery from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
-			err = ds.DiscoveryService().DeleteDiscovery(context.Background())
+			err := ds.DiscoveryService().DeleteDiscovery(context.Background())
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("Failed to delete")
 			}
@@ -68,10 +62,7 @@ func cmdUpdateDiscovery() *cobra.Command {
 		Short: "Update the discovery resource",
 		Long:  `update discovery is used to update the discovery resource on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newDiscovery := cabby.Discovery{
@@ -80,7 +71,7 @@ func cmdUpdateDiscovery() *cobra.Command {
 				Contact:     discoveryContact,
 				Default:     discoveryDefault}
 
-			err = ds.DiscoveryService().UpdateDiscovery(context.Background(), newDiscovery)
+			err := ds.DiscoveryService().UpdateDiscovery(context.Background(), newDiscovery)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "discovery": newDiscovery}).Error("Failed to create")
 			}

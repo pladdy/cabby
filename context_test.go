@@ -7,6 +7,18 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+func TestContextBytes(t *testing.T) {
+	ctx := context.Background()
+	bytes := 100
+
+	ctx = WithBytes(ctx, bytes)
+	result := TakeBytes(ctx)
+
+	if result != bytes {
+		t.Error("Got:", result, "Expected:", bytes)
+	}
+}
+
 func TestContextTransactionID(t *testing.T) {
 	ctx := context.Background()
 
