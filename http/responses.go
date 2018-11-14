@@ -32,6 +32,10 @@ func resourceToJSON(v interface{}) string {
 	return string(b)
 }
 
+func withBytes(r *http.Request, bytes int) *http.Request {
+	return r.WithContext(cabby.WithBytes(r.Context(), bytes))
+}
+
 func withHSTS(w http.ResponseWriter) http.ResponseWriter {
 	w.Header().Add("Strict-Transport-Security", "max-age="+sixMonthsOfSeconds+"; includeSubDomains")
 	return w
@@ -48,6 +52,8 @@ func write(w http.ResponseWriter, r *http.Request, content string) {
 			"Error trying to write resource to the response",
 		)
 	}
+
+	*r = *r.WithContext(cabby.WithBytes(r.Context(), bytes))
 }
 
 func writeContent(w http.ResponseWriter, r *http.Request, contentType, content string) {

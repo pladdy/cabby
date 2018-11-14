@@ -187,7 +187,7 @@ func TestWithRequestLogging(t *testing.T) {
 
 	// set up handler
 	testHandler := testHandlerFunc(t.Name())
-	decoratedHandler := withRequestLogging(testHandler)
+	decoratedHandler := withLogging(testHandler)
 
 	// set up a server
 	server := httptest.NewServer(decoratedHandler)
