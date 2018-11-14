@@ -19,6 +19,16 @@ func TestContextBytes(t *testing.T) {
 	}
 }
 
+func TestContextBytesInvalid(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, KeyBytes, "test")
+	result := TakeBytes(ctx)
+
+	if result != 0 {
+		t.Error("Got:", result, "Expected:", 0)
+	}
+}
+
 func TestContextTransactionID(t *testing.T) {
 	ctx := context.Background()
 
