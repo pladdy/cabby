@@ -15,10 +15,7 @@ func cmdCreateAPIRoot() *cobra.Command {
 		Short: "Create a apiRoot",
 		Long:  `create apiRoot is used to create a apiRoot on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newAPIRoot := cabby.APIRoot{
@@ -28,7 +25,7 @@ func cmdCreateAPIRoot() *cobra.Command {
 				Versions:         strings.Split(apiRootVersions, ","),
 				MaxContentLength: maxContentLength}
 
-			err = ds.APIRootService().CreateAPIRoot(context.Background(), newAPIRoot)
+			err := ds.APIRootService().CreateAPIRoot(context.Background(), newAPIRoot)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "api_root": newAPIRoot}).Error("Failed to create")
 			}
@@ -47,13 +44,10 @@ func cmdDeleteAPIRoot() *cobra.Command {
 		Short: "Delete a apiRoot",
 		Long:  `delete apiRoot is used to delete a apiRoot from a server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
-			err = ds.APIRootService().DeleteAPIRoot(context.Background(), apiRootPath)
+			err := ds.APIRootService().DeleteAPIRoot(context.Background(), apiRootPath)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("Failed to delete")
 			}
@@ -74,10 +68,7 @@ func cmdUpdateAPIRoot() *cobra.Command {
 		Short: "Update a apiRoot",
 		Long:  `update apiRoot is used to update a apiRoot on the server`,
 		Run: func(cmd *cobra.Command, args []string) {
-			ds, err := dataStoreFromConfig(configPath)
-			if err != nil {
-				log.WithFields(log.Fields{"error": err}).Panic("Can't connect to data store")
-			}
+			ds := dataStoreFromConfig(configPath)
 			defer ds.Close()
 
 			newAPIRoot := cabby.APIRoot{
@@ -87,7 +78,7 @@ func cmdUpdateAPIRoot() *cobra.Command {
 				Versions:         strings.Split(apiRootVersions, ","),
 				MaxContentLength: maxContentLength}
 
-			err = ds.APIRootService().CreateAPIRoot(context.Background(), newAPIRoot)
+			err := ds.APIRootService().CreateAPIRoot(context.Background(), newAPIRoot)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err, "apiRoot": newAPIRoot}).Error("Failed to create")
 			}

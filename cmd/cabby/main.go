@@ -19,7 +19,7 @@ func main() {
 
 	ds, err := sqlite.NewDataStore(c.DataStore["path"])
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Panic("Can't start server")
+		log.WithFields(log.Fields{"error": err, "config-path": configPath}).Panic("Can't start server")
 	}
 
 	server := http.NewCabby(ds, c)

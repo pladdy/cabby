@@ -62,9 +62,13 @@ func cmdUpdate() *cobra.Command {
 	}
 }
 
-func dataStoreFromConfig(path string) (cabby.DataStore, error) {
+func dataStoreFromConfig(path string) cabby.DataStore {
 	config := cabby.Config{}.Parse(path)
-	return sqlite.NewDataStore(config.DataStore["path"])
+	ds, err := sqlite.NewDataStore(config.DataStore["path"])
+	if err != nil {
+		log.WithFields(log.Fields{"error": err, "path": config.DataStore["path"]}).Panic("Unable to connect to data store")
+	}
+	return ds
 }
 
 func main() {
@@ -73,11 +77,8 @@ func main() {
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}
 	rootCmd.PersistentFlags().StringVar(&configPath, "config", cabby.DefaultProductionConfig, "path to cabby config file")
-
-	err := rootCmd.MarkFlagRequired("config")
-	if err != nil {
-		log.WithFields(log.Fields{"error": err, "flag": "config"}).Error("Unable to mark flag as required")
-	}
+	/* #nosec G104 */
+	rootCmd.MarkFlagRequired("config")
 
 	cmdCreate := cmdCreate()
 	cmdDelete := cmdDelete()
@@ -109,7 +110,7 @@ func main() {
 		cmdUpdateUser(),
 		cmdUpdateUserCollection())
 
-	err = rootCmd.Execute()
+	err := rootCmd.Execute()
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Panic("Unable to execute command")
 	}
