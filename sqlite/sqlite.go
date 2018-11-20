@@ -113,6 +113,7 @@ func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan
 
 		err := s.execute(stmt, args...)
 		if err != nil {
+			log.WithFields(log.Fields{"sql": query, "error": err}).Error("Error after call to 'execute'")
 			errs <- err
 			continue
 		}
@@ -121,12 +122,14 @@ func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan
 		if i >= maxWritesPerBatch {
 			err := tx.Commit() // on commit a statement is closed, create a new transaction for next batch
 			if err != nil {
+				log.WithFields(log.Fields{"sql": query, "error": err}).Error("Error after call to 'Commit'")
 				errs <- err
 				return
 			}
 
 			tx, stmt, err = s.writeOperation(query)
 			if err != nil {
+				log.WithFields(log.Fields{"sql": query, "error": err}).Error("Error after call to 'writeOperation'")
 				errs <- err
 				return
 			}

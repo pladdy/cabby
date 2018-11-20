@@ -170,6 +170,7 @@ func bundleFromBytes(b []byte) (stones.Bundle, error) {
 
 	err := json.Unmarshal(b, &bundle)
 	if err != nil {
+		log.WithFields(log.Fields{"bundle": string(b)}).Error("Unable to unmarshal bundle")
 		return bundle, fmt.Errorf("Unable to convert json to bundle, error: %v", err)
 	}
 
