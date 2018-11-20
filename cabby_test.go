@@ -167,6 +167,10 @@ func TestCollectionValidate(t *testing.T) {
 		if test.expectError && result == nil {
 			t.Error("Got:", result, "Expected:", test.expectError)
 		}
+
+		if !test.expectError && result != nil {
+			t.Error("Error unexpected:", result, "Test:", test)
+		}
 	}
 }
 
@@ -176,7 +180,7 @@ func TestNewRange(t *testing.T) {
 	tests := []struct {
 		input       string
 		resultRange Range
-		isError     bool
+		expectError bool
 	}{
 		{"items 0-10", Range{First: 0, Last: 10, Set: true}, false},
 		{"items 10-0", Range{First: 10, Last: 0}, true},
@@ -194,7 +198,7 @@ func TestNewRange(t *testing.T) {
 			t.Error("Got:", result, "Expected:", test.resultRange)
 		}
 
-		if err != nil && test.isError == false {
+		if err != nil && test.expectError == false {
 			t.Error("Got:", err, "Expected: no error", "Range:", result)
 		}
 	}

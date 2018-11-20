@@ -390,8 +390,8 @@ func TestObjectServiceInvalidIDs(t *testing.T) {
 
 func TestUnmarshalObjectFail(t *testing.T) {
 	tests := []struct {
-		inputs   []string
-		hasError bool
+		inputs      []string
+		expectError bool
 	}{
 		{[]string{"malware--82407036-edf9-4c75-9a56-e72697c53e99", "invalid time", "2016-04-06T20:03:48.000Z"}, true},
 		{[]string{"malware--82407036-edf9-4c75-9a56-e72697c53e99", "2016-04-06T20:03:48.000Z", "invalid time"}, true},
@@ -402,11 +402,11 @@ func TestUnmarshalObjectFail(t *testing.T) {
 	for _, test := range tests {
 		_, err := unmarshalObject(stones.Object{}, test.inputs[0], test.inputs[1], test.inputs[2])
 
-		if test.hasError && err == nil {
+		if test.expectError && err == nil {
 			t.Error("Expected an error", "Test:", test)
 		}
 
-		if !test.hasError && err != nil {
+		if !test.expectError && err != nil {
 			t.Error("Error unexpected:", err, "Test:", test)
 		}
 	}
