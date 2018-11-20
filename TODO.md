@@ -5,6 +5,10 @@ Handle migrations with a tool?
 
 Should we open port 443 in vagrant? https://help.ubuntu.com/community/UFW#UFW_-_Uncomplicated_Firewall
 
+#### batch writing
+- errors can happen in more than 1 scenario, which can inflate the failure counts which the status service uses to figure
+  out what was successful vs not...
+  
 #### Admin section
 What about these use cases?  Right now, data is left in place...
   - if i delete a user, should i delete their collection associations?

@@ -43,6 +43,7 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 	for _, object := range b.Objects {
 		o, err := bytesToObject(object)
 		if err != nil {
+			log.WithFields(log.Fields{"raw object": string(object), "error": err}).Error("Failed to convert bytes to Object")
 			errs <- err
 			continue
 		}
@@ -227,13 +228,20 @@ func unmarshalObject(o stones.Object, id, created, modified string) (new stones.
 }
 
 func updateStatus(ctx context.Context, st cabby.Status, errs chan error, ss cabby.StatusService) {
-	failures := int64(0)
-	for range errs {
-		failures++
+	for err := range errs {
+		if err != nil {
+			log.WithFields(log.Fields{"error": err}).Warn("Found an error")
+			st.FailureCount++
+		}
 	}
 
-	st.FailureCount = failures
-	st.SuccessCount = st.TotalCount - failures
+	// don't allow more failures than objects that can be written; TODO: provide better status updates
+	if st.FailureCount > st.TotalCount {
+		st.FailureCount = st.TotalCount
+	}
+
+	st.SuccessCount = st.TotalCount - st.FailureCount
+
 	err := ss.UpdateStatus(ctx, st)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err, "status": st}).Error("An error occured when updating the status")

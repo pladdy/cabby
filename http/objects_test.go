@@ -19,6 +19,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func TestBundleFromBytes(t *testing.T) {
+	bundleFile, err := os.Open("testdata/malware_bundle.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rawBundle, err := ioutil.ReadAll(bundleFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = bundleFromBytes(rawBundle)
+	if err != nil {
+		t.Error("Error unexpected:", err)
+	}
+}
+
 func TestBundleFromBytesUnmarshalFail(t *testing.T) {
 	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
 	if err == nil {
