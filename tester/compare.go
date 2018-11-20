@@ -129,13 +129,6 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 		passed = false
 	}
 
-	// rVersions := strings.Join(result.Versions, ",")
-	// eVersions := strings.Join(expected.Versions, ",")
-	// if rVersions != eVersions {
-	// 	log.Error("Got: ", rVersions, " Expected: ", eVersions)
-	// 	passed = false
-	// }
-
 	if len(result.Versions) != len(expected.Versions) {
 		log.Error("Got: ", len(result.Versions), " Expected: ", len(expected.Versions))
 		passed = false
