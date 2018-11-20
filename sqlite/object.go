@@ -48,7 +48,7 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 		}
 
 		log.WithFields(log.Fields{"id": o.ID.String()}).Info("Sending to data store")
-		toWrite <- []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Source, collectionID}
+		toWrite <- []interface{}{o.ID.String(), o.Type, o.Created.String(), o.Modified.String(), o.Source, collectionID}
 	}
 	close(toWrite)
 
@@ -66,7 +66,7 @@ func (s ObjectService) CreateObject(ctx context.Context, collectionID string, ob
 
 func (s ObjectService) createObject(collectionID string, o stones.Object) error {
 	sql := createObjectSQL
-	args := []interface{}{o.ID.String(), o.Type, o.Created, o.Modified, o.Source, collectionID}
+	args := []interface{}{o.ID.String(), o.Type, o.Created.String(), o.Modified.String(), o.Source, collectionID}
 
 	err := s.DataStore.write(createObjectSQL, args...)
 	if err != nil {
@@ -107,12 +107,13 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 
 	for rows.Next() {
 		var o stones.Object
-		var id string
-		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Source); err != nil {
+		var id, created, modified string
+
+		if err := rows.Scan(&id, &o.Type, &created, &modified, &o.Source); err != nil {
 			return objects, err
 		}
 
-		o.ID, err = stones.IdentifierFromString(id)
+		o, err = unmarshalObject(o, id, created, modified)
 		if err != nil {
 			return objects, err
 		}
@@ -167,13 +168,13 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 
 	for rows.Next() {
 		var o stones.Object
-		var id string
+		var id, created, modified string
 
-		if err := rows.Scan(&id, &o.Type, &o.Created, &o.Modified, &o.Source, &dateAdded, &cr.Total); err != nil {
+		if err := rows.Scan(&id, &o.Type, &created, &modified, &o.Source, &dateAdded, &cr.Total); err != nil {
 			return objects, err
 		}
 
-		o.ID, err = stones.IdentifierFromString(id)
+		o, err = unmarshalObject(o, id, created, modified)
 		if err != nil {
 			return objects, err
 		}
@@ -201,6 +202,28 @@ func bytesToObject(b []byte) (stones.Object, error) {
 
 	o.Source = b
 	return o, err
+}
+
+func unmarshalObject(o stones.Object, id, created, modified string) (new stones.Object, err error) {
+	o.ID, err = stones.IdentifierFromString(id)
+	if err != nil {
+		return o, err
+	}
+
+	ts, err := stones.NewTimestamp(created)
+	if err != nil {
+		return o, err
+	}
+	o.Created = ts
+
+	ts, err = stones.NewTimestamp(modified)
+	if err != nil {
+		return o, err
+	}
+	o.Modified = ts
+
+	new = o
+	return
 }
 
 func updateStatus(ctx context.Context, st cabby.Status, errs chan error, ss cabby.StatusService) {

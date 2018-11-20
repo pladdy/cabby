@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -166,6 +167,10 @@ func TestCollectionValidate(t *testing.T) {
 		if test.expectError && result == nil {
 			t.Error("Got:", result, "Expected:", test.expectError)
 		}
+
+		if !test.expectError && result != nil {
+			t.Error("Error unexpected:", result, "Test:", test)
+		}
 	}
 }
 
@@ -175,7 +180,7 @@ func TestNewRange(t *testing.T) {
 	tests := []struct {
 		input       string
 		resultRange Range
-		isError     bool
+		expectError bool
 	}{
 		{"items 0-10", Range{First: 0, Last: 10, Set: true}, false},
 		{"items 10-0", Range{First: 10, Last: 0}, true},
@@ -193,21 +198,25 @@ func TestNewRange(t *testing.T) {
 			t.Error("Got:", result, "Expected:", test.resultRange)
 		}
 
-		if err != nil && test.isError == false {
+		if err != nil && test.expectError == false {
 			t.Error("Got:", err, "Expected: no error", "Range:", result)
 		}
 	}
 }
 
 func TestRangeAddedAfterFirst(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
+	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MinimumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+		{Range{MinimumAddedAfter: ts}, ts.String()},
 	}
 
 	for _, test := range tests {
@@ -219,14 +228,18 @@ func TestRangeAddedAfterFirst(t *testing.T) {
 }
 
 func TestRangeAddedAfterLast(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
+	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MaximumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+		{Range{MaximumAddedAfter: ts}, ts.String()},
 	}
 
 	for _, test := range tests {

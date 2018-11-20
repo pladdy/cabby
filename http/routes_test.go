@@ -40,8 +40,8 @@ func TestRegisterAPIRoutesFail(t *testing.T) {
 	registerAPIRoots(ds, sm)
 
 	// parse log into struct
-	var result requestLog
-	err := json.Unmarshal([]byte(lastLog(buf)), &result)
+	var result tester.RequestLog
+	err := json.Unmarshal([]byte(tester.LastLog(buf)), &result)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,8 +75,8 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 	registerCollectionRoutes(ds, cabby.APIRoot{}, sm)
 
 	// parse log into struct
-	var result requestLog
-	err := json.Unmarshal([]byte(lastLog(buf)), &result)
+	var result tester.RequestLog
+	err := json.Unmarshal([]byte(tester.LastLog(buf)), &result)
 	if err != nil {
 		t.Fatal(err)
 	}

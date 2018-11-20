@@ -18,12 +18,15 @@ func TestManifestServiceManifest(t *testing.T) {
 
 	cr := cabby.Range{}
 	expected := tester.ManifestEntry
-	expectedTime := time.Now()
+	expectedTime := time.Now().UTC()
 
 	result, err := s.Manifest(context.Background(), tester.CollectionID, &cr, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
+
+	// sync the date added times; this is set in the db, not sure how to "mock" this
+	expected.DateAdded = result.Objects[0].DateAdded
 
 	passed := tester.CompareManifestEntry(result.Objects[0], expected)
 	if !passed {
@@ -31,11 +34,11 @@ func TestManifestServiceManifest(t *testing.T) {
 	}
 
 	if cr.MinimumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
-		t.Error("Got:", cr.MinimumAddedAfter, "Expected >=:", expectedTime.UnixNano())
+		t.Error("Got:", cr.MinimumAddedAfter.UnixNano(), "Expected >=:", expectedTime.UnixNano())
 	}
 
 	if cr.MaximumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
-		t.Error("Got:", cr.MaximumAddedAfter, "Expected NOT:", expectedTime.UnixNano())
+		t.Error("Got:", cr.MaximumAddedAfter.UnixNano(), "Expected NOT:", expectedTime.UnixNano())
 	}
 }
 
@@ -137,5 +140,21 @@ func TestManifestServiceManifestNoAPIRoot(t *testing.T) {
 	_, err := s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
+	}
+}
+
+func TestManifestServiceManifestInvalidDateAdded(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ManifestService()
+
+	_, err := ds.DB.Exec("update objects set created_at = 'fail'")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
 	}
 }

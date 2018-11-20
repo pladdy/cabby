@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -44,16 +44,16 @@ func newFilter(r *http.Request) (f cabby.Filter) {
 	return
 }
 
-func takeAddedAfter(r *http.Request) string {
+func takeAddedAfter(r *http.Request) stones.Timestamp {
 	af := r.URL.Query()["added_after"]
 
 	if len(af) > 0 {
-		t, err := time.Parse(time.RFC3339Nano, af[0])
+		t, err := stones.NewTimestamp(af[0])
 		if err == nil {
-			return t.Format(time.RFC3339Nano)
+			return t
 		}
 	}
-	return ""
+	return stones.Timestamp{}
 }
 
 func takeAPIRoot(r *http.Request) string {

@@ -69,10 +69,20 @@ func createObjectVersion(ds *DataStore, id, version string) {
 	o := tester.Object
 	sid, _ := stones.IdentifierFromString(id)
 	o.ID = sid
-	o.Modified = version
-	o.Created = time.Now().UTC().Format(time.RFC3339Nano)
 
-	err := ds.ObjectService().CreateObject(context.Background(), tester.Collection.ID.String(), o)
+	modified, err := stones.NewTimestamp(version)
+	if err != nil {
+		log.Fatal(err)
+	}
+	o.Modified = modified
+
+	created, err := stones.NewTimestamp(time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		log.Fatal(err)
+	}
+	o.Created = created
+
+	err = ds.ObjectService().CreateObject(context.Background(), tester.Collection.ID.String(), o)
 	if err != nil {
 		log.Fatal(err)
 	}

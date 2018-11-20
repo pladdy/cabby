@@ -2,7 +2,6 @@ package tester
 
 import (
 	"strings"
-	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/stones"
@@ -125,16 +124,13 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 		passed = false
 	}
 
-	t := time.Time{}
-	if result.DateAdded == t.Format(time.RFC3339Nano) {
-		log.Error("Got:", result.DateAdded, "Expected:", t.Format(time.RFC3339Nano))
+	if result.DateAdded.String() != expected.DateAdded.String() {
+		log.Error("Got:", result.DateAdded.String(), " Expected:", expected.DateAdded.String())
 		passed = false
 	}
 
-	rVersions := strings.Join(result.Versions, ",")
-	eVersions := strings.Join(expected.Versions, ",")
-	if rVersions != eVersions {
-		log.Error("Got:", rVersions, "Expected:", eVersions)
+	if len(result.Versions) != len(expected.Versions) {
+		log.Error("Got: ", len(result.Versions), " Expected: ", len(expected.Versions))
 		passed = false
 	}
 

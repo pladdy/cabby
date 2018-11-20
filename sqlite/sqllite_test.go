@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 )
 
 func TestNewDataStore(t *testing.T) {
@@ -207,13 +208,18 @@ func TestDataStoreWriteOperationError(t *testing.T) {
 }
 
 func TestFilterQueryString(t *testing.T) {
+	ts, err := stones.NewTimestamp("2016-04-06T20:03:48.123Z")
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		filter        cabby.Filter
 		expectedQuery string
 		expectedArgs  []interface{}
 	}{
 		{cabby.Filter{}, ``, []interface{}{}},
-		{cabby.Filter{AddedAfter: "2016-04-06T20:03:48.123Z"},
+		{cabby.Filter{AddedAfter: ts},
 			`(strftime('%s', strftime('%Y-%m-%d %H:%M:%f', created_at)) + strftime('%f',
 				strftime('%Y-%m-%d %H:%M:%f', created_at))) * 1000 > (strftime('%s',
 				strftime('%Y-%m-%d %H:%M:%f', ?)) + strftime('%f', strftime('%Y-%m-%d %H:%M:%f', ?))) * 1000`,

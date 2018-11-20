@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/pladdy/stones"
@@ -238,7 +237,7 @@ type Error struct {
 
 // Filter for filtering results based on URL parameters
 type Filter struct {
-	AddedAfter string
+	AddedAfter stones.Timestamp
 	IDs        string
 	Types      string
 	Versions   string
@@ -289,10 +288,10 @@ type Manifest struct {
 
 // ManifestEntry is a summary of an object in a manifest
 type ManifestEntry struct {
-	ID         string   `json:"id"`
-	DateAdded  string   `json:"date_added"`
-	Versions   []string `json:"versions"`
-	MediaTypes []string `json:"media_types"`
+	ID         string           `json:"id"`
+	DateAdded  stones.Timestamp `json:"date_added"`
+	Versions   []string         `json:"versions"`
+	MediaTypes []string         `json:"media_types"`
 }
 
 // ManifestService provides manifest data
@@ -319,9 +318,9 @@ type Range struct {
 	First uint64
 	Last  uint64
 	// Used for setting X-TAXII-Date-Added-First
-	MinimumAddedAfter time.Time
+	MinimumAddedAfter stones.Timestamp
 	// Used for setting X-TAXII-Date-Added-Last
-	MaximumAddedAfter time.Time
+	MaximumAddedAfter stones.Timestamp
 	Set               bool
 	Total             uint64
 }
@@ -367,17 +366,17 @@ func NewRange(items string) (r Range, err error) {
 
 // AddedAfterFirst returns the first added after as a string
 func (r *Range) AddedAfterFirst() string {
-	return r.MinimumAddedAfter.Format(time.RFC3339Nano)
+	return r.MinimumAddedAfter.String()
 }
 
 // AddedAfterLast returns the last added after as a string
 func (r *Range) AddedAfterLast() string {
-	return r.MaximumAddedAfter.Format(time.RFC3339Nano)
+	return r.MaximumAddedAfter.String()
 }
 
 // SetAddedAfters only takes one date string and uses it to update the minimum and maximum added after fields
 func (r *Range) SetAddedAfters(date string) {
-	t, err := time.Parse(time.RFC3339Nano, date)
+	t, err := stones.NewTimestamp(date)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to parse date")
 		return
@@ -416,16 +415,16 @@ func (r *Range) Valid() bool {
 
 // Status represents a TAXII status object
 type Status struct {
-	ID               ID       `json:"id"`
-	Status           string   `json:"status"`
-	RequestTimestamp string   `json:"request_timestamp"`
-	TotalCount       int64    `json:"total_count"`
-	SuccessCount     int64    `json:"success_count"`
-	Successes        []string `json:"successes"`
-	FailureCount     int64    `json:"failure_count"`
-	Failures         []string `json:"failures"`
-	PendingCount     int64    `json:"pending_count"`
-	Pendings         []string `json:"pendings"`
+	ID               ID               `json:"id"`
+	Status           string           `json:"status"`
+	RequestTimestamp stones.Timestamp `json:"request_timestamp"`
+	TotalCount       int64            `json:"total_count"`
+	SuccessCount     int64            `json:"success_count"`
+	Successes        []string         `json:"successes"`
+	FailureCount     int64            `json:"failure_count"`
+	Failures         []string         `json:"failures"`
+	PendingCount     int64            `json:"pending_count"`
+	Pendings         []string         `json:"pendings"`
 }
 
 // NewStatus returns a status struct
