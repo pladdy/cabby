@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
 	"github.com/pladdy/stones"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestBytesToObjectValidJSON(t *testing.T) {
@@ -386,6 +388,30 @@ func TestObjectServiceInvalidIDs(t *testing.T) {
 	}
 }
 
+func TestUnmarshalObjectFail(t *testing.T) {
+	tests := []struct {
+		inputs   []string
+		hasError bool
+	}{
+		{[]string{"malware--82407036-edf9-4c75-9a56-e72697c53e99", "invalid time", "2016-04-06T20:03:48.000Z"}, true},
+		{[]string{"malware--82407036-edf9-4c75-9a56-e72697c53e99", "2016-04-06T20:03:48.000Z", "invalid time"}, true},
+		{[]string{"invalid id", "2016-04-06T20:03:48.000Z", "2016-04-06T20:03:48.000Z"}, true},
+		{[]string{"malware--82407036-edf9-4c75-9a56-e72697c53e99", "2016-04-06T20:03:48.000Z", "2016-04-06T20:03:48.000Z"}, false},
+	}
+
+	for _, test := range tests {
+		_, err := unmarshalObject(stones.Object{}, test.inputs[0], test.inputs[1], test.inputs[2])
+
+		if test.hasError && err == nil {
+			t.Error("Expected an error", "Test:", test)
+		}
+
+		if !test.hasError && err != nil {
+			t.Error("Error unexpected:", err, "Test:", test)
+		}
+	}
+}
+
 func TestUpdateStatus(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
@@ -428,5 +454,50 @@ func TestUpdateStatus(t *testing.T) {
 	passed = tester.CompareStatus(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestUpdateStatusFail(t *testing.T) {
+	// redirect log output for test
+	var buf bytes.Buffer
+
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(&buf)
+
+	defer func() {
+		log.SetFormatter(&log.TextFormatter{})
+		log.SetOutput(os.Stderr)
+	}()
+
+	// set up db
+	setupSQLite()
+	ds := testDataStore()
+	ss := ds.StatusService()
+
+	err := ss.CreateStatus(context.Background(), tester.Status)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = ds.DB.Exec("drop table status")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// assume one object failed to write
+	errs := make(chan error, 10)
+	errs <- errors.New("an error")
+	close(errs)
+	updateStatus(context.Background(), tester.Status, errs, ss)
+
+	// parse log into struct
+	var result tester.ErrorLog
+	err = json.Unmarshal([]byte(tester.LastLog(buf)), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Level != "error" {
+		t.Error("Got:", result.Level, "Expected: error")
 	}
 }

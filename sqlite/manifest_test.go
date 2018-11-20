@@ -142,3 +142,19 @@ func TestManifestServiceManifestNoAPIRoot(t *testing.T) {
 		t.Error("Got:", err, "Expected no error")
 	}
 }
+
+func TestManifestServiceManifestInvalidDateAdded(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ManifestService()
+
+	_, err := ds.DB.Exec("update objects set created_at = 'fail'")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	if err == nil {
+		t.Error("Got:", err, "Expected an error")
+	}
+}
