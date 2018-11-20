@@ -24,11 +24,6 @@ update cli
 - for any error handler (unauthorized, etc.) send the request object and get the context into the log
 - should i move api roots and collections back to config file? https://gist.github.com/pladdy/954ea6f01794e51c1c7d8d217e6f9fdd
 
-#### test schema.sql?
-schema.sql should have schema_test.sql too...like do inserts and updates to test triggers, sql syntax, etc.
-- this should be handled in the migration?  like to verify if the thing exists (probably shouldn't insert/update data...
-  but how do you test a schema without data?)
-
 #### Structured logging
 Log the right things
   - http://www.miyagijournal.com/articles/five-steps-application-logging/
