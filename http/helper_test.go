@@ -9,8 +9,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 
@@ -30,16 +28,6 @@ var (
 	testStatusURL      = testAPIRootURL + "status/" + tester.StatusID + "/"
 	testDiscoveryURL   = tester.BaseURL + "/taxii/"
 )
-
-type requestLog struct {
-	Time      string
-	Level     string
-	Msg       string
-	ElapsedTs float64 `json:"elapsed_ts"`
-	EndTs     int64   `json:"end_ts"`
-	Method    string
-	URL       string
-}
 
 /* helper functions */
 
@@ -86,11 +74,6 @@ func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) 
 	return code, body
 }
 
-func lastLog(buf bytes.Buffer) string {
-	logs := regexp.MustCompile("\n").Split(strings.TrimSpace(buf.String()), -1)
-	return logs[len(logs)-1]
-}
-
 func newPostRequest(url string, b *bytes.Buffer) *http.Request {
 	req := newRequest("POST", url, b)
 	req.Header.Set("Accept", cabby.TaxiiContentType)
@@ -130,7 +113,7 @@ func testHandlerFunc(testName string) http.Handler {
 	})
 }
 
-func testErrorLog(result requestLog, t *testing.T) {
+func testErrorLog(result tester.RequestLog, t *testing.T) {
 	if len(result.Time) <= 0 {
 		t.Error("Got:", result.Time, "Expected: a time")
 	}
@@ -142,7 +125,7 @@ func testErrorLog(result requestLog, t *testing.T) {
 	}
 }
 
-func testRequestLog(result requestLog, t *testing.T) {
+func testRequestLog(result tester.RequestLog, t *testing.T) {
 	if len(result.Time) <= 0 {
 		t.Error("Got:", result.Time, "Expected: a time")
 	}

@@ -25,7 +25,7 @@ const (
 	// Port for testing server
 	Port = 1234
 	// StatusID for status tests
-	StatusID = "5abf4004-4f7f-459a-2eea-9c14af7b58abc"
+	StatusID = "5abf4004-4f7f-459a-2eea-9c14af7b58ab"
 	// UserEmail for tests
 	UserEmail = "test@cabby.com"
 	// UserPassword for tests
