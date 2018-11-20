@@ -3,8 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"errors"
+	"fmt"
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
@@ -191,17 +190,17 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 /* helpers */
 
 func bytesToObject(b []byte) (stones.Object, error) {
-	var o stones.Object
-	err := json.Unmarshal(b, &o)
+	o, err := stones.NewObject(b)
 	if err != nil {
 		return o, err
 	}
 
-	if valid, _ := o.ID.Valid(); !valid {
-		err = errors.New("Invalid ID")
+	valid, errs := o.Valid()
+	if !valid {
+		log.WithFields(log.Fields{"errors": errs}).Error("Invalid object")
+		err = fmt.Errorf("Errors with raw object: %v", errs)
 	}
 
-	o.Source = b
 	return o, err
 }
 
