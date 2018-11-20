@@ -75,11 +75,7 @@ var (
 	// Manifest mock
 	Manifest = cabby.Manifest{Objects: []cabby.ManifestEntry{ManifestEntry}}
 	// ManifestEntry mock
-	ManifestEntry = cabby.ManifestEntry{
-		ID:         ObjectID,
-		DateAdded:  time.Now().Format(time.RFC3339Nano),
-		Versions:   []string{objectCreated},
-		MediaTypes: []string{cabby.StixContentType}}
+	ManifestEntry = manifestEntry()
 	// Object mock
 	Object = object()
 	// Objects mock
@@ -112,6 +108,19 @@ func collection() cabby.Collection {
 	return c
 }
 
+func manifestEntry() cabby.ManifestEntry {
+	dateAdded, err := stones.NewTimestamp(time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to create a timestamp")
+	}
+
+	return cabby.ManifestEntry{
+		ID:         ObjectID,
+		DateAdded:  dateAdded,
+		Versions:   []string{objectCreated},
+		MediaTypes: []string{cabby.StixContentType}}
+}
+
 func newContext() context.Context {
 	ctx := context.Background()
 	ctx = cabby.WithUser(ctx, User)
@@ -119,26 +128,17 @@ func newContext() context.Context {
 }
 
 func object() stones.Object {
-	id, err := stones.IdentifierFromString(ObjectID)
-	if err != nil {
-		log.WithFields(log.Fields{"error": err, "input": ObjectID}).Error("Failed to create an id from provided string")
-	}
-
-	o := stones.Object{
-		ID:       id,
-		Type:     "malware",
-		Created:  objectCreated,
-		Modified: objectCreated,
-	}
-
-	o.Source = []byte(`{
+	o, err := stones.NewObject([]byte(`{
 	      "type": "malware",
 	      "id": "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc",
 	      "created": "2016-04-06T20:07:09.000Z",
 	      "modified": "2016-04-06T20:07:09.000Z",
 	      "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",
 	      "name": "Poison Ivy"
-	    }`)
+	    }`))
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to create an object from provided string")
+	}
 
 	return o
 }

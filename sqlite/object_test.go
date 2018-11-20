@@ -187,6 +187,11 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
+	ts, err := stones.NewTimestamp(versions[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		filter          cabby.Filter
 		expectedObjects int
@@ -197,7 +202,7 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		{cabby.Filter{IDs: ids[0].String()}, 1},
 		{cabby.Filter{IDs: strings.Join([]string{ids[0].String(), ids[4].String(), ids[8].String()}, ",")}, 3},
 		{cabby.Filter{Versions: versions[2]}, 1},
-		{cabby.Filter{AddedAfter: versions[0]}, 5},
+		{cabby.Filter{AddedAfter: ts}, 5},
 	}
 
 	cr := cabby.Range{}

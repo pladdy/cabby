@@ -9,6 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 )
 
 // ManifestService implements a SQLite version of the ManifestService interface
@@ -55,13 +56,19 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 
 	for rows.Next() {
 		me := cabby.ManifestEntry{}
-		var versions string
+		var dateAdded, versions string
 
-		if err := rows.Scan(&me.ID, &me.DateAdded, &versions, &cr.Total); err != nil {
+		if err := rows.Scan(&me.ID, &dateAdded, &versions, &cr.Total); err != nil {
 			return m, err
 		}
 
-		cr.SetAddedAfters(me.DateAdded)
+		ts, err := stones.NewTimestamp(dateAdded)
+		if err != nil {
+			return m, err
+		}
+		me.DateAdded = ts
+
+		cr.SetAddedAfters(me.DateAdded.String())
 		me.MediaTypes = []string{cabby.StixContentType}
 		me.Versions = strings.Split(string(versions), ",")
 		m.Objects = append(m.Objects, me)

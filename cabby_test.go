@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
+	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -200,14 +201,18 @@ func TestNewRange(t *testing.T) {
 }
 
 func TestRangeAddedAfterFirst(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
+	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MinimumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+		{Range{MinimumAddedAfter: ts}, ts.String()},
 	}
 
 	for _, test := range tests {
@@ -219,14 +224,18 @@ func TestRangeAddedAfterFirst(t *testing.T) {
 }
 
 func TestRangeAddedAfterLast(t *testing.T) {
-	now := time.Now()
+	now := time.Now().UTC()
+	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MaximumAddedAfter: now}, now.Format(time.RFC3339Nano)},
+		{Range{MaximumAddedAfter: ts}, ts.String()},
 	}
 
 	for _, test := range tests {

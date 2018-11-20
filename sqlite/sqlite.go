@@ -179,8 +179,8 @@ type Filter struct {
 func (f *Filter) QueryString() (q string, args []interface{}) {
 	var filters []string
 
-	if len(f.AddedAfter) > 0 {
-		filter, newArgs := filterAddedAfter(f.AddedAfter)
+	if !f.AddedAfter.IsZero() {
+		filter, newArgs := filterAddedAfter(f.AddedAfter.String())
 		if filter != "" {
 			filters = append(filters, filter)
 			args = append(args, newArgs...)

@@ -51,16 +51,16 @@ func TestTakeAddedAfter(t *testing.T) {
 		request    *http.Request
 		addedAfter string
 	}{
-		{httptest.NewRequest("GET", "/foo/bar/baz", nil), ""},
-		{httptest.NewRequest("GET", "/foo/bar/baz?added_after=invalid", nil), ""},
+		{httptest.NewRequest("GET", "/foo/bar/baz", nil), "0001-01-01T00:00:00Z"},
+		{httptest.NewRequest("GET", "/foo/bar/baz?added_after=invalid", nil), "0001-01-01T00:00:00Z"},
 		{httptest.NewRequest("GET", "/foo/bar/baz?added_after=2016-02-21T05:01:01.000Z", nil), "2016-02-21T05:01:01Z"},
 		{httptest.NewRequest("GET", "/foo/bar/baz?added_after=2016-02-21T05:01:01.123Z", nil), "2016-02-21T05:01:01.123Z"},
 	}
 
 	for _, test := range tests {
 		result := takeAddedAfter(test.request)
-		if result != test.addedAfter {
-			t.Error("Got:", result, "Expected:", test.addedAfter)
+		if result.String() != test.addedAfter {
+			t.Error("Got:", result.String(), "Expected:", test.addedAfter)
 		}
 	}
 }
