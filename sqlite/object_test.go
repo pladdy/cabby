@@ -412,7 +412,51 @@ func TestUnmarshalObjectFail(t *testing.T) {
 	}
 }
 
-func TestUpdateStatus(t *testing.T) {
+func TestUpdateStatusNoError(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	ss := ds.StatusService()
+
+	// assumptions:
+	//   - a user posted a bundle of 3 objects
+	expected := tester.Status
+	expected.ID, _ = cabby.NewID()
+	expected.Status = "pending"
+	expected.TotalCount = 3
+
+	err := ss.CreateStatus(context.Background(), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check the pending status
+	result, _ := ss.Status(context.Background(), expected.ID.String())
+	passed := tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
+	// no errors
+	errs := make(chan error, 10)
+	close(errs)
+
+	// updating implies complete
+	updateStatus(context.Background(), expected, errs, ss)
+
+	expected.FailureCount = 0
+	expected.PendingCount = 0
+	expected.SuccessCount = 3
+	expected.Status = "complete"
+
+	// query the status to confirm it's accurate
+	result, _ = ss.Status(context.Background(), expected.ID.String())
+	passed = tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestUpdateStatusWithError(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	ss := ds.StatusService()
@@ -447,6 +491,52 @@ func TestUpdateStatus(t *testing.T) {
 	expected.FailureCount = 1
 	expected.PendingCount = 0
 	expected.SuccessCount = 2
+	expected.Status = "complete"
+
+	// query the status to confirm it's accurate
+	result, _ = ss.Status(context.Background(), expected.ID.String())
+	passed = tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestUpdateStatusWithTooManyErrors(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	ss := ds.StatusService()
+
+	// assumptions:
+	//   - a user posted a bundle of 3 objects
+	expected := tester.Status
+	expected.ID, _ = cabby.NewID()
+	expected.Status = "pending"
+	expected.TotalCount = 1
+
+	err := ss.CreateStatus(context.Background(), expected)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check the pending status
+	result, _ := ss.Status(context.Background(), expected.ID.String())
+	passed := tester.CompareStatus(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
+	// create more errors than objects
+	errs := make(chan error, 10)
+	errs <- errors.New("an error")
+	errs <- errors.New("an error")
+	close(errs)
+
+	// updating implies complete
+	updateStatus(context.Background(), expected, errs, ss)
+
+	expected.FailureCount = 1
+	expected.PendingCount = 0
+	expected.SuccessCount = 0
 	expected.Status = "complete"
 
 	// query the status to confirm it's accurate
