@@ -81,7 +81,6 @@ func TestObjectsHandlerGet(t *testing.T) {
 	}
 
 	expected := tester.Object
-	expected.Source = nil
 
 	// parse the bundle for an object
 	var bundle stones.Bundle
@@ -98,7 +97,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 
 	passed := tester.CompareObject(object, expected)
 	if !passed {
-		t.Error("Comparison failed")
+		t.Error("Comparison failed", "\nObject:", object, "\nExpected:", expected)
 	}
 }
 
