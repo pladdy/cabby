@@ -3,7 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"encoding/json"
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
@@ -39,10 +39,11 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 
 	go s.DataStore.batchWrite(createObjectSQL, toWrite, errs)
 
-	for _, object := range b.Objects {
-		o, err := bytesToObject(object)
+	for _, raw := range b.Objects {
+		var o stones.Object
+		err := json.Unmarshal(raw, &o)
 		if err != nil {
-			log.WithFields(log.Fields{"raw object": string(object), "error": err}).Error("Failed to convert bytes to Object")
+			log.WithFields(log.Fields{"raw object": string(raw), "error": err}).Error("Failed to convert bytes to Object")
 			errs <- err
 			continue
 		}
@@ -188,21 +189,6 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 }
 
 /* helpers */
-
-func bytesToObject(b []byte) (stones.Object, error) {
-	o, err := stones.NewObject(b)
-	if err != nil {
-		return o, err
-	}
-
-	valid, errs := o.Valid()
-	if !valid {
-		log.WithFields(log.Fields{"errors": errs}).Error("Invalid object")
-		err = fmt.Errorf("Errors with raw object: %v", errs)
-	}
-
-	return o, err
-}
 
 func unmarshalObject(o stones.Object, id, created, modified string) (new stones.Object, err error) {
 	o.ID, err = stones.IdentifierFromString(id)

@@ -2,6 +2,7 @@ package tester
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -127,20 +128,22 @@ func newContext() context.Context {
 	return ctx
 }
 
-func object() stones.Object {
-	o, err := stones.NewObject([]byte(`{
+func object() (o stones.Object) {
+	rawJSON := []byte(`{
 	      "type": "malware",
 	      "id": "malware--11b940e4-4f7f-459a-80ea-9c1f17b58abc",
 	      "created": "2016-04-06T20:07:09.000Z",
 	      "modified": "2016-04-06T20:07:09.000Z",
 	      "created_by_ref": "identity--f431f809-377b-45e0-aa1c-6a4751cae5ff",
 	      "name": "Poison Ivy"
-	    }`))
+	    }`)
+
+	err := json.Unmarshal(rawJSON, &o)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to create an object from provided string")
 	}
 
-	return o
+	return
 }
 
 func status() cabby.Status {

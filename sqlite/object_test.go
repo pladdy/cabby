@@ -17,33 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func TestBytesToObjectValidJSON(t *testing.T) {
-	_, err := bytesToObject([]byte(`{
-		"type": "malware",
-		"id": "malware--31b940d4-6f7f-459a-80ea-9c1f17b5891b",
-    "created": "2016-04-06T20:07:09.000Z",
-		"modified": "2016-04-06T20:07:09.000Z",
-		"name": "Poison Ivy"}`))
-
-	if err != nil {
-		t.Error("Expected no error")
-	}
-}
-
-func TestBytesToObjectInvalidObject(t *testing.T) {
-	_, err := bytesToObject([]byte(`{"foo": "bar"}`))
-	if err == nil {
-		t.Error("Expected an error")
-	}
-}
-
-func TestBytesToObjectInvalidJSON(t *testing.T) {
-	o, err := bytesToObject([]byte(`{"foo": "bar"`))
-	if err == nil {
-		t.Error("Expected error for bundle:", o)
-	}
-}
-
 func TestObjectServiceCreateObject(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
@@ -306,10 +279,17 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 	osv.CreateBundle(context.Background(), bundle, tester.CollectionID, st, ssv)
 
 	// check objects were saved
-	for _, object := range bundle.Objects {
-		expected, _ := bytesToObject(object)
+	for _, raw := range bundle.Objects {
+		var expected stones.Object
+		err := json.Unmarshal(raw, &expected)
+		if err != nil {
+			t.Fatal(err)
+		}
 
-		results, _ := osv.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
+		results, err := osv.Object(context.Background(), tester.CollectionID, expected.ID.String(), cabby.Filter{})
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		passed := tester.CompareObject(results[0], expected)
 		if !passed {

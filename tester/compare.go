@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"regexp"
 	"strings"
 
 	"github.com/pladdy/cabby"
@@ -165,10 +166,13 @@ func CompareObject(result, expected stones.Object) bool {
 		passed = false
 	}
 
-	rObject := string(result.Source)
-	eObject := string(expected.Source)
+	// compare sources with whitespace removed; some tests have json that's padded for indentation
+	re := regexp.MustCompile(`\s+`)
+	rObject := re.ReplaceAllString(string(result.Source), "")
+	eObject := re.ReplaceAllString(string(expected.Source), "")
 	if rObject != eObject {
-		log.Error("Got:", rObject, "Expected:", eObject)
+		log.Error("Got Source:", rObject)
+		log.Error("Expected Source:", eObject)
 		passed = false
 	}
 
