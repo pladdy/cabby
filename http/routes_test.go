@@ -83,3 +83,26 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 
 	testErrorLog(result, t)
 }
+
+func TestRouteRequest(t *testing.T) {
+	mock := mockRequestHandler{}
+
+	tests := []struct {
+		method string
+		url    string
+		status int
+	}{
+		{"CUSTOM", testDiscoveryURL, http.StatusMethodNotAllowed},
+		{"GET", testDiscoveryURL, http.StatusOK},
+		{"HEAD", testDiscoveryURL, http.StatusOK},
+		{"POST", testDiscoveryURL, http.StatusOK},
+	}
+
+	for _, test := range tests {
+		status, _ := handlerTest(routeRequest(mock), test.method, test.url, nil)
+
+		if status != test.status {
+			t.Error("Got:", status, "Expected:", test.status)
+		}
+	}
+}

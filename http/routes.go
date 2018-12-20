@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -24,13 +25,13 @@ func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 
 func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 	if path != "" {
-		registerRoute(sm, path, WithMimeType(RouteRequest(ah), "Accept", cabby.TaxiiContentType))
+		registerRoute(sm, path, WithMimeType(routeRequest(ah), "Accept", cabby.TaxiiContentType))
 	}
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
 	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(RouteRequest(csh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(routeRequest(csh), "Accept", cabby.TaxiiContentType))
 
 	ss := ds.StatusService()
 	oh := ObjectsHandler{
@@ -51,19 +52,19 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String(),
-			WithMimeType(RouteRequest(ch), "Accept", cabby.TaxiiContentType))
+			WithMimeType(routeRequest(ch), "Accept", cabby.TaxiiContentType))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
-			RouteRequest(oh))
+			routeRequest(oh))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithMimeType(RouteRequest(mh), "Accept", cabby.TaxiiContentType))
+			WithMimeType(routeRequest(mh), "Accept", cabby.TaxiiContentType))
 	}
 
 	sh := StatusHandler{StatusService: ss}
-	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(RouteRequest(sh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(routeRequest(sh), "Accept", cabby.TaxiiContentType))
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
@@ -74,4 +75,24 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	}
 	log.WithFields(log.Fields{"route": route}).Info("Registering handler to route")
 	sm.HandleFunc(route, h)
+}
+
+func routeRequest(h RequestHandler) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer recoverFromPanic(w)
+
+		switch r.Method {
+		case http.MethodGet:
+			h.Get(w, r)
+		case http.MethodPost:
+			h.Post(w, r)
+		case http.MethodHead:
+			// for HEAD requests send to GET, it will omit response
+			h.Get(w, r)
+		default:
+			w.Header().Set("Allow", "Get, Head, Post")
+			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+			return
+		}
+	})
 }

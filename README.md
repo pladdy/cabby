@@ -27,7 +27,7 @@ Security checking tool: https://github.com/securego/gosec
 `make sec pkg=<package>` to run against a specific package.  Example: `make sec pkg=sqlite` to run it against sqlite package
 
 ## Building
-Cabby uses sqlite3 as it's data store.  The library in golang being used requires C extensions/bindings and as such
+Cabby uses sqlite3 as its data store.  The library in golang being used requires C extensions/bindings and as such
 doesn't build on a Mac for a Ubuntu OS.  Therefore vagrant vm is used to build a debian for ubuntu (i know...gross).
 
 Building debian package for a vagrant VM running ubuntu: `make build-debian`
@@ -43,6 +43,11 @@ sudo journalctl -u cabby | less
 ```
 
 ### Building: Metrics/Logs on the VM (TICK Stack)
+I used this project to also explore the TICK stack: https://www.influxdata.com/time-series-platform/
+
+To use/play with it, run `make vagrant`
+
+Syslog input reference (the VM uses syslog to as an input to influx-db):
 - https://github.com/influxdata/telegraf/blob/release-1.8/plugins/inputs/syslog/README.md
 
 ### Building: References

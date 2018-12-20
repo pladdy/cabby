@@ -51,29 +51,6 @@ func (m mockRequestHandler) Post(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, r.Method)
 }
 
-func TestRequestHandlerRouteRequest(t *testing.T) {
-	mock := mockRequestHandler{}
-
-	tests := []struct {
-		method string
-		url    string
-		status int
-	}{
-		{"CUSTOM", testDiscoveryURL, http.StatusMethodNotAllowed},
-		{"GET", testDiscoveryURL, http.StatusOK},
-		{"HEAD", testDiscoveryURL, http.StatusOK},
-		{"POST", testDiscoveryURL, http.StatusOK},
-	}
-
-	for _, test := range tests {
-		status, _ := handlerTest(RouteRequest(mock), test.method, test.url, nil)
-
-		if status != test.status {
-			t.Error("Got:", status, "Expected:", test.status)
-		}
-	}
-}
-
 func TestWithMimeType(t *testing.T) {
 	tests := []struct {
 		acceptedHeader string

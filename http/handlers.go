@@ -21,27 +21,6 @@ type RequestHandler interface {
 	Post(w http.ResponseWriter, r *http.Request)
 }
 
-// RouteRequest takes a RequestHandler and routes requests to its methods
-func RouteRequest(h RequestHandler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer recoverFromPanic(w)
-
-		switch r.Method {
-		case http.MethodGet:
-			h.Get(w, r)
-		case http.MethodPost:
-			h.Post(w, r)
-		case http.MethodHead:
-			// for HEAD requests send to GET, it will omit response
-			h.Get(w, r)
-		default:
-			w.Header().Set("Allow", "Get, Head, Post")
-			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
-			return
-		}
-	})
-}
-
 func verifySupportedMimeType(w http.ResponseWriter, r *http.Request, mh, mv string) bool {
 	mimeType, _ := splitMimeType(r.Header.Get(mh))
 
