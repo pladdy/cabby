@@ -310,7 +310,7 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bundleFile, _ := os.Open("testdata/bundle_invalid_object.json")
+	bundleFile, _ := os.Open("testdata/bundle_invalid_objects.json")
 	content, _ := ioutil.ReadAll(bundleFile)
 
 	var bundle stones.Bundle
