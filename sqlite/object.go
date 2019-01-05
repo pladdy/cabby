@@ -48,6 +48,13 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 			continue
 		}
 
+		valid, validationErrs := o.Valid()
+		if !valid {
+			log.WithFields(log.Fields{"raw object": string(raw), "error": err}).Error("Invalid object")
+			errs <- stones.ErrorsToString(validationErrs)
+			continue
+		}
+
 		log.WithFields(log.Fields{"id": o.ID.String()}).Info("Sending to data store")
 		toWrite <- []interface{}{o.ID.String(), o.Type, o.Created.String(), o.Modified.String(), o.Source, collectionID}
 	}
