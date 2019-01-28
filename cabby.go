@@ -376,7 +376,7 @@ func (r *Range) AddedAfterLast() string {
 
 // SetAddedAfters only takes one date string and uses it to update the minimum and maximum added after fields
 func (r *Range) SetAddedAfters(date string) {
-	t, err := stones.NewTimestamp(date)
+	t, err := stones.TimestampFromString(date)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to parse date")
 		return

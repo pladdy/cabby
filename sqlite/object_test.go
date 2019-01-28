@@ -162,7 +162,7 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	ts, err := stones.NewTimestamp(versions[0])
+	ts, err := stones.TimestampFromString(versions[0])
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/cabby/tester"
@@ -70,17 +69,13 @@ func createObjectVersion(ds *DataStore, id, version string) {
 	sid, _ := stones.IdentifierFromString(id)
 	o.ID = sid
 
-	modified, err := stones.NewTimestamp(version)
+	modified, err := stones.TimestampFromString(version)
 	if err != nil {
 		log.Fatal(err)
 	}
 	o.Modified = modified
 
-	created, err := stones.NewTimestamp(time.Now().UTC().Format(time.RFC3339Nano))
-	if err != nil {
-		log.Fatal(err)
-	}
-	o.Created = created
+	o.Created = stones.NewTimestamp()
 
 	err = ds.ObjectService().CreateObject(context.Background(), tester.Collection.ID.String(), o)
 	if err != nil {

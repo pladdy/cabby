@@ -205,18 +205,14 @@ func TestNewRange(t *testing.T) {
 }
 
 func TestRangeAddedAfterFirst(t *testing.T) {
-	now := time.Now().UTC()
-	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := stones.NewTimestamp()
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MinimumAddedAfter: ts}, ts.String()},
+		{Range{MinimumAddedAfter: now}, now.String()},
 	}
 
 	for _, test := range tests {
@@ -228,18 +224,14 @@ func TestRangeAddedAfterFirst(t *testing.T) {
 }
 
 func TestRangeAddedAfterLast(t *testing.T) {
-	now := time.Now().UTC()
-	ts, err := stones.NewTimestamp(now.Format(time.RFC3339Nano))
-	if err != nil {
-		t.Fatal(err)
-	}
+	now := stones.NewTimestamp()
 
 	tests := []struct {
 		cr       Range
 		expected string
 	}{
 		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MaximumAddedAfter: ts}, ts.String()},
+		{Range{MaximumAddedAfter: now}, now.String()},
 	}
 
 	for _, test := range tests {

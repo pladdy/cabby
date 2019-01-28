@@ -208,7 +208,7 @@ func TestDataStoreWriteOperationError(t *testing.T) {
 }
 
 func TestFilterQueryString(t *testing.T) {
-	ts, err := stones.NewTimestamp("2016-04-06T20:03:48.123Z")
+	ts, err := stones.TimestampFromString("2016-04-06T20:03:48.123Z")
 	if err != nil {
 		t.Fatal(err)
 	}

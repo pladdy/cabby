@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/pladdy/cabby"
 	"github.com/pladdy/stones"
@@ -110,14 +109,11 @@ func collection() cabby.Collection {
 }
 
 func manifestEntry() cabby.ManifestEntry {
-	dateAdded, err := stones.NewTimestamp(time.Now().UTC().Format(time.RFC3339Nano))
-	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Error("Failed to create a timestamp")
-	}
+	now := stones.NewTimestamp()
 
 	return cabby.ManifestEntry{
 		ID:         ObjectID,
-		DateAdded:  dateAdded,
+		DateAdded:  now,
 		Versions:   []string{objectCreated},
 		MediaTypes: []string{cabby.StixContentType}}
 }
