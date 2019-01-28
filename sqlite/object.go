@@ -50,8 +50,9 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 
 		valid, validationErrs := o.Valid()
 		if !valid {
+			err = stones.ErrorsToString(validationErrs)
 			log.WithFields(log.Fields{"raw object": string(raw), "error": err}).Error("Invalid object")
-			errs <- stones.ErrorsToString(validationErrs)
+			errs <- err
 			continue
 		}
 
@@ -203,13 +204,13 @@ func unmarshalObject(o stones.Object, id, created, modified string) (new stones.
 		return o, err
 	}
 
-	ts, err := stones.NewTimestamp(created)
+	ts, err := stones.TimestampFromString(created)
 	if err != nil {
 		return o, err
 	}
 	o.Created = ts
 
-	ts, err = stones.NewTimestamp(modified)
+	ts, err = stones.TimestampFromString(modified)
 	if err != nil {
 		return o, err
 	}

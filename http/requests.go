@@ -48,7 +48,7 @@ func takeAddedAfter(r *http.Request) stones.Timestamp {
 	af := r.URL.Query()["added_after"]
 
 	if len(af) > 0 {
-		t, err := stones.NewTimestamp(af[0])
+		t, err := stones.TimestampFromString(af[0])
 		if err == nil {
 			return t
 		}

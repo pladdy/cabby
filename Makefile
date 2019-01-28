@@ -72,12 +72,12 @@ config/cabby.json: config/cabby.example.json
 cover:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -failfast -coverprofile=$(pkg).out ./$(pkg)
+	gotest $(BUILD_TAGS) -v -failfast -coverprofile=$(pkg).out ./$(pkg)
 	go tool cover -func=$(pkg).out
 else
 	@for package in $(PACKAGES); do \
 	  go test $(BUILD_TAGS) -i ./$${package}; \
-		go test $(BUILD_TAGS) -v -failfast -coverprofile=$${package}.out ./$${package}; \
+		gotest $(BUILD_TAGS) -v -failfast -coverprofile=$${package}.out ./$${package}; \
 		go tool cover -func=$${package}.out; \
 	done
 endif
@@ -115,6 +115,7 @@ dependencies:
 	go get github.com/fzipp/gocyclo
 	go get golang.org/x/lint/golint
 	go get github.com/securego/gosec/cmd/gosec/...
+	go get -u github.com/rakyll/gotest
 
 dev-db: db/cabby.db
 
@@ -148,16 +149,16 @@ endif
 test:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
-	go test $(BUILD_TAGS) -v -failfast -cover ./$(pkg)
+	gotest $(BUILD_TAGS) -v -failfast -cover ./$(pkg)
 else
 	go test $(BUILD_TAGS) -i ./...
-	go test $(BUILD_TAGS) -v -failfast -cover ./...
+	gotest $(BUILD_TAGS) -v -failfast -cover ./...
 endif
 
 test-run:
 ifdef test
 	go test $(BUILD_TAGS) -i ./...
-	go test $(BUILD_TAGS) -v -failfast ./... -run $(test)
+	gotest $(BUILD_TAGS) -v -failfast ./... -run $(test)
 else
 	@echo Syntax is 'make $@ test=<test name>'
 endif

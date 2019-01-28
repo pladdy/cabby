@@ -62,7 +62,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 			return m, err
 		}
 
-		ts, err := stones.NewTimestamp(dateAdded)
+		ts, err := stones.TimestampFromString(dateAdded)
 		if err != nil {
 			return m, err
 		}
