@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eux
 # ref: http://redsymbol.net/articles/unofficial-bash-strict-mode/
 
 # add user and group
 /usr/sbin/adduser --system --group cabby
-chmod 775 /usr/bin/cabby-certs
+/bin/chmod 775 /usr/bin/cabby-certs
 
 # create db dir
 CABBY_ROOT=/var/cabby
-mkdir -p $CABBY_ROOT
-chown cabby:cabby -R $CABBY_ROOT
+/bin/mkdir -p $CABBY_ROOT
+/bin/chown cabby:cabby -R $CABBY_ROOT
 
 # create db and migrate it
-sudo -u cabby cabby-cli migrate up
+/bin/ls -al /usr/bin/cabby-cli
+/usr/bin/cabby-cli -h
+/usr/bin/sudo -u cabby /usr/bin/cabby-cli migrate up
 
 # change perm of db path
 CONFIG_PATH="/etc/cabby/cabby.json"
 DB_PATH="$(jq .data_store.path $CONFIG_PATH | sed 's/\"//g')"
-chmod 664 $DB_PATH
+/bin/chmod 664 $DB_PATH
 
 # warn the user
 echo "To finish setup:"
