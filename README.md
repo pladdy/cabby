@@ -1,6 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/pladdy/cabby)](https://goreportcard.com/report/github.com/pladdy/cabby)
 [![Code Coverage](https://codecov.io/gh/pladdy/cabby/branch/master/graph/badge.svg)](https://codecov.io/gh/pladdy/cabby)
-[![Build Status](https://travis-ci.org/pladdy/cabby.svg?branch=master)](https://travis-ci.org/pladdy/cabby)
+[![Build Status](https://travis-ci.com/pladdy/cabby.svg?branch=master)](https://travis-ci.com/pladdy/cabby)
 [![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg?style=flat-square)](http://godoc.org/github.com/pladdy/cabby)
 [![Go City](https://img.shields.io/badge/go--city-view-blue.svg)](https://go-city.github.io/#/github.com/pladdy/cabby)
 [![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/pladdy/cabby/releases/latest)
