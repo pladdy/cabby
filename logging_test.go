@@ -25,7 +25,9 @@ func TestLogServiceEnd(t *testing.T) {
 
 	resource := t.Name()
 	action := "test"
-	LogServiceEnd(context.Background(), resource, action, time.Now().In(time.UTC))
+	start := time.Now().In(time.UTC)
+	oneMillisecondAgo := start.Add(time.Millisecond * -1)
+	LogServiceEnd(context.Background(), resource, action, oneMillisecondAgo)
 
 	type expectedLog struct {
 		Action    string

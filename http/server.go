@@ -35,6 +35,8 @@ func setupServer(ds cabby.DataStore, h http.Handler, c cabby.Config) *http.Serve
 	}
 }
 
+// TODO: not this in an app...this should be done in a web server like nginx;
+//       it was neat to get work in the app though
 func setupTLS() *tls.Config {
 	return &tls.Config{
 		MinVersion:               tls.VersionTLS12,
