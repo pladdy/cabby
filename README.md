@@ -59,6 +59,13 @@ Syslog input reference (the VM uses syslog to as an input to influx-db):
 - How to use systemctl: https://www.digitalocean.com/community/tutorials/how-to-use-systemctl-to-manage-systemd-services-and-units
 - Understanding systemd: https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
 
+## Versioning
+Release branches are kept tied to a TAXII spec version and a [SemVer](https://semver.org/) version.
+Example:
+`release/2.0/1.0.0`: my first release of a TAXII 2.0 spec server
+`release/2.0/2.0.0`: a version of TAXII 2.0 spec server that has backward incompatible changes BUT is still a TAXII 2.0 server
+`release/2.1/0.0.0`: initial version of TAXII 2.1 spec server
+
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
 - port

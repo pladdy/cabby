@@ -193,6 +193,8 @@ func TestSetupTLS(t *testing.T) {
 		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305:    true,
 		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305:  true,
 		// TLS 1.3
+		tls.TLS_AES_256_GCM_SHA384:                true,
+		tls.TLS_CHACHA20_POLY1305_SHA256:          true,
 		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256: true,
 	}
 	for _, cipherSuite := range tlsSetup.CipherSuites {
