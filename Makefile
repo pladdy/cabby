@@ -1,9 +1,9 @@
 .PHONY: all build clean cover cover-html db/cabby.db nosec reportcard run run-log sec test test-run vagrant
 
-BUILD_TAGS=-tags json1
-BUILD_PATH=build/cabby
-CLI_FILES=$(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
-PACKAGES=./ sqlite http cmd/cabby-cli
+BUILD_TAGS = -tags json1
+BUILD_PATH = build/cabby
+CLI_FILES = $(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
+PACKAGES = ./ sqlite http cmd/cabby-cli
 
 all: config/cabby.json cert dependencies dev-db
 
@@ -43,7 +43,7 @@ cabby.deb: build
 		-n cabby \
 		-p $@ \
 		-m "Matt Pladna" \
-		--description "A TAXII 2.0 server" \
+		--description "A TAXII 2.x server" \
 		--after-install build/debian/postinst \
 		--deb-user cabby \
 		--deb-group cabby \

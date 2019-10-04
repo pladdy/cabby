@@ -61,13 +61,21 @@ Syslog input reference (the VM uses syslog to as an input to influx-db):
 
 ## Versioning
 
-Release branches are kept tied to a TAXII spec version and a [SemVer](https://semver.org/) version.
+Release branches are associated to a TAXII spec version and a [SemVer](https://semver.org/) version down to the minor revision.
+
+Patches are annotated by creating a tag off of the release branch.
 
 Examples:
 
-1. `release/2.0/1.0.0`: my first release of a TAXII 2.0 spec server
-1. `release/2.0/2.0.0`: a version of TAXII 2.0 spec server that has backward incompatible changes BUT is still a TAXII 2.0 server
-1. `release/2.1/0.0.0`: initial version of TAXII 2.1 spec server
+1. First major release of a TAXII 2.0 server:
+  1. branch: `release/2.0/1.0`
+  1. tag: `release/2.0/1.0.0`
+1. A version of TAXII 2.0 spec server that has backward incompatible changes BUT is still a TAXII 2.0 server
+  1. branch: `release/2.0/2.0`
+  1. tag: `release/2.0/2.0.0`
+1. Initial branch for a 2.1 spec server:
+  1. branch: `release/2.1/0.0`
+  1. tag: `release/2.1/0.0.1` (once a chunk of code worth tagging is ready)
 
 ## Configuration
 The `make` task will generate certs and a default config file.  Edit the `config/cabby.json` file to adjust things like
