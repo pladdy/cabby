@@ -224,6 +224,12 @@ type DiscoveryService interface {
 	UpdateDiscovery(ctx context.Context, d Discovery) error
 }
 
+// Envelope resource for transmitting stix objects
+type Envelope struct {
+	More    bool            `json:"more"`
+	Objects []stones.Object `json:"objects"`
+}
+
 // Error struct for TAXII 2 errors
 type Error struct {
 	Title           string            `json:"title"`
@@ -290,7 +296,7 @@ type Manifest struct {
 type ManifestEntry struct {
 	ID         string           `json:"id"`
 	DateAdded  stones.Timestamp `json:"date_added"`
-	Versions   []string         `json:"versions"`
+	Version    stones.Timestamp `json:"version"`
 	MediaTypes []string         `json:"media_types"`
 }
 

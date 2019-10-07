@@ -64,7 +64,7 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 	updateStatus(ctx, st, errs, ss)
 }
 
-// CreateObject will read from the data store and return the resource
+// CreateObject will create an object in the datastore
 func (s ObjectService) CreateObject(ctx context.Context, collectionID string, object stones.Object) error {
 	resource, action := "Object", "create"
 	start := cabby.LogServiceStart(ctx, resource, action)

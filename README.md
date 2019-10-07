@@ -203,9 +203,9 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 ```
 
 ## Resources
-- OASIS Doc: https://oasis-open.github.io/cti-documentation/resources
-  - TAXII 2.0 Spec: https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI
-  - STIX 2.0 Spec: https://docs.oasis-open.org/cti/stix/v2.0/stix-v2.0-part1-stix-core.html
-  - STIX/TAXII Graphics: https://freetaxii.github.io/
-- TLS in Golang Examples: https://gist.github.com/denji/12b3a568f092ab951456
-  - Perfect SSL Labs Score Article: https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go
+- [OASIS Resources](https://oasis-open.github.io/cti-documentation/resources)
+  - [TAXII 2.1 Spec](https://docs.google.com/document/d/1EsiWY7TGqt9yH6QUXv4c-opXSr3wR0TDMt8Q0yJjpoo)
+  - [STIX 2.0 Spec](https://docs.oasis-open.org/cti/stix/v2.0/stix-v2.0-part1-stix-core.html)
+  - [STIX/TAXII Graphics](https://freetaxii.github.io/)
+- [TLS in Golang Examples](https://gist.github.com/denji/12b3a568f092ab951456)
+  - [Perfect SSL Labs Score Article](https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go)

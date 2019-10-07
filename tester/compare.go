@@ -121,24 +121,24 @@ func CompareManifestEntry(result, expected cabby.ManifestEntry) bool {
 	passed := true
 
 	if result.ID != expected.ID {
-		log.Error("Got:", result.ID, "Expected:", expected.ID)
+		log.Error("ID, Got:", result.ID, "Expected:", expected.ID)
 		passed = false
 	}
 
 	if result.DateAdded.String() != expected.DateAdded.String() {
-		log.Error("Got:", result.DateAdded.String(), " Expected:", expected.DateAdded.String())
+		log.Error("DateAdded, Got:", result.DateAdded.String(), " Expected:", expected.DateAdded.String())
 		passed = false
 	}
 
-	if len(result.Versions) != len(expected.Versions) {
-		log.Error("Got: ", len(result.Versions), " Expected: ", len(expected.Versions))
+	if result.Version != expected.Version {
+		log.Error("Version, Got: ", result.Version, " Expected: ", expected.Version)
 		passed = false
 	}
 
 	rMediaTypes := strings.Join(result.MediaTypes, ",")
 	eMediaTypes := strings.Join(expected.MediaTypes, ",")
 	if rMediaTypes != eMediaTypes {
-		log.Error("Got:", rMediaTypes, "Expected:", eMediaTypes)
+		log.Error("Media Types, Got:", rMediaTypes, "Expected:", eMediaTypes)
 		passed = false
 	}
 
