@@ -10,10 +10,19 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// DiscoveryMethods lists allowed methods
+const DiscoveryMethods = "Get, Head"
+
 // DiscoveryHandler holds a cabby DiscoveryService
 type DiscoveryHandler struct {
 	DiscoveryService cabby.DiscoveryService
 	Port             int
+}
+
+// Delete handler
+func (h DiscoveryHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", DiscoveryMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 // Get serves a discovery resource
@@ -40,9 +49,9 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(discovery))
 }
 
-// Post handles post request
+// Post handler
 func (h DiscoveryHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", DiscoveryMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 

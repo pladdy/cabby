@@ -12,6 +12,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ObjectsMethods lists allowed methods
+const ObjectsMethods = "Get, Head"
+
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
 	ObjectService    cabby.ObjectService
@@ -19,9 +22,29 @@ type ObjectsHandler struct {
 	MaxContentLength int64
 }
 
+/* Delete */
+
+//Delete handles a delete of an object; can only be done given an ID
+func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
+
+	if takeObjectID(r) == "" {
+		w.Header().Set("Allow", ObjectsMethods)
+		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+		return
+	}
+	h.deleteObject(w, r)
+}
+
+func (h ObjectsHandler) deleteObject(w http.ResponseWriter, r *http.Request) {
+	// implement
+	return
+}
+
 /* Get */
 
-// Get handles a get request
+// Get handles a get request for the objects endpoint; it has to decide if a request is for objects in a collection
+// or a specfic object
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
@@ -190,7 +213,7 @@ func greaterThan(r, m int64) bool {
 
 func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"object id": takeObjectID(r)}).Error("Invalid method for object")
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", ObjectsMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 

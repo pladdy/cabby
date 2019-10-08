@@ -44,6 +44,9 @@ func TestHandleUndefinedRequest(t *testing.T) {
 type mockRequestHandler struct {
 }
 
+func (m mockRequestHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
 func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, r.Method)
 }

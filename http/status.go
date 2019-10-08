@@ -7,9 +7,18 @@ import (
 	"github.com/pladdy/cabby"
 )
 
+// StatusMethods lists allowed methods
+const StatusMethods = "Get, Head"
+
 // StatusHandler holds a cabby StatusService
 type StatusHandler struct {
 	StatusService cabby.StatusService
+}
+
+// Delete handler
+func (h StatusHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", StatusMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 // Get serves a status resource
@@ -28,8 +37,8 @@ func (h StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(status))
 }
 
-// Post handles post request
+// Post handler
 func (h StatusHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", StatusMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
