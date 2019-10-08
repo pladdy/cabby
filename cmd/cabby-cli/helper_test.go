@@ -5,7 +5,7 @@ import (
 	"os/exec"
 
 	"github.com/pladdy/cabby"
-	"github.com/pladdy/cabby/sqlite"
+	"github.com/pladdy/cabby/backends/sqlite"
 	"github.com/pladdy/cabby/tester"
 	log "github.com/sirupsen/logrus"
 )

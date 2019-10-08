@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sort"
 
-	"github.com/pladdy/cabby/sqlite/migrations"
+	"github.com/pladdy/cabby/backends/sqlite/migrations"
 	log "github.com/sirupsen/logrus"
 )
 

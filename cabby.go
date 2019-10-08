@@ -25,15 +25,15 @@ const (
 	DefaultProductionConfig = "/etc/cabby/cabby.json"
 
 	// StixContentType20 represents a stix 2.0 content type
-	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
+	StixContentType20 = "application/vnd.oasis.stix+json;version=2.0"
 	// StixContentType represents a stix 2 content type
 	StixContentType = "application/vnd.oasis.stix+json"
 	// TaxiiContentType20 represents a taxii 2.0 content type
-	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
+	TaxiiContentType20 = "application/vnd.oasis.taxii+json;version=2.1"
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
 	// TaxiiVersion notes the supported version of the server
-	TaxiiVersion = "taxii-2.0"
+	TaxiiVersion = "taxii-2.1"
 
 	// UnsetUnixNano is the value returned from an unset time.Time{}.UnixNano() call
 	UnsetUnixNano = -6795364578871345152
