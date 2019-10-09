@@ -26,7 +26,7 @@ var (
 	testObjectsURL     = testCollectionURL + "objects/"
 	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
 	testStatusURL      = testAPIRootURL + "status/" + tester.StatusID + "/"
-	testDiscoveryURL   = tester.BaseURL + "/taxii/"
+	testDiscoveryURL   = tester.BaseURL + "/taxii2/"
 )
 
 /* helper functions */
