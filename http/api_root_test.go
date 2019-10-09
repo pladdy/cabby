@@ -27,7 +27,7 @@ func TestAPIRootHandleDelete(t *testing.T) {
 
 func TestAPIRootHandlerGet(t *testing.T) {
 	h := APIRootHandler{APIRootService: mockAPIRootService()}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -57,7 +57,7 @@ func TestAPIRootHandlerGetFailures(t *testing.T) {
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -82,7 +82,7 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

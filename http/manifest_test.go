@@ -26,7 +26,7 @@ func TestManifestHandleDelete(t *testing.T) {
 
 func TestManifestHandlerGet(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
-	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testManifestURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -47,7 +47,7 @@ func TestManifestHandlerGet(t *testing.T) {
 
 func TestManifestHandlerGetHeaders(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
-	req := newRequest("GET", testManifestURL, nil)
+	req := newRequest(http.MethodGet, testManifestURL, nil)
 
 	res := httptest.NewRecorder()
 	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -90,7 +90,7 @@ func TestManifestHandlerGetRange(t *testing.T) {
 		h := ManifestHandler{ManifestService: ms}
 
 		// set up request
-		req := newRequest("GET", testManifestURL, nil)
+		req := newRequest(http.MethodGet, testManifestURL, nil)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -132,7 +132,7 @@ func TestManifestHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := newRequest("GET", testManifestURL, nil)
+		req := newRequest(http.MethodGet, testManifestURL, nil)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -154,7 +154,7 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 	}
 
 	h := ManifestHandler{ManifestService: &ms}
-	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testManifestURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -179,7 +179,7 @@ func TestManifestHandlerGetNoManifest(t *testing.T) {
 	}
 
 	h := ManifestHandler{ManifestService: &ms}
-	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testManifestURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

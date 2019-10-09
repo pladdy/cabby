@@ -22,7 +22,7 @@ func TestCollectionHandleDelete(t *testing.T) {
 
 func TestCollectionHandlerGet(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
-	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -51,7 +51,7 @@ func TestCollectionHandlerGetFailures(t *testing.T) {
 	}
 
 	h := CollectionHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -76,7 +76,7 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	}
 
 	h := CollectionHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, "GET", testCollectionURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

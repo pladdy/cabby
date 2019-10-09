@@ -81,7 +81,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest("GET", testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
 	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
@@ -112,7 +112,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 
 func TestObjectsHandlerGetHeaders(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newRequest("GET", testObjectsURL, nil)
+	req := newRequest(http.MethodGet, testObjectsURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
 
 	res := httptest.NewRecorder()
@@ -135,7 +135,7 @@ func TestObjectsHandlerGetUnsupportedMimeType(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest("GET", testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
 	req.Header.Set("Accept", "invalid")
 
 	res := httptest.NewRecorder()
@@ -156,7 +156,7 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, "GET", testObjectURL, nil)
+	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -181,7 +181,7 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, "GET", testObjectURL, nil)
+	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -204,7 +204,7 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 
 func TestObjectsHandlerGetObjects(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -246,7 +246,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 		h := ObjectsHandler{ObjectService: obs}
 
 		// set up request
-		req := newRequest("GET", testObjectsURL, nil)
+		req := newRequest(http.MethodGet, testObjectsURL, nil)
 		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
@@ -289,7 +289,7 @@ func TestObjectsHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := newRequest("GET", testObjectsURL, nil)
+		req := newRequest(http.MethodGet, testObjectsURL, nil)
 		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", test.rangeString)
 
@@ -312,7 +312,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -337,7 +337,7 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -530,7 +530,7 @@ func TestObjectsPostValidPost(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
 	for _, test := range tests {
-		r := newRequest("POST", testObjectsURL, nil)
+		r := newRequest(http.MethodPost, testObjectsURL, nil)
 		r.Header.Set("Accept", test.accept)
 		r.Header.Set("Content-Type", test.contentType)
 

@@ -27,7 +27,7 @@ func TestDiscoveryHandleDelete(t *testing.T) {
 
 func TestDiscoveryHandlerGet(t *testing.T) {
 	h := DiscoveryHandler{DiscoveryService: mockDiscoveryService(), Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -56,7 +56,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -81,7 +81,7 @@ func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

@@ -22,7 +22,7 @@ func TestStatusHandleDelete(t *testing.T) {
 
 func TestStatusHandlerGet(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -51,7 +51,7 @@ func TestStatusHandlerGetFailures(t *testing.T) {
 	}
 
 	h := StatusHandler{StatusService: &ms}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -76,7 +76,7 @@ func TestStatusHandlerGetNoStatus(t *testing.T) {
 	}
 
 	h := StatusHandler{StatusService: &ms}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

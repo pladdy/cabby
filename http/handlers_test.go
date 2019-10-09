@@ -19,7 +19,7 @@ import (
 )
 
 func TestHandleUndefinedRequest(t *testing.T) {
-	status, body := handlerTest(handleUndefinedRoute, "GET", "/", nil)
+	status, body := handlerTest(handleUndefinedRoute, http.MethodGet, "/", nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -81,7 +81,7 @@ func TestWithMimeType(t *testing.T) {
 		}
 		testHandler = WithMimeType(testHandler, "Accept", test.acceptedHeader)
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Add("Accept", test.acceptHeader)
 		res := httptest.NewRecorder()
 
@@ -144,7 +144,7 @@ func TestWithBasicAuth(t *testing.T) {
 		server := httptest.NewServer(decoratedHandler)
 		defer server.Close()
 
-		req := newServerRequest("GET", server.URL)
+		req := newServerRequest(http.MethodGet, server.URL)
 		res, _ := getResponse(req, server)
 
 		if res.StatusCode != test.expectedStatus {
@@ -173,7 +173,7 @@ func TestWithRequestLogging(t *testing.T) {
 	server := httptest.NewServer(decoratedHandler)
 	defer server.Close()
 
-	req := newServerRequest("GET", server.URL)
+	req := newServerRequest(http.MethodGet, server.URL)
 	res, _ := getResponse(req, server)
 
 	if res.StatusCode != http.StatusOK {
