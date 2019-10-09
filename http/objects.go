@@ -13,7 +13,10 @@ import (
 )
 
 // ObjectsMethods lists allowed methods
-const ObjectsMethods = "Get, Head"
+const ObjectsMethods = "Get, Head, Post"
+
+// ObjectMethods lists allowed methods
+const ObjectMethods = "Get, Delete, Head"
 
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
@@ -213,7 +216,7 @@ func greaterThan(r, m int64) bool {
 
 func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"object id": takeObjectID(r)}).Error("Invalid method for object")
-	w.Header().Set("Allow", ObjectsMethods)
+	w.Header().Set("Allow", ObjectMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 

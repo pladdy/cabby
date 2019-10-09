@@ -315,6 +315,7 @@ type MigrationService interface {
 type ObjectService interface {
 	CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, s Status, ss StatusService)
 	CreateObject(ctx context.Context, collectionID string, o stones.Object) error
+	DeleteObject(ctx context.Context, collectionID, objecteID string) error
 	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]stones.Object, error)
 	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]stones.Object, error)
 }

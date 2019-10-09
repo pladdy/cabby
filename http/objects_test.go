@@ -491,7 +491,7 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostToObjectURL(t *testing.T) {
+func TestObjectsHandlePostToObjectURL(t *testing.T) {
 	osv := mockObjectService()
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
 		log.Debug("mock call of CreateBundle")
@@ -505,14 +505,10 @@ func TestObjectsHandlerPostToObjectURL(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectURL, b)
-	status, _, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
-	}
-
-	if headers.Get("allow") != "Get, Head" {
-		t.Error("Got:", headers["content-type"], "Expected:", "Get, Head")
 	}
 }
 

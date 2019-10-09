@@ -211,6 +211,7 @@ type ObjectService struct {
 	MaxContentLength int64
 	CreateBundleFn   func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
 	CreateObjectFn   func(ctx context.Context, collectionID string, object stones.Object) error
+	DeleteObjectFn   func(ctx context.Context, collectionID, objectID string) error
 	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error)
 	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error)
 }
@@ -223,6 +224,11 @@ func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collec
 // CreateObject is a mock implementation
 func (s ObjectService) CreateObject(ctx context.Context, collectionID string, object stones.Object) error {
 	return s.CreateObjectFn(ctx, collectionID, object)
+}
+
+// DeleteObject is a mock implementation
+func (s ObjectService) DeleteObject(ctx context.Context, collectionID, objectID string) error {
+	return s.DeleteObjectFn(ctx, collectionID, objectID)
 }
 
 // Object is a mock implementation
