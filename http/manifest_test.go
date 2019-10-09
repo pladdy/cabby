@@ -15,6 +15,15 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestManifestHandleDelete(t *testing.T) {
+	h := ManifestHandler{ManifestService: mockManifestService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testManifestURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestManifestHandlerGet(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
 	status, body := handlerTest(h.Get, "GET", testManifestURL, nil)
@@ -193,7 +202,7 @@ func TestManifestHandlerGetNoManifest(t *testing.T) {
 
 func TestManifestHandlePost(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
-	status, _ := handlerTest(h.Post, "POST", testManifestURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testManifestURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)

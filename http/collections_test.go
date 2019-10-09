@@ -14,6 +14,15 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestCollectionsHandleDelete(t *testing.T) {
+	h := CollectionsHandler{CollectionService: mockCollectionService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testCollectionsURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestCollectionsHandlerGet(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
 	status, result := handlerTest(h.Get, "GET", testCollectionsURL, nil)
@@ -198,7 +207,7 @@ func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
 
 func TestCollectionsHandlePost(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
-	status, _ := handlerTest(h.Post, "POST", testCollectionsURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionsURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)

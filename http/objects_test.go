@@ -68,6 +68,15 @@ func TestGreaterThan(t *testing.T) {
 	}
 }
 
+func TestObjectsHandleDelete(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectsURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 

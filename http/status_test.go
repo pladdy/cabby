@@ -11,6 +11,15 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestStatusHandleDelete(t *testing.T) {
+	h := StatusHandler{StatusService: mockStatusService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testStatusURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestStatusHandlerGet(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
 	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
@@ -90,7 +99,7 @@ func TestStatusHandlerGetNoStatus(t *testing.T) {
 
 func TestStatusHandlePost(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
-	status, _ := handlerTest(h.Post, "POST", testStatusURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testStatusURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
