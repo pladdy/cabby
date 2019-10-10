@@ -77,6 +77,47 @@ func TestObjectsHandleDelete(t *testing.T) {
 	}
 }
 
+/* Delete */
+
+func TestObjectsHandlerDelete(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
+	}
+}
+
+func TestObjectsHandlerDeleteObjectBadRequest(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
+
+	s := mockObjectService()
+	s.DeleteObjectFn = func(ctx context.Context, collectionID, objectID string) error {
+		return errors.New(expected.Description)
+	}
+
+	h := ObjectsHandler{ObjectService: &s}
+	status, body := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+/* Get */
+
 func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 

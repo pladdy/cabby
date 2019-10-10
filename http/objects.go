@@ -36,12 +36,13 @@ func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 		return
 	}
-	h.deleteObject(w, r)
-}
 
-func (h ObjectsHandler) deleteObject(w http.ResponseWriter, r *http.Request) {
-	// implement
-	return
+	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	writeContent(w, r, cabby.TaxiiContentType, "")
 }
 
 /* Get */
@@ -123,7 +124,7 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	// due to how the routing logic works, a post can go to a url with an object on the path.  technically a path with
+	// due to how the routing logic works, a post can go to a url with an object on the path.  a path with
 	// an object id can only receive a get method
 	if takeObjectID(r) != "" {
 		handlePostToObjectURL(w, r)
