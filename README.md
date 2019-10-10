@@ -202,6 +202,19 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[version\]=2017-01-01T12:15:12.123Z' | jq .
 ```
 
+#### Delete objects
+NOTE: These actions are destructive, use `make dev-db` to reset the dev db after deleting.
+
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad' && echo
+# OR parsed json
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad' | jq .
+
+# view objects to verify
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+```
+
 ## Resources
 - [OASIS Resources](https://oasis-open.github.io/cti-documentation/resources)
   - [TAXII 2.1 Spec](https://docs.google.com/document/d/1EsiWY7TGqt9yH6QUXv4c-opXSr3wR0TDMt8Q0yJjpoo)
