@@ -11,9 +11,18 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestStatusHandleDelete(t *testing.T) {
+	h := StatusHandler{StatusService: mockStatusService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testStatusURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestStatusHandlerGet(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -42,7 +51,7 @@ func TestStatusHandlerGetFailures(t *testing.T) {
 	}
 
 	h := StatusHandler{StatusService: &ms}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -67,7 +76,7 @@ func TestStatusHandlerGetNoStatus(t *testing.T) {
 	}
 
 	h := StatusHandler{StatusService: &ms}
-	status, body := handlerTest(h.Get, "GET", testStatusURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testStatusURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -90,7 +99,7 @@ func TestStatusHandlerGetNoStatus(t *testing.T) {
 
 func TestStatusHandlePost(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
-	status, _ := handlerTest(h.Post, "POST", testStatusURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testStatusURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)

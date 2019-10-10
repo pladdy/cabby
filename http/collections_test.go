@@ -14,9 +14,18 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestCollectionsHandleDelete(t *testing.T) {
+	h := CollectionsHandler{CollectionService: mockCollectionService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testCollectionsURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestCollectionsHandlerGet(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
-	status, result := handlerTest(h.Get, "GET", testCollectionsURL, nil)
+	status, result := handlerTest(h.Get, http.MethodGet, testCollectionsURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -59,7 +68,7 @@ func TestCollectionsHandlerGetRange(t *testing.T) {
 		h := CollectionsHandler{CollectionService: cs}
 
 		// set up request
-		req := newRequest("GET", testCollectionsURL, nil)
+		req := newRequest(http.MethodGet, testCollectionsURL, nil)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -101,7 +110,7 @@ func TestCollectionsHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := newRequest("GET", testCollectionsURL, nil)
+		req := newRequest(http.MethodGet, testCollectionsURL, nil)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -123,7 +132,7 @@ func TestCollectionsHandlerGetFailures(t *testing.T) {
 	}
 
 	h := CollectionsHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, "GET", testCollectionsURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testCollectionsURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -148,7 +157,7 @@ func TestCollectionsHandlerGetNoCollections(t *testing.T) {
 	}
 
 	h := CollectionsHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, "GET", testCollectionsURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testCollectionsURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -175,7 +184,7 @@ func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
 
 	cs := mockCollectionService()
 	h := CollectionsHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, "GET", badRoute, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, badRoute, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -198,7 +207,7 @@ func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
 
 func TestCollectionsHandlePost(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
-	status, _ := handlerTest(h.Post, "POST", testCollectionsURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionsURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)

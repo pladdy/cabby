@@ -4,8 +4,8 @@ import (
 	"flag"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/cabby/backends/sqlite"
 	"github.com/pladdy/cabby/http"
-	"github.com/pladdy/cabby/sqlite"
 	log "github.com/sirupsen/logrus"
 )
 

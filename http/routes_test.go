@@ -92,17 +92,18 @@ func TestRouteRequest(t *testing.T) {
 		url    string
 		status int
 	}{
-		{"CUSTOM", testDiscoveryURL, http.StatusMethodNotAllowed},
-		{"GET", testDiscoveryURL, http.StatusOK},
-		{"HEAD", testDiscoveryURL, http.StatusOK},
-		{"POST", testDiscoveryURL, http.StatusOK},
+		{"CUSTOM", tester.BaseURL, http.StatusMethodNotAllowed},
+		{http.MethodGet, tester.BaseURL, http.StatusOK},
+		{http.MethodHead, tester.BaseURL, http.StatusOK},
+		{http.MethodPost, tester.BaseURL, http.StatusOK},
+		{http.MethodDelete, tester.BaseURL, http.StatusOK},
 	}
 
 	for _, test := range tests {
 		status, _ := handlerTest(routeRequest(mock), test.method, test.url, nil)
 
 		if status != test.status {
-			t.Error("Got:", status, "Expected:", test.status)
+			t.Error("Testing method: ", test.method, "Got:", status, "Expected:", test.status)
 		}
 	}
 }

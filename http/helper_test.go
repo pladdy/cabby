@@ -26,7 +26,7 @@ var (
 	testObjectsURL     = testCollectionURL + "objects/"
 	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
 	testStatusURL      = testAPIRootURL + "status/" + tester.StatusID + "/"
-	testDiscoveryURL   = tester.BaseURL + "/taxii/"
+	testDiscoveryURL   = tester.BaseURL + "/taxii2/"
 )
 
 /* helper functions */
@@ -215,6 +215,9 @@ func mockObjectService() tester.ObjectService {
 	osv := tester.ObjectService{}
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
 		log.Debug("mock Creating Bundle")
+	}
+	osv.DeleteObjectFn = func(ctx context.Context, collectionID, objectID string) error {
+		return nil
 	}
 	osv.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 		return tester.Objects, nil

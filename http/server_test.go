@@ -26,7 +26,7 @@ func TestNewCabby(t *testing.T) {
 	}()
 
 	// send request
-	req := newServerRequest("GET", "https://localhost:"+strconv.Itoa(c.Port)+"/taxii/")
+	req := newServerRequest("GET", "https://localhost:"+strconv.Itoa(c.Port)+"/taxii2/")
 	req.Header.Set("Accept", cabby.TaxiiContentType)
 
 	client := tlsClient()

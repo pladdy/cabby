@@ -108,11 +108,11 @@ In another terminal, run a server:
 #### View TAXII Discovery
 ```sh
 # with headers
-curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' && echo
+curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii2/' && echo
 # parsed json
-curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii/' | jq .
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii2/' | jq .
 # without a trailing slash
-curl -sk --location-trusted -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii' | jq .
+curl -sk --location-trusted -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/taxii2' | jq .
 ```
 
 #### View API Root
@@ -202,10 +202,23 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[version\]=2017-01-01T12:15:12.123Z' | jq .
 ```
 
+#### Delete objects
+NOTE: These actions are destructive, use `make dev-db` to reset the dev db after deleting.
+
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad' && echo
+# OR parsed json
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -X DELETE 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad' | jq .
+
+# view objects to verify
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' | jq .
+```
+
 ## Resources
-- OASIS Doc: https://oasis-open.github.io/cti-documentation/resources
-  - TAXII 2.0 Spec: https://docs.google.com/document/d/1Jv9ICjUNZrOnwUXtenB1QcnBLO35RnjQcJLsa1mGSkI
-  - STIX 2.0 Spec: https://docs.oasis-open.org/cti/stix/v2.0/stix-v2.0-part1-stix-core.html
-  - STIX/TAXII Graphics: https://freetaxii.github.io/
-- TLS in Golang Examples: https://gist.github.com/denji/12b3a568f092ab951456
-  - Perfect SSL Labs Score Article: https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go
+- [OASIS Resources](https://oasis-open.github.io/cti-documentation/resources)
+  - [TAXII 2.1 Spec](https://docs.google.com/document/d/1EsiWY7TGqt9yH6QUXv4c-opXSr3wR0TDMt8Q0yJjpoo)
+  - [STIX 2.0 Spec](https://docs.oasis-open.org/cti/stix/v2.0/stix-v2.0-part1-stix-core.html)
+  - [STIX/TAXII Graphics](https://freetaxii.github.io/)
+- [TLS in Golang Examples](https://gist.github.com/denji/12b3a568f092ab951456)
+  - [Perfect SSL Labs Score Article](https://blog.bracebin.com/achieving-perfect-ssl-labs-score-with-go)

@@ -11,9 +11,23 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestDiscoveryHandleDelete(t *testing.T) {
+	ds := mockDiscoveryService()
+	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
+		return cabby.Discovery{Title: ""}, nil
+	}
+
+	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testDiscoveryURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestDiscoveryHandlerGet(t *testing.T) {
 	h := DiscoveryHandler{DiscoveryService: mockDiscoveryService(), Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -42,7 +56,7 @@ func TestDiscoveryHandlerGetFailures(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -67,7 +81,7 @@ func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-	status, body := handlerTest(h.Get, "GET", testDiscoveryURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testDiscoveryURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -95,7 +109,7 @@ func TestDiscoveryHandlePost(t *testing.T) {
 	}
 
 	h := DiscoveryHandler{DiscoveryService: &ds, Port: tester.Port}
-	status, _ := handlerTest(h.Post, "POST", testDiscoveryURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testDiscoveryURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)

@@ -9,9 +9,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// APIRootMethods lists allowed methods
+const APIRootMethods = "Get, Head"
+
 // APIRootHandler holds a cabby APIRootService
 type APIRootHandler struct {
 	APIRootService cabby.APIRootService
+}
+
+// Delete handler
+func (h APIRootHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", APIRootMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 // Get handles a get request
@@ -34,8 +43,8 @@ func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(apiRoot))
 }
 
-// Post handles post request
+// Post handler
 func (h APIRootHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", APIRootMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

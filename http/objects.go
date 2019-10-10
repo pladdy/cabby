@@ -12,6 +12,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ObjectsMethods lists allowed methods
+const ObjectsMethods = "Get, Head, Post"
+
+// ObjectMethods lists allowed methods
+const ObjectMethods = "Get, Delete, Head"
+
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
 	ObjectService    cabby.ObjectService
@@ -19,9 +25,30 @@ type ObjectsHandler struct {
 	MaxContentLength int64
 }
 
+/* Delete */
+
+//Delete handles a delete of an object; can only be done given an ID
+func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
+
+	if takeObjectID(r) == "" {
+		w.Header().Set("Allow", ObjectsMethods)
+		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+		return
+	}
+
+	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
+	if err != nil {
+		internalServerError(w, err)
+		return
+	}
+	writeContent(w, r, cabby.TaxiiContentType, "")
+}
+
 /* Get */
 
-// Get handles a get request
+// Get handles a get request for the objects endpoint; it has to decide if a request is for objects in a collection
+// or a specfic object
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
@@ -97,7 +124,7 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	// due to how the routing logic works, a post can go to a url with an object on the path.  technically a path with
+	// due to how the routing logic works, a post can go to a url with an object on the path.  a path with
 	// an object id can only receive a get method
 	if takeObjectID(r) != "" {
 		handlePostToObjectURL(w, r)
@@ -190,7 +217,7 @@ func greaterThan(r, m int64) bool {
 
 func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"object id": takeObjectID(r)}).Error("Invalid method for object")
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", ObjectMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 

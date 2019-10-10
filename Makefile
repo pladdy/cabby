@@ -3,7 +3,7 @@
 BUILD_TAGS = -tags json1
 BUILD_PATH = build/cabby
 CLI_FILES = $(shell find cmd/cabby-cli/*.go -name '*go' | grep -v test)
-PACKAGES = ./ sqlite http cmd/cabby-cli
+PACKAGES = ./ backends/sqlite http cmd/cabby-cli
 
 all: config/cabby.json cert dependencies dev-db
 
@@ -100,7 +100,7 @@ cover-http.txt:
 	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./http/...
 
 cover-sqlite.txt:
-	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./sqlite/...
+	go test -v $(BUILD_TAGS) -failfast -coverprofile=$@ -covermode=atomic ./backends/sqlite/...
 
 coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 	@cat $^ > $@

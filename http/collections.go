@@ -8,9 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// CollectionsMethods lists allowed methods
+const CollectionsMethods = "Get, Head"
+
 // CollectionsHandler handles Collections requests
 type CollectionsHandler struct {
 	CollectionService cabby.CollectionService
+}
+
+// Delete handler
+func (h CollectionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", CollectionsMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 // Get handles a get request
@@ -46,8 +55,8 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Post handles post request
+// Post handler
 func (h CollectionsHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", CollectionsMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

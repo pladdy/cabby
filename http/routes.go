@@ -82,6 +82,8 @@ func routeRequest(h RequestHandler) http.HandlerFunc {
 		defer recoverFromPanic(w)
 
 		switch r.Method {
+		case http.MethodDelete:
+			h.Delete(w, r)
 		case http.MethodGet:
 			h.Get(w, r)
 		case http.MethodPost:

@@ -68,11 +68,61 @@ func TestGreaterThan(t *testing.T) {
 	}
 }
 
+func TestObjectsHandleDelete(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectsURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
+/* Delete */
+
+func TestObjectsHandlerDelete(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+
+	if status != http.StatusOK {
+		t.Error("Got:", status, "Expected:", http.StatusOK)
+	}
+}
+
+func TestObjectsHandlerDeleteObjectBadRequest(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
+
+	s := mockObjectService()
+	s.DeleteObjectFn = func(ctx context.Context, collectionID, objectID string) error {
+		return errors.New(expected.Description)
+	}
+
+	h := ObjectsHandler{ObjectService: &s}
+	status, body := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+/* Get */
+
 func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest("GET", testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
 	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
@@ -103,7 +153,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 
 func TestObjectsHandlerGetHeaders(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newRequest("GET", testObjectsURL, nil)
+	req := newRequest(http.MethodGet, testObjectsURL, nil)
 	req.Header.Set("Accept", cabby.StixContentType)
 
 	res := httptest.NewRecorder()
@@ -126,7 +176,7 @@ func TestObjectsHandlerGetUnsupportedMimeType(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest("GET", testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
 	req.Header.Set("Accept", "invalid")
 
 	res := httptest.NewRecorder()
@@ -147,7 +197,7 @@ func TestObjectsHandlerGetObjectFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, "GET", testObjectURL, nil)
+	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -172,7 +222,7 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, "GET", testObjectURL, nil)
+	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -195,7 +245,7 @@ func TestObjectsHandlerGetObjectNoObject(t *testing.T) {
 
 func TestObjectsHandlerGetObjects(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -237,7 +287,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 		h := ObjectsHandler{ObjectService: obs}
 
 		// set up request
-		req := newRequest("GET", testObjectsURL, nil)
+		req := newRequest(http.MethodGet, testObjectsURL, nil)
 		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
@@ -280,7 +330,7 @@ func TestObjectsHandlerGetInvalidRange(t *testing.T) {
 
 	for _, test := range tests {
 		// set up request
-		req := newRequest("GET", testObjectsURL, nil)
+		req := newRequest(http.MethodGet, testObjectsURL, nil)
 		req.Header.Set("Accept", cabby.StixContentType)
 		req.Header.Set("Range", test.rangeString)
 
@@ -303,7 +353,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -328,7 +378,7 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, "GET", testObjectsURL, nil)
+	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -482,7 +532,7 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostToObjectURL(t *testing.T) {
+func TestObjectsHandlePostToObjectURL(t *testing.T) {
 	osv := mockObjectService()
 	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
 		log.Debug("mock call of CreateBundle")
@@ -496,14 +546,10 @@ func TestObjectsHandlerPostToObjectURL(t *testing.T) {
 	b := bytes.NewBuffer(bundle)
 
 	req := newPostRequest(testObjectURL, b)
-	status, _, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
-	}
-
-	if headers.Get("allow") != "Get, Head" {
-		t.Error("Got:", headers["content-type"], "Expected:", "Get, Head")
 	}
 }
 
@@ -521,7 +567,7 @@ func TestObjectsPostValidPost(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
 	for _, test := range tests {
-		r := newRequest("POST", testObjectsURL, nil)
+		r := newRequest(http.MethodPost, testObjectsURL, nil)
 		r.Header.Set("Accept", test.accept)
 		r.Header.Set("Content-Type", test.contentType)
 

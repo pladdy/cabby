@@ -16,6 +16,7 @@ import (
 const (
 	createObjectSQL = `insert into objects (id, type, created, modified, object, collection_id)
 				             values (?, ?, ?, ?, ?, ?)`
+	deleteObjectSQL = `delete from objects where collection_id = ? and id = ?`
 	batchBufferSize = 50
 )
 
@@ -64,7 +65,7 @@ func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collec
 	updateStatus(ctx, st, errs, ss)
 }
 
-// CreateObject will read from the data store and return the resource
+// CreateObject will create an object in the datastore
 func (s ObjectService) CreateObject(ctx context.Context, collectionID string, object stones.Object) error {
 	resource, action := "Object", "create"
 	start := cabby.LogServiceStart(ctx, resource, action)
@@ -78,6 +79,26 @@ func (s ObjectService) createObject(collectionID string, o stones.Object) error 
 	args := []interface{}{o.ID.String(), o.Type, o.Created.String(), o.Modified.String(), o.Source, collectionID}
 
 	err := s.DataStore.write(createObjectSQL, args...)
+	if err != nil {
+		logSQLError(sql, args, err)
+	}
+	return err
+}
+
+// DeleteObject will delete an object from a collection
+func (s ObjectService) DeleteObject(ctx context.Context, collectionID, objectID string) error {
+	resource, action := "Object", "delete"
+	start := cabby.LogServiceStart(ctx, resource, action)
+	err := s.deleteObject(collectionID, objectID)
+	cabby.LogServiceEnd(ctx, resource, action, start)
+	return err
+}
+
+func (s ObjectService) deleteObject(collectionID, objectID string) error {
+	sql := deleteObjectSQL
+	args := []interface{}{collectionID, objectID}
+
+	err := s.DataStore.write(deleteObjectSQL, args...)
 	if err != nil {
 		logSQLError(sql, args, err)
 	}

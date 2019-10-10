@@ -8,9 +8,18 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// ManifestMethods lists allowed methods
+const ManifestMethods = "Get, Head"
+
 // ManifestHandler holds a cabby ManifestService
 type ManifestHandler struct {
 	ManifestService cabby.ManifestService
+}
+
+// Delete handler
+func (h ManifestHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", ManifestMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
 // Get serves a manifest resource
@@ -44,8 +53,8 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Post handles post request
+// Post handler
 func (h ManifestHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", "Get, Head")
+	w.Header().Set("Allow", ManifestMethods)
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

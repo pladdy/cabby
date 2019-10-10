@@ -18,26 +18,7 @@ import (
 )
 
 func TestObjectServiceCreateObject(t *testing.T) {
-	setupSQLite()
-	ds := testDataStore()
-	s := ds.ObjectService()
-
-	test := tester.GenerateObject("malware")
-
-	err := s.CreateObject(context.Background(), tester.CollectionID, test)
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	results, err := s.Object(context.Background(), tester.CollectionID, test.ID.String(), cabby.Filter{})
-	if err != nil {
-		t.Error("Got:", err)
-	}
-
-	passed := tester.CompareObject(results[0], test)
-	if !passed {
-		t.Error("Comparison failed")
-	}
+	// see TestObjectServiceDeleteObject; have to create and verify before deleting
 }
 
 func TestObjectServiceCreateObjectFail(t *testing.T) {
@@ -52,6 +33,63 @@ func TestObjectServiceCreateObjectFail(t *testing.T) {
 
 	obj := tester.GenerateObject("malware")
 	err = s.CreateObject(context.Background(), tester.CollectionID, obj)
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
+func TestObjectServiceDeleteObject(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ObjectService()
+
+	// create object
+	testObject := tester.GenerateObject("malware")
+	err := s.CreateObject(context.Background(), tester.CollectionID, testObject)
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	// verify object was created
+	results, err := s.Object(context.Background(), tester.CollectionID, testObject.ID.String(), cabby.Filter{})
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	passed := tester.CompareObject(results[0], testObject)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+
+	// delete object
+	err = s.DeleteObject(context.Background(), tester.CollectionID, testObject.ID.String())
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	// verify object is gone
+	results, err = s.Object(context.Background(), tester.CollectionID, testObject.ID.String(), cabby.Filter{})
+	if err != nil {
+		t.Error("Got:", err)
+	}
+
+	if len(results) > 0 {
+		t.Error("Object", testObject.ID.String(), "was not deleted from collection", tester.CollectionID)
+	}
+}
+
+func TestObjectServiceDeleteObjectFail(t *testing.T) {
+	setupSQLite()
+	ds := testDataStore()
+	s := ds.ObjectService()
+
+	_, err := ds.DB.Exec("drop table objects")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	obj := tester.GenerateObject("malware")
+	err = s.DeleteObject(context.Background(), tester.CollectionID, obj.ID.String())
 	if err == nil {
 		t.Error("Expected error")
 	}

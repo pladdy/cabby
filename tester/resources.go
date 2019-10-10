@@ -12,9 +12,8 @@ import (
 )
 
 const (
-	baseURL       = "https://localhost"
-	eightMB       = 8388608
-	objectCreated = "2016-04-06T20:07:09.000Z"
+	baseURL = "https://localhost"
+	eightMB = 8388608
 
 	// APIRootPath for tests
 	APIRootPath = "cabby_test_root"
@@ -114,7 +113,7 @@ func manifestEntry() cabby.ManifestEntry {
 	return cabby.ManifestEntry{
 		ID:         ObjectID,
 		DateAdded:  now,
-		Versions:   []string{objectCreated},
+		Version:    objectCreated(),
 		MediaTypes: []string{cabby.StixContentType}}
 }
 
@@ -142,6 +141,13 @@ func object() (o stones.Object) {
 	return
 }
 
+func objectCreated() stones.Timestamp {
+	ts, err := stones.TimestampFromString("2016-04-06T20:07:09.000Z")
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Error("Failed to create a timestamp from provided string")
+	}
+	return ts
+}
 func status() cabby.Status {
 	s := cabby.Status{TotalCount: 3, PendingCount: 3}
 

@@ -139,6 +139,15 @@ func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan
 	errs <- tx.Commit()
 }
 
+func (s *DataStore) execute(stmt *sql.Stmt, args ...interface{}) error {
+	_, err := stmt.Exec(args...)
+	if err != nil {
+		log.WithFields(log.Fields{"err": err, "args": args}).Error("Failed to execute")
+	}
+	return err
+}
+
+// helper function used by tests to create resources
 func (s *DataStore) write(query string, args ...interface{}) error {
 	tx, stmt, err := s.writeOperation(query)
 	if err != nil {
@@ -149,14 +158,6 @@ func (s *DataStore) write(query string, args ...interface{}) error {
 	defer stmt.Close()
 
 	return s.execute(stmt, args...)
-}
-
-func (s *DataStore) execute(stmt *sql.Stmt, args ...interface{}) error {
-	_, err := stmt.Exec(args...)
-	if err != nil {
-		log.WithFields(log.Fields{"err": err, "args": args}).Error("Failed to execute")
-	}
-	return err
 }
 
 func (s *DataStore) writeOperation(query string) (tx *sql.Tx, stmt *sql.Stmt, err error) {

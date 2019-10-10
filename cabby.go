@@ -25,15 +25,15 @@ const (
 	DefaultProductionConfig = "/etc/cabby/cabby.json"
 
 	// StixContentType20 represents a stix 2.0 content type
-	StixContentType20 = "application/vnd.oasis.stix+json; version=2.0"
+	StixContentType20 = "application/vnd.oasis.stix+json;version=2.0"
 	// StixContentType represents a stix 2 content type
 	StixContentType = "application/vnd.oasis.stix+json"
 	// TaxiiContentType20 represents a taxii 2.0 content type
-	TaxiiContentType20 = "application/vnd.oasis.taxii+json; version=2.0"
+	TaxiiContentType20 = "application/vnd.oasis.taxii+json;version=2.1"
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
 	// TaxiiVersion notes the supported version of the server
-	TaxiiVersion = "taxii-2.0"
+	TaxiiVersion = "taxii-2.1"
 
 	// UnsetUnixNano is the value returned from an unset time.Time{}.UnixNano() call
 	UnsetUnixNano = -6795364578871345152
@@ -224,6 +224,12 @@ type DiscoveryService interface {
 	UpdateDiscovery(ctx context.Context, d Discovery) error
 }
 
+// Envelope resource for transmitting stix objects
+type Envelope struct {
+	More    bool            `json:"more"`
+	Objects []stones.Object `json:"objects"`
+}
+
 // Error struct for TAXII 2 errors
 type Error struct {
 	Title           string            `json:"title"`
@@ -290,7 +296,7 @@ type Manifest struct {
 type ManifestEntry struct {
 	ID         string           `json:"id"`
 	DateAdded  stones.Timestamp `json:"date_added"`
-	Versions   []string         `json:"versions"`
+	Version    stones.Timestamp `json:"version"`
 	MediaTypes []string         `json:"media_types"`
 }
 
@@ -309,6 +315,7 @@ type MigrationService interface {
 type ObjectService interface {
 	CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, s Status, ss StatusService)
 	CreateObject(ctx context.Context, collectionID string, o stones.Object) error
+	DeleteObject(ctx context.Context, collectionID, objecteID string) error
 	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]stones.Object, error)
 	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]stones.Object, error)
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/pladdy/cabby"
-	"github.com/pladdy/cabby/sqlite"
+	"github.com/pladdy/cabby/backends/sqlite"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

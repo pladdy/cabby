@@ -29,7 +29,8 @@ func TestAPIRootValidate(t *testing.T) {
 		{APIRoot{Path: "foo"}, true},
 		{APIRoot{}, true},
 		{APIRoot{Path: "foo", Title: "title"}, true},
-		{APIRoot{Path: "foo", Title: "title", Versions: []string{"taxii-2.1"}}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{"taxii-2.0"}}, true},
+		{APIRoot{Path: "foo", Title: "title", Versions: []string{"taxii-2.1"}}, false},
 		{APIRoot{Path: "foo", Title: "title", Versions: []string{TaxiiVersion}}, false},
 	}
 
@@ -37,7 +38,7 @@ func TestAPIRootValidate(t *testing.T) {
 		result := test.apiRoot.Validate()
 
 		if test.expectError && result == nil {
-			t.Error("Got:", result, "Expected:", test.expectError)
+			t.Error("Testing API Root:", test.apiRoot, "Got an error?", result, "Expected an error?", test.expectError)
 		}
 	}
 }

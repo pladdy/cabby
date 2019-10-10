@@ -3,7 +3,6 @@ package sqlite
 import (
 	"context"
 	"database/sql"
-	"strings"
 
 	// import sqlite dependency
 	_ "github.com/mattn/go-sqlite3"
@@ -28,15 +27,15 @@ func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *
 
 func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
 	sql := `with data as (
-						select rowid, id, min(created_at) date_added, group_concat(modified) versions, 1 count
+						select rowid, id, min(created_at) date_added, modified version, 1 count
 						-- media_types omitted...should that be in this table?
 						from objects_data
 						where
 							collection_id = ?
 							and $filter
-						group by rowid, id
+						group by rowid, id, modified
 					)
-					select id, date_added, versions, (select sum(count) from data) total
+					select id, date_added, version, (select sum(count) from data) total
 					from data
 					$paginate`
 
@@ -56,9 +55,9 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 
 	for rows.Next() {
 		me := cabby.ManifestEntry{}
-		var dateAdded, versions string
+		var dateAdded, version string
 
-		if err := rows.Scan(&me.ID, &dateAdded, &versions, &cr.Total); err != nil {
+		if err := rows.Scan(&me.ID, &dateAdded, &version, &cr.Total); err != nil {
 			return m, err
 		}
 
@@ -68,9 +67,14 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 		}
 		me.DateAdded = ts
 
+		ts, err = stones.TimestampFromString(version)
+		if err != nil {
+			return m, err
+		}
+		me.Version = ts
+
 		cr.SetAddedAfters(me.DateAdded.String())
 		me.MediaTypes = []string{cabby.StixContentType}
-		me.Versions = strings.Split(string(versions), ",")
 		m.Objects = append(m.Objects, me)
 	}
 

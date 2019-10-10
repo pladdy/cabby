@@ -11,9 +11,23 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
+func TestAPIRootHandleDelete(t *testing.T) {
+	as := mockAPIRootService()
+	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
+		return cabby.APIRoot{Title: ""}, nil
+	}
+
+	h := APIRootHandler{APIRootService: &as}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testAPIRootURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestAPIRootHandlerGet(t *testing.T) {
 	h := APIRootHandler{APIRootService: mockAPIRootService()}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -43,7 +57,7 @@ func TestAPIRootHandlerGetFailures(t *testing.T) {
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -68,7 +82,7 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, body := handlerTest(h.Get, "GET", testAPIRootURL, nil)
+	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -96,7 +110,7 @@ func TestAPIRootHandlePost(t *testing.T) {
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, _ := handlerTest(h.Post, "POST", testAPIRootURL, nil)
+	status, _ := handlerTest(h.Post, http.MethodPost, testAPIRootURL, nil)
 
 	if status != http.StatusMethodNotAllowed {
 		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
