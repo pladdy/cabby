@@ -148,9 +148,9 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 #### Add Objects
 In the above example, new collections were added.  Kill the server (CTRL+C) and `make run` again.  The logs will show new routes are added.
 
-Now post a bundle of STIX 2.0 data:
+Now post a envelope of STIX 2.0 data:
 ```sh
-curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -H 'Content-Type: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @sqlite/testdata/malware_bundle.json | jq .
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' -H 'Content-Type: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @backends/sqlite/testdata/malware_envelope.json | jq .
 ```
 
 #### Check status
@@ -188,8 +188,8 @@ curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasi
 curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/?match\[id\]=indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f' | jq .
 
 # add objects to filter on versions
-# the below bundle has objects that already exist; status will have 3 failures
-curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @sqlite/testdata/versions_bundle.json | jq .
+# the below envelope has objects that already exist; status will have 3 failures
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' -X POST 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/' -d @sqlite/testdata/versions_envelope.json | jq .
 
 # check status to confirm
 curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' "https://localhost:1234/cabby_test_root/status/<your id here>/" | jq .
