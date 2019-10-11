@@ -116,7 +116,7 @@ func TestObjectsHandlerGet(t *testing.T) {
 
 	// call handler for object
 	req := newRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", cabby.StixContentType)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
 	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusOK {
@@ -147,15 +147,15 @@ func TestObjectsHandlerGet(t *testing.T) {
 func TestObjectsHandlerGetHeaders(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 	req := newRequest(http.MethodGet, testObjectsURL, nil)
-	req.Header.Set("Accept", cabby.StixContentType)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
 
 	res := httptest.NewRecorder()
 	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	tm := time.Time{}
 
-	if res.Header().Get("Content-Type") != cabby.StixContentType {
-		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.StixContentType)
+	if res.Header().Get("Content-Type") != cabby.TaxiiContentType {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.TaxiiContentType)
 	}
 	if res.Header().Get("X-Taxii-Date-Added-First") != tm.Format(time.RFC3339Nano) {
 		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
@@ -281,7 +281,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 
 		// set up request
 		req := newRequest(http.MethodGet, testObjectsURL, nil)
-		req.Header.Set("Accept", cabby.StixContentType)
+		req.Header.Set("Accept", cabby.TaxiiContentType)
 		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
 
 		res := httptest.NewRecorder()
@@ -324,7 +324,7 @@ func TestObjectsHandlerGetInvalidRange(t *testing.T) {
 	for _, test := range tests {
 		// set up request
 		req := newRequest(http.MethodGet, testObjectsURL, nil)
-		req.Header.Set("Accept", cabby.StixContentType)
+		req.Header.Set("Accept", cabby.TaxiiContentType)
 		req.Header.Set("Range", test.rangeString)
 
 		res := httptest.NewRecorder()
@@ -552,8 +552,8 @@ func TestObjectsPostValidPost(t *testing.T) {
 		contentType string
 		valid       bool
 	}{
-		{cabby.TaxiiContentType, cabby.StixContentType, true},
-		{"invalid", cabby.StixContentType, false},
+		{cabby.TaxiiContentType, cabby.TaxiiContentType, true},
+		{"invalid", cabby.TaxiiContentType, false},
 		{cabby.TaxiiContentType, "invalid", false},
 	}
 

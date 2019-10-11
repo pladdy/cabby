@@ -77,7 +77,7 @@ func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) 
 func newPostRequest(url string, b *bytes.Buffer) *http.Request {
 	req := newRequest("POST", url, b)
 	req.Header.Set("Accept", cabby.TaxiiContentType)
-	req.Header.Set("Content-Type", cabby.StixContentType)
+	req.Header.Set("Content-Type", cabby.TaxiiContentType)
 	return req
 }
 

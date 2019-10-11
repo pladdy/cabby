@@ -52,7 +52,7 @@ func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	if !verifySupportedMimeType(w, r, "Accept", cabby.StixContentType) {
+	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
 		return
 	}
 
@@ -91,9 +91,9 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
+		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 	} else {
-		writeContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
+		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 	}
 }
 
@@ -115,7 +115,7 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 }
 
 /* Post */
@@ -173,7 +173,7 @@ func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isVal
 		return
 	}
 
-	if !verifySupportedMimeType(w, r, "Content-Type", cabby.StixContentType) {
+	if !verifySupportedMimeType(w, r, "Content-Type", cabby.TaxiiContentType) {
 		return
 	}
 
