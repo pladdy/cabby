@@ -298,26 +298,26 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 	}
 }
 
-func TestObjectServiceCreateBundle(t *testing.T) {
+func TestObjectServiceCreateEnvelope(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	osv := ds.ObjectService()
 	ssv := ds.StatusService()
 
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	content, _ := ioutil.ReadAll(bundleFile)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	content, _ := ioutil.ReadAll(envelopeFile)
 
-	var bundle stones.Bundle
-	err := json.Unmarshal(content, &bundle)
+	var envelope cabby.Envelope
+	err := json.Unmarshal(content, &envelope)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	st := tester.Status
-	osv.CreateBundle(context.Background(), bundle, tester.CollectionID, st, ssv)
+	osv.CreateEnvelope(context.Background(), envelope, tester.CollectionID, st, ssv)
 
 	// check objects were saved
-	for _, raw := range bundle.Objects {
+	for _, raw := range envelope.Objects {
 		var expected stones.Object
 		err := json.Unmarshal(raw, &expected)
 		if err != nil {
@@ -336,7 +336,7 @@ func TestObjectServiceCreateBundle(t *testing.T) {
 	}
 }
 
-func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
+func TestObjectServiceCreateEnvelopeWithInvalidObject(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	osv := ds.ObjectService()
@@ -348,17 +348,17 @@ func TestObjectServiceCreateBundleWithInvalidObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	bundleFile, _ := os.Open("testdata/bundle_invalid_objects.json")
-	content, _ := ioutil.ReadAll(bundleFile)
+	envelopeFile, _ := os.Open("testdata/invalid_objects_envelope.json")
+	content, _ := ioutil.ReadAll(envelopeFile)
 
-	var bundle stones.Bundle
-	err = json.Unmarshal(content, &bundle)
+	var envelope cabby.Envelope
+	err = json.Unmarshal(content, &envelope)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	st := tester.Status
-	osv.CreateBundle(context.Background(), bundle, tester.CollectionID, st, ssv)
+	osv.CreateEnvelope(context.Background(), envelope, tester.CollectionID, st, ssv)
 
 	// check objects were saved; use an invalid range to get all
 	result, _ := osv.Objects(context.Background(), tester.CollectionID, &cabby.Range{First: 0, Last: 0}, cabby.Filter{})
@@ -436,7 +436,7 @@ func TestUpdateStatusNoError(t *testing.T) {
 	ss := ds.StatusService()
 
 	// assumptions:
-	//   - a user posted a bundle of 3 objects
+	//   - a user posted an envelope of 3 objects
 	expected := tester.Status
 	expected.ID, _ = cabby.NewID()
 	expected.Status = "pending"
@@ -480,7 +480,7 @@ func TestUpdateStatusWithError(t *testing.T) {
 	ss := ds.StatusService()
 
 	// assumptions:
-	//   - a user posted a bundle of 3 objects
+	//   - a user posted an envelope of 3 objects
 	expected := tester.Status
 	expected.ID, _ = cabby.NewID()
 	expected.Status = "pending"
@@ -525,7 +525,7 @@ func TestUpdateStatusWithTooManyErrors(t *testing.T) {
 	ss := ds.StatusService()
 
 	// assumptions:
-	//   - a user posted a bundle of 3 objects
+	//   - a user posted an envelope of 3 objects
 	expected := tester.Status
 	expected.ID, _ = cabby.NewID()
 	expected.Status = "pending"

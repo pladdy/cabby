@@ -226,8 +226,8 @@ type DiscoveryService interface {
 
 // Envelope resource for transmitting stix objects
 type Envelope struct {
-	More    bool            `json:"more"`
-	Objects []stones.Object `json:"objects"`
+	More    bool              `json:"more"`
+	Objects []json.RawMessage `json:"objects"`
 }
 
 // Error struct for TAXII 2 errors
@@ -313,7 +313,7 @@ type MigrationService interface {
 
 // ObjectService provides Object data
 type ObjectService interface {
-	CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, s Status, ss StatusService)
+	CreateEnvelope(ctx context.Context, e Envelope, collectionID string, s Status, ss StatusService)
 	CreateObject(ctx context.Context, collectionID string, o stones.Object) error
 	DeleteObject(ctx context.Context, collectionID, objecteID string) error
 	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]stones.Object, error)

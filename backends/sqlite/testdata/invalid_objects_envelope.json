@@ -1,7 +1,4 @@
 {
-  "type": "bundle",
-  "id": "bundle--5d0092c5-5f74-4287-9642-33f4c354e56d",
-  "spec_version": "2.0",
   "objects": [
     {
       "type": "indicator",

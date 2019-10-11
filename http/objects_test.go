@@ -19,34 +19,27 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func TestBundleFromBytes(t *testing.T) {
-	bundleFile, err := os.Open("testdata/malware_bundle.json")
+func TestEnvelopeFromBytes(t *testing.T) {
+	envelopeFile, err := os.Open("testdata/malware_envelope.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	rawBundle, err := ioutil.ReadAll(bundleFile)
+	rawEnvelope, err := ioutil.ReadAll(envelopeFile)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = bundleFromBytes(rawBundle)
+	_, err = envelopeFromBytes(rawEnvelope)
 	if err != nil {
 		t.Error("Error unexpected:", err)
 	}
 }
 
-func TestBundleFromBytesUnmarshalFail(t *testing.T) {
-	b, err := bundleFromBytes([]byte(`{"foo": "bar"`))
+func TestEnvelopeFromBytesUnmarshalFail(t *testing.T) {
+	b, err := envelopeFromBytes([]byte(`{"foo": "bar"`))
 	if err == nil {
-		t.Error("Expected error for bundle:", b)
-	}
-}
-
-func TestBundleFromBytesInvalidBundle(t *testing.T) {
-	b, err := bundleFromBytes([]byte(`{"foo": "bar"}`))
-	if err == nil {
-		t.Error("Expected error for bundle:", b)
+		t.Error("Expected error for envelope:", b)
 	}
 }
 
@@ -132,15 +125,15 @@ func TestObjectsHandlerGet(t *testing.T) {
 
 	expected := tester.Object
 
-	// parse the bundle for an object
-	var bundle stones.Bundle
-	err := json.Unmarshal([]byte(body), &bundle)
+	// parse the envelope for an object
+	var envelope cabby.Envelope
+	err := json.Unmarshal([]byte(body), &envelope)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	var object stones.Object
-	err = json.Unmarshal(bundle.Objects[0], &object)
+	err = json.Unmarshal(envelope.Objects[0], &object)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,14 +244,14 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 
-	var bundle stones.Bundle
-	err := json.Unmarshal([]byte(body), &bundle)
+	var envelope cabby.Envelope
+	err := json.Unmarshal([]byte(body), &envelope)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(bundle.Objects) <= 0 {
-		t.Error("Got:", len(bundle.Objects), "Expected: > 0")
+	if len(envelope.Objects) <= 0 {
+		t.Error("Got:", len(envelope.Objects), "Expected: > 0")
 	}
 }
 
@@ -296,7 +289,7 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 
 		body, _ := ioutil.ReadAll(res.Body)
 
-		var result stones.Bundle
+		var result cabby.Envelope
 		err := json.Unmarshal([]byte(body), &result)
 		if err != nil {
 			t.Fatal(err)
@@ -403,16 +396,16 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 
 func TestObjectsHandlerPost(t *testing.T) {
 	osv := mockObjectService()
-	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		log.Debug("mock call of CreateBundle")
+	osv.CreateEnvelopeFn = func(ctx context.Context, e cabby.Envelope, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		log.Debug("mock call of CreateEnvelope")
 	}
 
 	ssv := mockStatusService()
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: osv, StatusService: ssv}
 
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	bundle, _ := ioutil.ReadAll(bundleFile)
-	b := bytes.NewBuffer(bundle)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectsURL, b)
 	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -453,9 +446,9 @@ func TestObjectsHandlerPostForbidden(t *testing.T) {
 func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(1), ObjectService: mockObjectService()}
 
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	bundle, _ := ioutil.ReadAll(bundleFile)
-	b := bytes.NewBuffer(bundle)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectsURL, b)
 	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -465,11 +458,11 @@ func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostInvalidBundle(t *testing.T) {
+func TestObjectsHandlerPostInvalidEnvelope(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
-	bundle := []byte(`{"foo":"bar"}`)
-	b := bytes.NewBuffer(bundle)
+	envelope := []byte(`{"foo":"bar"`)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectsURL, b)
 	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -479,12 +472,12 @@ func TestObjectsHandlerPostInvalidBundle(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostEmptyBundle(t *testing.T) {
+func TestObjectsHandlerPostEmptyEnvelope(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
-	// make a valid bundle except that the objects are mpty
-	bundle := []byte(`{"type": "bundle", "objects": [], "spec_version": "2.0", "id": "bundle--5d0092c5-5f74-4287-9642-33f4c354e56d"}`)
-	b := bytes.NewBuffer(bundle)
+	// make a valid envelope except that the objects are empty
+	envelope := []byte(`{"objects": []}`)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectsURL, b)
 	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -505,9 +498,9 @@ func TestObjectsPostStatusFail(t *testing.T) {
 		Description: "Unable to store status resource",
 		HTTPStatus:  http.StatusInternalServerError}
 
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	bundle, _ := ioutil.ReadAll(bundleFile)
-	b := bytes.NewBuffer(bundle)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectsURL, b)
 	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -534,16 +527,16 @@ func TestObjectsPostStatusFail(t *testing.T) {
 
 func TestObjectsHandlePostToObjectURL(t *testing.T) {
 	osv := mockObjectService()
-	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		log.Debug("mock call of CreateBundle")
+	osv.CreateEnvelopeFn = func(ctx context.Context, e cabby.Envelope, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		log.Debug("mock call of CreateEnvelope")
 	}
 
 	ssv := mockStatusService()
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: osv, StatusService: ssv}
 
-	bundleFile, _ := os.Open("testdata/malware_bundle.json")
-	bundle, _ := ioutil.ReadAll(bundleFile)
-	b := bytes.NewBuffer(bundle)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+	b := bytes.NewBuffer(envelope)
 
 	req := newPostRequest(testObjectURL, b)
 	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
@@ -580,8 +573,8 @@ func TestObjectsPostValidPost(t *testing.T) {
 	}
 }
 
-func TestObjectsToBundleError(t *testing.T) {
-	_, err := objectsToBundle([]stones.Object{})
+func TestObjectsToEnvelopeError(t *testing.T) {
+	_, err := objectsToEnvelope([]stones.Object{})
 	if err == nil {
 		t.Error("Expected error")
 	}
