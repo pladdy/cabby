@@ -80,9 +80,9 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bundle, err := objectsToBundle(objects)
+	envelope, err := objectsToEnvelope(objects)
 	if err != nil {
-		internalServerError(w, errors.New("Unable to create bundle"))
+		internalServerError(w, errors.New("Unable to create envelope"))
 		return
 	}
 
@@ -91,9 +91,9 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 
 	if cr.Set {
 		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
+		writePartialContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
 	} else {
-		writeContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
+		writeContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
 	}
 }
 
@@ -109,13 +109,13 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bundle, err := objectsToBundle(objects)
+	envelope, err := objectsToEnvelope(objects)
 	if err != nil {
-		internalServerError(w, errors.New("Unable to create bundle"))
+		internalServerError(w, errors.New("Unable to create envelope"))
 		return
 	}
 
-	writeContent(w, r, cabby.StixContentType, resourceToJSON(bundle))
+	writeContent(w, r, cabby.StixContentType, resourceToJSON(envelope))
 }
 
 /* Post */
@@ -142,13 +142,13 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	bundle, err := bundleFromBytes(body)
-	if err != nil {
+	envelope, err := envelopeFromBytes(body)
+	if err != nil || len(envelope.Objects) == 0 {
 		badRequest(w, err)
 		return
 	}
 
-	status, err := cabby.NewStatus(len(bundle.Objects))
+	status, err := cabby.NewStatus(len(envelope.Objects))
 	if err != nil {
 		internalServerError(w, errors.New("Unable to initialize status resource"))
 		return
@@ -165,7 +165,7 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(status))
 
-	go h.ObjectService.CreateBundle(r.Context(), bundle, takeCollectionID(r), status, h.StatusService)
+	go h.ObjectService.CreateEnvelope(r.Context(), envelope, takeCollectionID(r), status, h.StatusService)
 }
 
 func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isValid bool) {
@@ -192,20 +192,13 @@ func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isVal
 
 /* helpers */
 
-func bundleFromBytes(b []byte) (stones.Bundle, error) {
-	var bundle stones.Bundle
-
-	err := json.Unmarshal(b, &bundle)
+func envelopeFromBytes(b []byte) (e cabby.Envelope, err error) {
+	err = json.Unmarshal(b, &e)
 	if err != nil {
-		log.WithFields(log.Fields{"bundle": string(b), "error:": err}).Error("Unable to unmarshal bundle")
-		return bundle, fmt.Errorf("Unable to convert JSON to bundle, error: %v", err)
+		log.WithFields(log.Fields{"envelope": string(b), "error:": err}).Error("Unable to unmarshal envelope")
+		return e, fmt.Errorf("Unable to convert JSON to envelope, error: %v", err)
 	}
-
-	valid, errs := bundle.Valid()
-	if !valid {
-		return bundle, stones.ErrorsToString(errs)
-	}
-	return bundle, nil
+	return
 }
 
 func greaterThan(r, m int64) bool {
@@ -221,19 +214,14 @@ func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
 	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
-func objectsToBundle(objects []stones.Object) (stones.Bundle, error) {
-	bundle, err := stones.NewBundle()
-	if err != nil {
-		return bundle, err
-	}
-
+func objectsToEnvelope(objects []stones.Object) (e cabby.Envelope, err error) {
 	for _, o := range objects {
-		bundle.AddObject(string(o.Source))
+		e.Objects = append(e.Objects, json.RawMessage(o.Source))
 	}
 
-	if len(bundle.Objects) == 0 {
-		log.Warn("Can't return an empty bundle, returning error to caller")
-		return bundle, errors.New("No data returned: empty bundle")
+	if len(e.Objects) == 0 {
+		log.Warn("Can't return an empty envelope, returning error to caller")
+		return e, errors.New("No data returned: empty envelope")
 	}
-	return bundle, err
+	return
 }

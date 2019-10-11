@@ -26,21 +26,21 @@ type ObjectService struct {
 	DataStore *DataStore
 }
 
-// CreateBundle will read from the data store and return the resource
-func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
-	resource, action := "Bundle", "create"
+// CreateEnvelope will read from the data store and return the resource
+func (s ObjectService) CreateEnvelope(ctx context.Context, e cabby.Envelope, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	resource, action := "Envelope", "create"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	s.createBundle(ctx, b, collectionID, st, ss)
+	s.createEnvelope(ctx, e, collectionID, st, ss)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 }
 
-func (s ObjectService) createBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
-	errs := make(chan error, len(b.Objects))
+func (s ObjectService) createEnvelope(ctx context.Context, e cabby.Envelope, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	errs := make(chan error, len(e.Objects))
 	toWrite := make(chan interface{}, batchBufferSize)
 
 	go s.DataStore.batchWrite(createObjectSQL, toWrite, errs)
 
-	for _, raw := range b.Objects {
+	for _, raw := range e.Objects {
 		var o stones.Object
 		err := json.Unmarshal(raw, &o)
 		if err != nil {

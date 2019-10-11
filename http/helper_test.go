@@ -213,8 +213,8 @@ func mockMigrationService() tester.MigrationService {
 
 func mockObjectService() tester.ObjectService {
 	osv := tester.ObjectService{}
-	osv.CreateBundleFn = func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		log.Debug("mock Creating Bundle")
+	osv.CreateEnvelopeFn = func(ctx context.Context, e cabby.Envelope, collectionID string, s cabby.Status, ss cabby.StatusService) {
+		log.Debug("mock Creating Envelope")
 	}
 	osv.DeleteObjectFn = func(ctx context.Context, collectionID, objectID string) error {
 		return nil

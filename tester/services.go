@@ -209,16 +209,16 @@ func (s MigrationService) Up() error {
 // ObjectService is a mock implementation
 type ObjectService struct {
 	MaxContentLength int64
-	CreateBundleFn   func(ctx context.Context, b stones.Bundle, collectionID string, s cabby.Status, ss cabby.StatusService)
+	CreateEnvelopeFn func(ctx context.Context, e cabby.Envelope, collectionID string, s cabby.Status, ss cabby.StatusService)
 	CreateObjectFn   func(ctx context.Context, collectionID string, object stones.Object) error
 	DeleteObjectFn   func(ctx context.Context, collectionID, objectID string) error
 	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error)
 	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error)
 }
 
-// CreateBundle is a mock implementation
-func (s ObjectService) CreateBundle(ctx context.Context, b stones.Bundle, collectionID string, st cabby.Status, ss cabby.StatusService) {
-	s.CreateBundleFn(ctx, b, collectionID, st, ss)
+// CreateEnvelope is a mock implementation
+func (s ObjectService) CreateEnvelope(ctx context.Context, e cabby.Envelope, collectionID string, st cabby.Status, ss cabby.StatusService) {
+	s.CreateEnvelopeFn(ctx, e, collectionID, st, ss)
 }
 
 // CreateObject is a mock implementation
