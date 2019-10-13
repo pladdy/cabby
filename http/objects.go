@@ -15,34 +15,11 @@ import (
 // ObjectsMethods lists allowed methods
 const ObjectsMethods = "Get, Head, Post"
 
-// ObjectMethods lists allowed methods
-const ObjectMethods = "Get, Delete, Head"
-
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
 	ObjectService    cabby.ObjectService
 	StatusService    cabby.StatusService
 	MaxContentLength int64
-}
-
-/* Delete */
-
-//Delete handles a delete of an object; can only be done given an ID
-func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
-
-	if takeObjectID(r) == "" {
-		w.Header().Set("Allow", ObjectsMethods)
-		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
-		return
-	}
-
-	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	writeContent(w, r, cabby.TaxiiContentType, "")
 }
 
 /* Get */
@@ -95,27 +72,6 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 	}
-}
-
-func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
-	objects, err := h.ObjectService.Object(r.Context(), takeCollectionID(r), takeObjectID(r), newFilter(r))
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-
-	if len(objects) <= 0 {
-		resourceNotFound(w, errors.New("No objects defined in this collection"))
-		return
-	}
-
-	envelope, err := objectsToEnvelope(objects)
-	if err != nil {
-		internalServerError(w, errors.New("Unable to create envelope"))
-		return
-	}
-
-	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 }
 
 /* Post */

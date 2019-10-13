@@ -1,3 +1,30 @@
+### Router
+Should I use a router library for dynamic routing?
+For example: path /<api root>/collections/<collection id>/objects/<object id>/versions
+  - a tool that puts <items in brackets> into vars?
+- [Vestigo](https://github.com/husobee/vestigo)
+  - [Introducing Vestigo](https://husobee.github.io/golang/urlrouter/vestigo/2015/09/22/vesigo.html)
+  - This router let's me set routes on explicit methods list too
+- [Gorilla/Mux](https://github.com/gorilla/mux)
+  - Can handle explicit methods for specific routes
+
+
+### Service naming convention
+Rename services to be more explicit
+- DropObject
+- EditObject
+- MakeObject
+- ReadObject
+
+### Var naming convention
+Replace 'ctx' vars with 'c'?  'c' can always mean context var...
+
+### Don't use stones in cabby
+Decouple stones from cabby?
+TAXII servers can be generic and store/serve more than STIX2.X...
+However, this codebase should be responsible for knowing how to parse/validate formats...separate responsibility
+
+### SQL migrations
 Handle migrations with a tool?
   Ref: https://blog.codinghorror.com/get-your-database-under-version-control/
   Tool?: https://github.com/pressly/goose
