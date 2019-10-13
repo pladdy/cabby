@@ -13,7 +13,8 @@ import (
 
 // ManifestService implements a SQLite version of the ManifestService interface
 type ManifestService struct {
-	DB *sql.DB
+	DB        *sql.DB
+	DataStore *DataStore
 }
 
 // Manifest will read from the data store and return the resource

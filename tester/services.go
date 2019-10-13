@@ -19,6 +19,7 @@ type DataStore struct {
 	ObjectServiceFn     func() ObjectService
 	StatusServiceFn     func() StatusService
 	UserServiceFn       func() UserService
+	VersionServiceFn    func() VersionService
 }
 
 // NewDataStore structure
@@ -313,4 +314,14 @@ func (s UserService) User(ctx context.Context, user, password string) (cabby.Use
 // UserCollections is a mock implementation
 func (s UserService) UserCollections(ctx context.Context, user string) (cabby.UserCollectionList, error) {
 	return s.UserCollectionsFn(ctx, user)
+}
+
+// VersionService mock implementation
+type VersionService struct {
+	VersionsFn func(c context.Context, cid, oid string) error
+}
+
+// Versions is a mock implementation
+func (v VersionService) Versions(c context.Context, cid, oid string) error {
+	return v.VersionsFn(c, cid, oid)
 }

@@ -499,3 +499,13 @@ type UserService interface {
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
 }
+
+// Versions contains a list of versions for an object
+type Versions struct {
+	Versions []string `json:"versions"`
+}
+
+// VersionService provides object versions
+type VersionService interface {
+	Versions(c context.Context, cid, oid string, f Filter) (Versions, error)
+}
