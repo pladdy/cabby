@@ -22,14 +22,15 @@ var (
 	testAPIRootURL     = tester.BaseURL + tester.APIRootPath + "/"
 	testCollectionsURL = testAPIRootURL + "collections/"
 	testCollectionURL  = testCollectionsURL + tester.CollectionID + "/"
+	testDiscoveryURL   = tester.BaseURL + "/taxii2/"
 	testManifestURL    = testCollectionURL + "manifest/"
 	testObjectsURL     = testCollectionURL + "objects/"
 	testObjectURL      = testObjectsURL + tester.ObjectID + "/"
 	testStatusURL      = testAPIRootURL + "status/" + tester.StatusID + "/"
-	testDiscoveryURL   = tester.BaseURL + "/taxii2/"
+	testVersionsURL    = testObjectURL + "/versions/"
 )
 
-/* helper functions */
+/* helper functions for tests */
 
 func attemptRequest(c *http.Client, r *http.Request) (*http.Response, error) {
 	log.Debug("Requesting", r.URL, "from test server")
@@ -245,6 +246,14 @@ func mockUserService() tester.UserService {
 		return cabby.UserCollectionList{}, nil
 	}
 	return us
+}
+
+func mockVersionsService() tester.VersionsService {
+	vs := tester.VersionsService{}
+	vs.VersionsFn = func(ctx context.Context, cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error) {
+		return tester.Versions, nil
+	}
+	return vs
 }
 
 func mockDataStore() tester.DataStore {

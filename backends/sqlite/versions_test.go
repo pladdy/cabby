@@ -8,12 +8,12 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestVersionServiceVersions(t *testing.T) {
+func TestVersionsServiceVersions(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := ds.VersionService()
+	s := ds.VersionsService()
 
-	result, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, cabby.Filter{})
+	result, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -24,28 +24,28 @@ func TestVersionServiceVersions(t *testing.T) {
 	}
 }
 
-func TestVersionServiceVersionQueryErr(t *testing.T) {
+func TestVersionsServiceVersionQueryErr(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := ds.VersionService()
+	s := ds.VersionsService()
 
 	_, err := ds.DB.Exec("drop table objects")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, cabby.Filter{})
+	_, err = s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
 }
 
-func TestVersionServiceVersionNoAPIRoot(t *testing.T) {
+func TestVersionsServiceVersionNoAPIRoot(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
-	s := ds.VersionService()
+	s := ds.VersionsService()
 
-	_, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, cabby.Filter{})
+	_, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}

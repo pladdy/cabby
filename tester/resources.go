@@ -85,10 +85,12 @@ var (
 	User = cabby.User{
 		Email:                UserEmail,
 		CanAdmin:             true,
-		CollectionAccessList: userCollectionList().CollectionAccessList,
-	}
+		CollectionAccessList: userCollectionList().CollectionAccessList}
 	// UserCollectionList mock
 	UserCollectionList = userCollectionList()
+	// Versions mock
+	Versions = cabby.Versions{
+		Versions: []string{"2016-04-06T20:07:09.000Z"}}
 )
 
 func collection() cabby.Collection {

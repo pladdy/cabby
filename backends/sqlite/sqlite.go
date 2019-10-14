@@ -95,9 +95,9 @@ func (s *DataStore) UserService() cabby.UserService {
 	return UserService{DB: s.DB, DataStore: s}
 }
 
-// VersionService returns a service for versions
-func (s *DataStore) VersionService() cabby.VersionService {
-	return VersionService{DB: s.DB, DataStore: s}
+// VersionsService returns a service for versions
+func (s *DataStore) VersionsService() cabby.VersionsService {
+	return VersionsService{DB: s.DB, DataStore: s}
 }
 
 /* writer methods */

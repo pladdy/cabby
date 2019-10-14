@@ -505,7 +505,7 @@ type Versions struct {
 	Versions []string `json:"versions"`
 }
 
-// VersionService provides object versions
-type VersionService interface {
-	Versions(c context.Context, cid, oid string, f Filter) (Versions, error)
+// VersionsService provides object versions
+type VersionsService interface {
+	Versions(c context.Context, cid, oid string, cr *Range, f Filter) (Versions, error)
 }
