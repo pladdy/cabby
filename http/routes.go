@@ -59,7 +59,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
-			routeObjectsRequest(oh, osh, vsh))
+			routeObjectsHandler(oh, osh, vsh))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
@@ -80,9 +80,9 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	sm.HandleFunc(route, h)
 }
 
-func routeObjectsRequest(oh, osh, vsh RequestHandler) http.HandlerFunc {
+func routeObjectsHandler(oh, osh, vsh RequestHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.WithFields(log.Fields{"handler": "routeObjectsRequest"}).Debug("Handler called")
+		log.WithFields(log.Fields{"handler": "routeObjectsHandler"}).Debug("Handler called")
 		if takeVersions(r) == versionsPathToken {
 			runHandler(vsh, w, r)
 			return
@@ -91,7 +91,6 @@ func routeObjectsRequest(oh, osh, vsh RequestHandler) http.HandlerFunc {
 			runHandler(osh, w, r)
 			return
 		}
-		log.WithFields(log.Fields{"handler": "ObjectHandler", "id": takeObjectID(r)}).Debug("Handler called")
 		runHandler(oh, w, r)
 	}
 }
