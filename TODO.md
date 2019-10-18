@@ -1,3 +1,10 @@
+### API Routes
+Are not a single token separated by a '/' and followed by 'collections'
+They can be multiple tokens...fix that bug
+
+### Log level
+Set log level from command line / env var or make it configurable
+
 ### Router
 Should I use a router library for dynamic routing?
 For example: path /<api root>/collections/<collection id>/objects/<object id>/versions
@@ -7,7 +14,6 @@ For example: path /<api root>/collections/<collection id>/objects/<object id>/ve
   - This router let's me set routes on explicit methods list too
 - [Gorilla/Mux](https://github.com/gorilla/mux)
   - Can handle explicit methods for specific routes
-
 
 ### Service naming convention
 Rename services to be more explicit

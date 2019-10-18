@@ -8,7 +8,7 @@ set -euo pipefail
 API_ROOT_PATH="cabby_test_root"
 API_ROOT_TITLE="a cabby api root"
 API_ROOT_MAX_CONTENT_LENGTH=8388608
-API_ROOT_VERSION="taxii-2.0"
+API_ROOT_VERSION="taxii-2.1"
 
 COLLECTION_ID="352abc04-a474-4e22-9f4d-944ca508e68c"
 COLLECTION_TITLE="a collection title"
