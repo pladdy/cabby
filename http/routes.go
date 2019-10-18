@@ -9,6 +9,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const versionsPathToken = "versions"
+
 func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 	ah := APIRootHandler{APIRootService: ds.APIRootService()}
 	apiRoots, err := ah.APIRootService.APIRoots(context.Background())
@@ -25,22 +27,23 @@ func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 
 func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 	if path != "" {
-		registerRoute(sm, path, WithMimeType(routeRequest(ah), "Accept", cabby.TaxiiContentType))
+		registerRoute(sm, path, WithMimeType(routeHandler(ah), "Accept", cabby.TaxiiContentType))
 	}
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
 	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(routeRequest(csh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(routeHandler(csh), "Accept", cabby.TaxiiContentType))
 
 	ss := ds.StatusService()
-	oh := ObjectsHandler{
+	osh := ObjectsHandler{
 		MaxContentLength: apiRoot.MaxContentLength,
 		ObjectService:    ds.ObjectService(),
 		StatusService:    ss}
-
 	mh := ManifestHandler{ManifestService: ds.ManifestService()}
 	ch := CollectionHandler{CollectionService: ds.CollectionService()}
+	oh := ObjectHandler{ObjectService: ds.ObjectService()}
+	vsh := VersionsHandler{VersionsService: ds.VersionsService()}
 
 	acs, err := csh.CollectionService.CollectionsInAPIRoot(context.Background(), apiRoot.Path)
 	if err != nil {
@@ -52,19 +55,19 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String(),
-			WithMimeType(routeRequest(ch), "Accept", cabby.TaxiiContentType))
+			WithMimeType(routeHandler(ch), "Accept", cabby.TaxiiContentType))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
-			routeRequest(oh))
+			routeObjectsRequest(oh, osh, vsh))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithMimeType(routeRequest(mh), "Accept", cabby.TaxiiContentType))
+			WithMimeType(routeHandler(mh), "Accept", cabby.TaxiiContentType))
 	}
 
 	sh := StatusHandler{StatusService: ss}
-	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(routeRequest(sh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(routeHandler(sh), "Accept", cabby.TaxiiContentType))
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
@@ -77,24 +80,44 @@ func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
 	sm.HandleFunc(route, h)
 }
 
-func routeRequest(h RequestHandler) http.HandlerFunc {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer recoverFromPanic(w)
-
-		switch r.Method {
-		case http.MethodDelete:
-			h.Delete(w, r)
-		case http.MethodGet:
-			h.Get(w, r)
-		case http.MethodPost:
-			h.Post(w, r)
-		case http.MethodHead:
-			// for HEAD requests send to GET, it will omit response
-			h.Get(w, r)
-		default:
-			w.Header().Set("Allow", "Get, Head, Post")
-			methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+func routeObjectsRequest(oh, osh, vsh RequestHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.WithFields(log.Fields{"handler": "routeObjectsRequest"}).Debug("Handler called")
+		if takeVersions(r) == versionsPathToken {
+			runHandler(vsh, w, r)
 			return
 		}
-	})
+		if takeObjectID(r) == "" {
+			runHandler(osh, w, r)
+			return
+		}
+		log.WithFields(log.Fields{"handler": "ObjectHandler", "id": takeObjectID(r)}).Debug("Handler called")
+		runHandler(oh, w, r)
+	}
+}
+
+func routeHandler(h RequestHandler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		runHandler(h, w, r)
+	}
+}
+
+func runHandler(h RequestHandler, w http.ResponseWriter, r *http.Request) {
+	defer recoverFromPanic(w)
+
+	switch r.Method {
+	case http.MethodDelete:
+		h.Delete(w, r)
+	case http.MethodGet:
+		h.Get(w, r)
+	case http.MethodPost:
+		h.Post(w, r)
+	case http.MethodHead:
+		// for HEAD requests send to GET, it will omit response
+		h.Get(w, r)
+	default:
+		w.Header().Set("Allow", "Get, Head, Post")
+		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+		return
+	}
 }

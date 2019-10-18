@@ -266,6 +266,6 @@ func mockDataStore() tester.DataStore {
 	md.ObjectServiceFn = func() tester.ObjectService { return mockObjectService() }
 	md.StatusServiceFn = func() tester.StatusService { return mockStatusService() }
 	md.UserServiceFn = func() tester.UserService { return mockUserService() }
-
+	md.VersionsServiceFn = func() tester.VersionsService { return mockVersionsService() }
 	return md
 }

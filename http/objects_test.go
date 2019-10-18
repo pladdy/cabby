@@ -19,6 +19,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func TestObjectsHandleDelete(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectsURL, nil)
+
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
+	}
+}
+
 func TestEnvelopeFromBytes(t *testing.T) {
 	envelopeFile, err := os.Open("testdata/malware_envelope.json")
 	if err != nil {
@@ -40,24 +49,6 @@ func TestEnvelopeFromBytesUnmarshalFail(t *testing.T) {
 	b, err := envelopeFromBytes([]byte(`{"foo": "bar"`))
 	if err == nil {
 		t.Error("Expected error for envelope:", b)
-	}
-}
-
-func TestGreaterThan(t *testing.T) {
-	tests := []struct {
-		x, y   int
-		result bool
-	}{
-		{1, 2, false},
-		{1, 1, false},
-		{2, 1, true},
-		{0, -1, true},
-	}
-
-	for _, test := range tests {
-		if result := greaterThan(int64(test.x), int64(test.y)); result != test.result {
-			t.Error("Got:", result, "Expected:", test.result)
-		}
 	}
 }
 
@@ -209,6 +200,19 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestObjectsHandlerGetInvalidMimeType(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+
+	// call handler for object
+	req := newRequest(http.MethodGet, testObjectURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+
+	if status != http.StatusUnsupportedMediaType {
+		t.Error("Got:", status, "Expected:", http.StatusUnsupportedMediaType)
 	}
 }
 
@@ -373,27 +377,6 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlePostToObjectURL(t *testing.T) {
-	osv := mockObjectService()
-	osv.CreateEnvelopeFn = func(ctx context.Context, e cabby.Envelope, collectionID string, s cabby.Status, ss cabby.StatusService) {
-		log.Debug("mock call of CreateEnvelope")
-	}
-
-	ssv := mockStatusService()
-	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: osv, StatusService: ssv}
-
-	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
-	envelope, _ := ioutil.ReadAll(envelopeFile)
-	b := bytes.NewBuffer(envelope)
-
-	req := newPostRequest(testObjectURL, b)
-	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
-
-	if status != http.StatusMethodNotAllowed {
-		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
-	}
-}
-
 func TestObjectsPostValidPost(t *testing.T) {
 	tests := []struct {
 		accept      string
@@ -418,12 +401,5 @@ func TestObjectsPostValidPost(t *testing.T) {
 		if result != test.valid {
 			t.Error("Got:", result, "Expected:", test.valid)
 		}
-	}
-}
-
-func TestObjectsToEnvelopeError(t *testing.T) {
-	_, err := objectsToEnvelope([]stones.Object{})
-	if err == nil {
-		t.Error("Expected error")
 	}
 }

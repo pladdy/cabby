@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,6 +23,17 @@ func noResources(w http.ResponseWriter, resources int, cr cabby.Range) bool {
 		return true
 	}
 	return false
+}
+
+func objectsToEnvelope(objects []stones.Object, cr cabby.Range) (e cabby.Envelope) {
+	if int(cr.Total) > len(objects) {
+		e.More = true
+	}
+
+	for _, o := range objects {
+		e.Objects = append(e.Objects, json.RawMessage(o.Source))
+	}
+	return
 }
 
 func resourceToJSON(v interface{}) string {

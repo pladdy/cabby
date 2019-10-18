@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -13,6 +14,20 @@ import (
 	"github.com/pladdy/cabby/tester"
 	log "github.com/sirupsen/logrus"
 )
+
+// set up mock handler to use for testing
+type mockRequestHandler struct {
+}
+
+func (m mockRequestHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
+func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
+func (m mockRequestHandler) Post(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
 
 func TestRegisterAPIRoutesFail(t *testing.T) {
 	// redirect log output for test
@@ -100,7 +115,7 @@ func TestRouteRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		status, _ := handlerTest(routeRequest(mock), test.method, test.url, nil)
+		status, _ := handlerTest(routeHandler(mock), test.method, test.url, nil)
 
 		if status != test.status {
 			t.Error("Testing method: ", test.method, "Got:", status, "Expected:", test.status)

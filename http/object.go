@@ -8,23 +8,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Object handlers are attached to the ObjectsHandler struct; requests for an object are routed to /objects/ handler
-// and below functions are called provided an object id is on path of the request
-
 // ObjectMethods lists allowed methods
 const ObjectMethods = "Get, Delete, Head"
 
-/* Delete */
+// ObjectHandler handles Objects requests
+type ObjectHandler struct {
+	ObjectService cabby.ObjectService
+}
 
 //Delete handles a delete of an object; can only be done given an ID
-func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
-
-	if takeObjectID(r) == "" {
-		w.Header().Set("Allow", ObjectsMethods)
-		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
-		return
-	}
+func (h ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectHandler"}).Debug("Handler called")
 
 	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
 	if err != nil {
@@ -34,9 +28,18 @@ func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	writeContent(w, r, cabby.TaxiiContentType, "")
 }
 
-/* Get */
+// Get handles a get request for the objects endpoint
+func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handler": "ObjectHandler", "objectID": takeObjectID(r)}).Debug("Handler called")
 
-func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
+	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
+		return
+	}
+
+	h.getObject(w, r)
+}
+
+func (h ObjectHandler) getObject(w http.ResponseWriter, r *http.Request) {
 	objects, err := h.ObjectService.Object(r.Context(), takeCollectionID(r), takeObjectID(r), newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
@@ -48,11 +51,12 @@ func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envelope, err := objectsToEnvelope(objects)
-	if err != nil {
-		internalServerError(w, errors.New("Unable to create envelope"))
-		return
-	}
-
+	envelope := objectsToEnvelope(objects, cabby.Range{})
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
+}
+
+// Post handler
+func (h ObjectHandler) Post(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Allow", VersionsMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }

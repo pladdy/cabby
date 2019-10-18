@@ -83,9 +83,9 @@ func takeCollectionID(r *http.Request) string {
 	return getToken(r.URL.Path, collectionIndex)
 }
 
-func takeObjectID(r *http.Request) string {
-	var objectIDIndex = 5
-	return getToken(r.URL.Path, objectIDIndex)
+func takeVersions(r *http.Request) string {
+	var versionsIndex = 6
+	return getToken(r.URL.Path, versionsIndex)
 }
 
 func takeMatchFilters(r *http.Request, filter string) string {
@@ -107,6 +107,11 @@ func takeMatchTypes(r *http.Request) string {
 
 func takeMatchVersions(r *http.Request) string {
 	return takeMatchFilters(r, "match[version]")
+}
+
+func takeObjectID(r *http.Request) string {
+	var objectIDIndex = 5
+	return getToken(r.URL.Path, objectIDIndex)
 }
 
 func trimSlashes(s string) string {

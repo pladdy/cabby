@@ -40,20 +40,6 @@ func TestHandleUndefinedRequest(t *testing.T) {
 	}
 }
 
-// set up mock handler
-type mockRequestHandler struct {
-}
-
-func (m mockRequestHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, r.Method)
-}
-func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, r.Method)
-}
-func (m mockRequestHandler) Post(w http.ResponseWriter, r *http.Request) {
-	io.WriteString(w, r.Method)
-}
-
 func TestWithMimeType(t *testing.T) {
 	tests := []struct {
 		acceptedHeader string
