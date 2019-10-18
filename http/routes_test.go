@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -102,29 +103,22 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 func TestRouteObjectsHandler(t *testing.T) {
 	// use mock hanlders and register them to the route
 	oh, osh, vsh := mockRequestHandler{}, mockRequestHandler{}, mockRequestHandler{}
-	// create a server
-	sm := http.Server{Handler: routeObjectsHandler(oh, osh, vsh)}
 
-	// run server for test
-	defer sm.Close()
-	go func() {
-		log.Info(sm.ListenAndServe())
-	}()
+	// set up a server
+	server := httptest.NewServer(routeObjectsHandler(oh, osh, vsh))
+	defer server.Close()
 
 	tests := []struct {
 		url string
 	}{
-		{"http://localhost/api-root/collections/collection-id/objects"},
-		{"http://localhost/api-root/collections/collection-id/objects/object-id"},
-		{"http://localhost/api-root/collections/collection-id/objects/object-id/versions/"},
+		{server.URL + "/api-root/collections/collection-id/objects"},
+		{server.URL + "/api-root/collections/collection-id/objects/object-id"},
+		{server.URL + "/api-root/collections/collection-id/objects/object-id/versions/"},
 	}
-
-	// test requests
-	client := http.Client{}
 
 	for _, test := range tests {
 		req := newServerRequest("GET", test.url)
-		res, err := attemptRequest(&client, req)
+		res, err := getResponse(req, server)
 		if err != nil {
 			t.Fatal(err)
 		}
