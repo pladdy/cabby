@@ -109,7 +109,11 @@ func TestObjectHandlerGetObjectFailure(t *testing.T) {
 	}
 
 	h := ObjectHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+
+	//status, body := handlerTest(h.Get, http.MethodGet, testObjectURL, nil)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -134,7 +138,9 @@ func TestObjectHandlerGetObjectNoObject(t *testing.T) {
 	}
 
 	h := ObjectHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObject, http.MethodGet, testObjectURL, nil)
+	req := newRequest(http.MethodGet, testObjectURL, nil)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -147,11 +153,11 @@ func TestObjectHandlerGetObjectNoObject(t *testing.T) {
 	}
 
 	expected := tester.ErrorResourceNotFound
-	expected.Description = "No objects defined in this collection"
+	expected.Description = "No objects found"
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
-		t.Error("Comparison failed")
+		t.Error("Comparison failed; result:", result, "Expected:", expected)
 	}
 }
 

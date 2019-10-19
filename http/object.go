@@ -36,10 +36,6 @@ func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.getObject(w, r)
-}
-
-func (h ObjectHandler) getObject(w http.ResponseWriter, r *http.Request) {
 	objects, err := h.ObjectService.Object(r.Context(), takeCollectionID(r), takeObjectID(r), newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
@@ -47,7 +43,7 @@ func (h ObjectHandler) getObject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(objects) <= 0 {
-		resourceNotFound(w, errors.New("No objects defined in this collection"))
+		resourceNotFound(w, errors.New("No objects found"))
 		return
 	}
 

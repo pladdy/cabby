@@ -1,3 +1,6 @@
+### Client error codes
+Check resource end points, verify 400-40X are handled per the spec
+
 ### API Routes
 Are not a single token separated by a '/' and followed by 'collections'
 They can be multiple tokens...fix that bug
