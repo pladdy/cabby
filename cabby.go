@@ -28,8 +28,8 @@ const (
 	StixContentType20 = "application/vnd.oasis.stix+json;version=2.0"
 	// StixContentType represents a stix 2 content type
 	StixContentType = "application/vnd.oasis.stix+json"
-	// TaxiiContentType20 represents a taxii 2.0 content type
-	TaxiiContentType20 = "application/vnd.oasis.taxii+json;version=2.1"
+	// TaxiiContentType21 represents a taxii 2.1 content type
+	TaxiiContentType21 = "application/vnd.oasis.taxii+json;version=2.1"
 	// TaxiiContentType represents a taxii 2 content type
 	TaxiiContentType = "application/vnd.oasis.taxii+json"
 	// TaxiiVersion notes the supported version of the server
@@ -196,6 +196,7 @@ type DataStore interface {
 	Open() error
 	StatusService() StatusService
 	UserService() UserService
+	VersionsService() VersionsService
 }
 
 // Discovery resource
@@ -498,4 +499,14 @@ type UserService interface {
 	UpdateUserCollection(ctx context.Context, u string, ca CollectionAccess) error
 	User(ctx context.Context, user, password string) (User, error)
 	UserCollections(ctx context.Context, user string) (UserCollectionList, error)
+}
+
+// Versions contains a list of versions for an object
+type Versions struct {
+	Versions []string `json:"versions"`
+}
+
+// VersionsService provides object versions
+type VersionsService interface {
+	Versions(c context.Context, cid, oid string, cr *Range, f Filter) (Versions, error)
 }

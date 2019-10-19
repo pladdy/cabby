@@ -18,9 +18,9 @@ import (
 func TestNewCabby(t *testing.T) {
 	c := cabby.Config{Port: 1212, SSLCert: "../server.crt", SSLKey: "../server.key"}
 	server := NewCabby(mockDataStore(), c)
-	defer server.Close()
 
 	// use tls which requires cert/key files
+	defer server.Close()
 	go func() {
 		log.Info(server.ListenAndServeTLS(c.SSLCert, c.SSLKey))
 	}()
@@ -76,9 +76,9 @@ func TestSetupServerHandler(t *testing.T) {
 
 	port := 1212
 	server := setupServer(ds, sm, cabby.Config{Port: port})
-	defer server.Close()
 
 	// ignore TLS, not needed for log test
+	defer server.Close()
 	go func() {
 		log.Info(server.ListenAndServe())
 	}()

@@ -154,3 +154,20 @@ func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
 		t.Error("Got:", ca, "Expected:", empty)
 	}
 }
+
+func TestTakeVersions(t *testing.T) {
+	tests := []struct {
+		request *http.Request
+		result  string
+	}{
+		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID/objects/objectID/versions", nil), "versions"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+	}
+
+	for _, test := range tests {
+		result := takeVersions(test.request)
+		if result != test.result {
+			t.Error("Got:", result, "Expected:", test.result)
+		}
+	}
+}

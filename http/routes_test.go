@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
@@ -13,6 +15,20 @@ import (
 	"github.com/pladdy/cabby/tester"
 	log "github.com/sirupsen/logrus"
 )
+
+// set up mock handler to use for testing
+type mockRequestHandler struct {
+}
+
+func (m mockRequestHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
+func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
+func (m mockRequestHandler) Post(w http.ResponseWriter, r *http.Request) {
+	io.WriteString(w, r.Method)
+}
 
 func TestRegisterAPIRoutesFail(t *testing.T) {
 	// redirect log output for test
@@ -84,6 +100,35 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 	testErrorLog(result, t)
 }
 
+func TestRouteObjectsHandler(t *testing.T) {
+	// use mock hanlders and register them to the route
+	oh, osh, vsh := mockRequestHandler{}, mockRequestHandler{}, mockRequestHandler{}
+
+	// set up a server
+	server := httptest.NewServer(routeObjectsHandler(oh, osh, vsh))
+	defer server.Close()
+
+	tests := []struct {
+		url string
+	}{
+		{server.URL + "/api-root/collections/collection-id/objects"},
+		{server.URL + "/api-root/collections/collection-id/objects/object-id"},
+		{server.URL + "/api-root/collections/collection-id/objects/object-id/versions/"},
+	}
+
+	for _, test := range tests {
+		req := newServerRequest("GET", test.url)
+		res, err := getResponse(req, server)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if res.StatusCode != http.StatusOK {
+			t.Error("Got:", res.StatusCode, "Expected:", http.StatusOK)
+		}
+	}
+}
+
 func TestRouteRequest(t *testing.T) {
 	mock := mockRequestHandler{}
 
@@ -100,7 +145,7 @@ func TestRouteRequest(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		status, _ := handlerTest(routeRequest(mock), test.method, test.url, nil)
+		status, _ := handlerTest(routeHandler(mock), test.method, test.url, nil)
 
 		if status != test.status {
 			t.Error("Testing method: ", test.method, "Got:", status, "Expected:", test.status)

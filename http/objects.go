@@ -8,15 +8,11 @@ import (
 	"net/http"
 
 	"github.com/pladdy/cabby"
-	"github.com/pladdy/stones"
 	log "github.com/sirupsen/logrus"
 )
 
 // ObjectsMethods lists allowed methods
 const ObjectsMethods = "Get, Head, Post"
-
-// ObjectMethods lists allowed methods
-const ObjectMethods = "Get, Delete, Head"
 
 // ObjectsHandler handles Objects requests
 type ObjectsHandler struct {
@@ -25,30 +21,13 @@ type ObjectsHandler struct {
 	MaxContentLength int64
 }
 
-/* Delete */
-
-//Delete handles a delete of an object; can only be done given an ID
+// Delete handler
 func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
-
-	if takeObjectID(r) == "" {
-		w.Header().Set("Allow", ObjectsMethods)
-		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
-		return
-	}
-
-	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-	writeContent(w, r, cabby.TaxiiContentType, "")
+	w.Header().Set("Allow", VersionsMethods)
+	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
 }
 
-/* Get */
-
-// Get handles a get request for the objects endpoint; it has to decide if a request is for objects in a collection
-// or a specfic object
+// Get handles a get request for the objects endpoint
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
@@ -56,11 +35,7 @@ func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if takeObjectID(r) == "" {
-		h.getObjects(w, r)
-		return
-	}
-	h.getObject(w, r)
+	h.getObjects(w, r)
 }
 
 func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
@@ -80,11 +55,7 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envelope, err := objectsToEnvelope(objects)
-	if err != nil {
-		internalServerError(w, errors.New("Unable to create envelope"))
-		return
-	}
+	envelope := objectsToEnvelope(objects, cr)
 
 	w.Header().Set("X-TAXII-Date-Added-First", cr.AddedAfterFirst())
 	w.Header().Set("X-TAXII-Date-Added-Last", cr.AddedAfterLast())
@@ -97,39 +68,11 @@ func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h ObjectsHandler) getObject(w http.ResponseWriter, r *http.Request) {
-	objects, err := h.ObjectService.Object(r.Context(), takeCollectionID(r), takeObjectID(r), newFilter(r))
-	if err != nil {
-		internalServerError(w, err)
-		return
-	}
-
-	if len(objects) <= 0 {
-		resourceNotFound(w, errors.New("No objects defined in this collection"))
-		return
-	}
-
-	envelope, err := objectsToEnvelope(objects)
-	if err != nil {
-		internalServerError(w, errors.New("Unable to create envelope"))
-		return
-	}
-
-	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
-}
-
 /* Post */
 
 // Post handles post request
 func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
-
-	// due to how the routing logic works, a post can go to a url with an object on the path.  a path with
-	// an object id can only receive a get method
-	if takeObjectID(r) != "" {
-		handlePostToObjectURL(w, r)
-		return
-	}
 
 	if !h.validPost(w, r) {
 		return
@@ -177,7 +120,7 @@ func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isVal
 		return
 	}
 
-	if greaterThan(r.ContentLength, h.MaxContentLength) {
+	if r.ContentLength > h.MaxContentLength {
 		requestTooLarge(w, r.ContentLength, h.MaxContentLength)
 		return
 	}
@@ -197,31 +140,6 @@ func envelopeFromBytes(b []byte) (e cabby.Envelope, err error) {
 	if err != nil {
 		log.WithFields(log.Fields{"envelope": string(b), "error:": err}).Error("Unable to unmarshal envelope")
 		return e, fmt.Errorf("Unable to convert JSON to envelope, error: %v", err)
-	}
-	return
-}
-
-func greaterThan(r, m int64) bool {
-	if r > m {
-		return true
-	}
-	return false
-}
-
-func handlePostToObjectURL(w http.ResponseWriter, r *http.Request) {
-	log.WithFields(log.Fields{"object id": takeObjectID(r)}).Error("Invalid method for object")
-	w.Header().Set("Allow", ObjectMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
-}
-
-func objectsToEnvelope(objects []stones.Object) (e cabby.Envelope, err error) {
-	for _, o := range objects {
-		e.Objects = append(e.Objects, json.RawMessage(o.Source))
-	}
-
-	if len(e.Objects) == 0 {
-		log.Warn("Can't return an empty envelope, returning error to caller")
-		return e, errors.New("No data returned: empty envelope")
 	}
 	return
 }

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/stones"
 )
 
 func TestNoResources(t *testing.T) {
@@ -17,6 +18,14 @@ func TestNoResources(t *testing.T) {
 	result := noResources(res, resources, cr)
 	if result != true {
 		t.Error("Expected true")
+	}
+}
+
+func TestObjectsToEnvelopeMore(t *testing.T) {
+	e := objectsToEnvelope([]stones.Object{}, cabby.Range{Total: 1})
+	expected := true
+	if e.More != expected {
+		t.Error("Got:", e.More, "Expected:", expected)
 	}
 }
 

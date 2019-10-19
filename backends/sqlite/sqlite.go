@@ -95,6 +95,11 @@ func (s *DataStore) UserService() cabby.UserService {
 	return UserService{DB: s.DB, DataStore: s}
 }
 
+// VersionsService returns a service for versions
+func (s *DataStore) VersionsService() cabby.VersionsService {
+	return VersionsService{DB: s.DB, DataStore: s}
+}
+
 /* writer methods */
 
 func (s *DataStore) batchWrite(query string, toWrite chan interface{}, errs chan error) {
