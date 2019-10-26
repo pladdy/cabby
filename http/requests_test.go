@@ -6,45 +6,8 @@ import (
 	"testing"
 
 	"github.com/pladdy/cabby"
+	"github.com/pladdy/cabby/tester"
 )
-
-func TestGetToken(t *testing.T) {
-	tests := []struct {
-		url      string
-		index    int
-		expected string
-	}{
-		{"/api_root/collections/collection_id/objects/stix_id", 0, ""},
-		{"/api_root/collections/collection_id/objects/stix_id", 1, "api_root"},
-		{"/api_root/collections/collection_id/objects/stix_id", 3, "collection_id"},
-		{"/api_root/collections/collection_id/objects/stix_id", 5, "stix_id"},
-		{"/api_root/collections/collection_id/objects/stix_id", 7, ""},
-	}
-
-	for _, test := range tests {
-		result := getToken(test.url, test.index)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
-func TestLastURLPathToken(t *testing.T) {
-	tests := []struct {
-		path     string
-		expected string
-	}{
-		{"/collections/", "collections"},
-		{"/collections/someId", "someId"},
-	}
-
-	for _, test := range tests {
-		result := lastURLPathToken(test.path)
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
 
 func TestTakeAddedAfter(t *testing.T) {
 	tests := []struct {
@@ -65,13 +28,45 @@ func TestTakeAddedAfter(t *testing.T) {
 	}
 }
 
+func TestTakeAPIRoot(t *testing.T) {
+	tests := []struct {
+		request  *http.Request
+		expected string
+	}{
+		{httptest.NewRequest("GET", "/api_root/collections/collection_id/objects/stix_id/", nil), "api_root"},
+		{httptest.NewRequest("GET", "/multi/token/api_root/collections/collection_id/objects/stix_id", nil), "multi/token/api_root"},
+		{httptest.NewRequest("GET", "/invalid/foobar/collection_id/objects/stix_id", nil), ""},
+	}
+
+	for _, test := range tests {
+		result := takeAPIRoot(test.request)
+		if result != test.expected {
+			t.Error("Got:", result, "Expected:", test.expected)
+		}
+	}
+}
+
+func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
+	// create a request with a valid context BUT a path with an invalid collection in it
+	req := httptest.NewRequest("GET", "/foo/bar/baz", nil)
+
+	ca := takeCollectionAccess(req)
+	empty := cabby.CollectionAccess{}
+
+	if ca != empty {
+		t.Error("Got:", ca, "Expected:", empty)
+	}
+}
+
 func TestTakeCollectionID(t *testing.T) {
+	cid := tester.CollectionID
+
 	tests := []struct {
 		request *http.Request
 		id      string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID", nil), "collectionID"},
-		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID/objects", nil), "collectionID"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid, nil), cid},
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects", nil), cid},
 		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
 	}
 
@@ -143,24 +138,36 @@ func TestTakeMatchVersions(t *testing.T) {
 	}
 }
 
-func TestTakeCollectionAccessInvalidCollection(t *testing.T) {
-	// create a request with a valid context BUT a path with an invalid collection in it
-	req := httptest.NewRequest("GET", "/foo/bar/baz", nil)
+func TestTakeStatusID(t *testing.T) {
+	sid := tester.StatusID
 
-	ca := takeCollectionAccess(req)
-	empty := cabby.CollectionAccess{}
+	tests := []struct {
+		request *http.Request
+		id      string
+	}{
+		{httptest.NewRequest("GET", "/api_root_path/status/"+sid, nil), sid},
+		{httptest.NewRequest("GET", "/api_root_path/status/"+sid+"/", nil), sid},
+		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+	}
 
-	if ca != empty {
-		t.Error("Got:", ca, "Expected:", empty)
+	for _, test := range tests {
+		result := takeStatusID(test.request)
+		if result != test.id {
+			t.Error("Got:", result, "Expected:", test.id)
+		}
 	}
 }
 
 func TestTakeVersions(t *testing.T) {
+	cid := tester.CollectionID
+	oid := tester.ObjectID
+
 	tests := []struct {
 		request *http.Request
 		result  string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/collections/collectionID/objects/objectID/versions", nil), "versions"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/versions", nil), "versions"},
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/versions/", nil), "versions"},
 		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
 	}
 

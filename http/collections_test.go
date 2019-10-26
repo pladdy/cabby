@@ -201,7 +201,7 @@ func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
-		t.Error("Comparison failed")
+		t.Error("Comparison failed, result:", result, "Expected:", expected)
 	}
 }
 
