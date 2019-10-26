@@ -17,20 +17,21 @@ const (
 	sixMonthsOfSeconds = "63072000"
 )
 
-func getToken(s string, i int) string {
-	tokens := strings.Split(s, "/")
-
-	if len(tokens) > i {
-		return tokens[i]
-	}
-	return ""
-}
-
-func lastURLPathToken(u string) string {
-	u = strings.TrimSuffix(u, "/")
-	tokens := strings.Split(u, "/")
-	return tokens[len(tokens)-1]
-}
+// I don't want to introduce a router dependency, so I'm using regexes...which may be worse.  I felt this was a less
+// bad path.
+// Golang regexes: https://github.com/google/re2/wiki/Syntax
+// Regex testing tool: https://regex101.com/ (the fact I needed this may indicate this was a bad choice)
+var (
+	apiRootRegex         = `/(?P<apiroot>[\w\\\/]+)/`
+	apiRootPathRegex     = regexp.MustCompile(apiRootRegex + `(status|collections)/`)
+	statusPathRegex      = regexp.MustCompile(apiRootRegex + `status/(?P<statusid>[a-zA-Z\-\d]+)/?`)
+	collectionsPathRegex = regexp.MustCompile(apiRootRegex + "collections/")
+	collectionPathRegex  = regexp.MustCompile(collectionsPathRegex.String() + `(?P<collectionid>[a-zA-Z\-\d]+)/?`)
+	manifestPathRegex    = regexp.MustCompile(collectionPathRegex.String() + "/manifest/")
+	objectsPathRegex     = regexp.MustCompile(collectionPathRegex.String() + "/objects/")
+	objectPathRegex      = regexp.MustCompile(objectsPathRegex.String() + `(?P<objectid>[a-zA-Z\-\d]+)/?`)
+	versionsPathRegex    = regexp.MustCompile(objectPathRegex.String() + "versions/?")
+)
 
 func newFilter(r *http.Request) (f cabby.Filter) {
 	f.AddedAfter = takeAddedAfter(r)
@@ -57,8 +58,11 @@ func takeAddedAfter(r *http.Request) stones.Timestamp {
 }
 
 func takeAPIRoot(r *http.Request) string {
-	var apiRootIndex = 1
-	return getToken(r.URL.Path, apiRootIndex)
+	apiRootIndex := 1
+	if apiRootPathRegex.Match([]byte(r.URL.Path)) {
+		return apiRootPathRegex.FindStringSubmatch(r.URL.Path)[apiRootIndex]
+	}
+	return ""
 }
 
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
@@ -79,13 +83,11 @@ func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 }
 
 func takeCollectionID(r *http.Request) string {
-	var collectionIndex = 3
-	return getToken(r.URL.Path, collectionIndex)
-}
-
-func takeObjectID(r *http.Request) string {
-	var objectIDIndex = 5
-	return getToken(r.URL.Path, objectIDIndex)
+	collectionIndex := 2
+	if collectionPathRegex.Match([]byte(r.URL.Path)) {
+		return collectionPathRegex.FindStringSubmatch(r.URL.Path)[collectionIndex]
+	}
+	return ""
 }
 
 func takeMatchFilters(r *http.Request, filter string) string {
@@ -109,20 +111,30 @@ func takeMatchVersions(r *http.Request) string {
 	return takeMatchFilters(r, "match[version]")
 }
 
+func takeObjectID(r *http.Request) string {
+	if objectPathRegex.Match([]byte(r.URL.Path)) {
+		return objectPathRegex.FindStringSubmatch(r.URL.Path)[1]
+	}
+	return ""
+}
+
 func trimSlashes(s string) string {
-	re := regexp.MustCompile("^/")
-	s = re.ReplaceAllString(s, "")
-
-	re = regexp.MustCompile("/$")
-	s = re.ReplaceAllString(s, "")
-
-	parts := strings.Split(s, "/")
-	return strings.Join(parts, "/")
+	return strings.Trim(s, "/")
 }
 
 func takeStatusID(r *http.Request) string {
-	var statusIndex = 3
-	return getToken(r.URL.Path, statusIndex)
+	statusIndex := 2
+	if statusPathRegex.Match([]byte(r.URL.Path)) {
+		return statusPathRegex.FindStringSubmatch(r.URL.Path)[statusIndex]
+	}
+	return ""
+}
+
+func takeVersions(r *http.Request) string {
+	if versionsPathRegex.Match([]byte(r.URL.Path)) {
+		return "versions"
+	}
+	return ""
 }
 
 func withTransactionID(r *http.Request) *http.Request {
