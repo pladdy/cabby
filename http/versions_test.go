@@ -64,7 +64,7 @@ func TestVersionsHandlerGetHeaders(t *testing.T) {
 	}
 }
 
-func TestVersionsHandlerGetRange(t *testing.T) {
+func TestVersionsHandlerGetPage(t *testing.T) {
 	tests := []struct {
 		limit    int
 		expected int

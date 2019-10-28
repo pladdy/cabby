@@ -94,7 +94,7 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerGetObjectsRange(t *testing.T) {
+func TestObjectsHandlerGetObjectsPage(t *testing.T) {
 	tests := []struct {
 		limit    int
 		expected int
