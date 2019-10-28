@@ -286,18 +286,18 @@ func TestFilterQueryString(t *testing.T) {
 	}
 }
 
-func TestRangeQueryString(t *testing.T) {
+func TestPageQueryString(t *testing.T) {
 	tests := []struct {
-		r     Range
+		p     Page
 		query string
 		args  int
 	}{
-		{Range{&cabby.Range{}}, "", 0},
-		{Range{&cabby.Range{First: 0, Last: 0, Set: true}}, "limit ? offset ?", 2},
+		{Page{&cabby.Page{}}, "", 0},
+		{Page{&cabby.Page{Limit: 1}}, "limit ?", 1},
 	}
 
 	for _, test := range tests {
-		result, args := test.r.QueryString()
+		result, args := test.p.QueryString()
 
 		if result != test.query {
 			t.Error("Got:", result, "Expected:", test.query)

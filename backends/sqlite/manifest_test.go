@@ -16,11 +16,11 @@ func TestManifestServiceManifest(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ManifestService()
 
-	cr := cabby.Range{}
+	p := cabby.Page{}
 	expected := tester.ManifestEntry
 	expectedTime := time.Now().UTC()
 
-	result, err := s.Manifest(context.Background(), tester.CollectionID, &cr, cabby.Filter{})
+	result, err := s.Manifest(context.Background(), tester.CollectionID, &p, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -33,12 +33,12 @@ func TestManifestServiceManifest(t *testing.T) {
 		t.Error("Comparison failed")
 	}
 
-	if cr.MinimumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
-		t.Error("Got:", cr.MinimumAddedAfter.UnixNano(), "Expected >=:", expectedTime.UnixNano())
+	if p.MinimumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected >=:", expectedTime.UnixNano())
 	}
 
-	if cr.MaximumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
-		t.Error("Got:", cr.MaximumAddedAfter.UnixNano(), "Expected NOT:", expectedTime.UnixNano())
+	if p.MaximumAddedAfter.UnixNano() >= expectedTime.UnixNano() {
+		t.Error("Got:", p.MaximumAddedAfter.UnixNano(), "Expected NOT:", expectedTime.UnixNano())
 	}
 }
 
@@ -67,7 +67,7 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &cabby.Range{First: 0, Last: 0}, test.filter)
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &cabby.Page{}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -78,7 +78,7 @@ func TestManifestServiceManifestFilter(t *testing.T) {
 	}
 }
 
-func TestManifestServiceManifestRange(t *testing.T) {
+func TestManifestServiceManifestPage(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := ds.ManifestService()
@@ -92,16 +92,16 @@ func TestManifestServiceManifestRange(t *testing.T) {
 	totalEntries := 11
 
 	tests := []struct {
-		cabbyRange      cabby.Range
+		cabbyPage       cabby.Page
 		expectedEntries int
 	}{
 		// setupSQLite() creates 1 object, 10 created above (11 total)
-		{cabby.Range{First: 0, Last: 0}, 11},
-		{cabby.Range{First: 0, Last: 5, Set: true}, 6},
+		{cabby.Page{Limit: 11}, 11},
+		{cabby.Page{Limit: 6}, 6},
 	}
 
 	for _, test := range tests {
-		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &test.cabbyRange, cabby.Filter{})
+		results, err := s.Manifest(context.Background(), tester.Collection.ID.String(), &test.cabbyPage, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -110,8 +110,8 @@ func TestManifestServiceManifestRange(t *testing.T) {
 			t.Error("Got:", len(results.Objects), "Expected:", test.expectedEntries)
 		}
 
-		if int(test.cabbyRange.Total) != totalEntries {
-			t.Error("Got:", test.cabbyRange.Total, "Expected:", totalEntries)
+		if int(test.cabbyPage.Total) != totalEntries {
+			t.Error("Got:", test.cabbyPage.Total, "Expected:", totalEntries)
 		}
 	}
 }
@@ -126,7 +126,7 @@ func TestManifestServiceManifestQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Page{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -137,7 +137,7 @@ func TestManifestServiceManifestNoAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := ds.ManifestService()
 
-	_, err := s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	_, err := s.Manifest(context.Background(), tester.CollectionID, &cabby.Page{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -153,7 +153,7 @@ func TestManifestServiceManifestInvalidDateAdded(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	_, err = s.Manifest(context.Background(), tester.CollectionID, &cabby.Page{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

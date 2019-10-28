@@ -18,15 +18,15 @@ type ManifestService struct {
 }
 
 // Manifest will read from the data store and return the resource
-func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+func (s ManifestService) Manifest(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 	resource, action := "Manifest", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.manifest(collectionID, cr, f)
+	result, err := s.manifest(collectionID, p, f)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
-func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+func (s ManifestService) manifest(collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 	sql := `with data as (
 						select rowid, id, min(created_at) date_added, modified version, 1 count
 						-- media_types omitted...should that be in this table?
@@ -43,7 +43,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 	args := []interface{}{collectionID}
 
 	sql, args = applyFiltering(sql, f, args)
-	sql, args = applyPaging(sql, cr, args)
+	sql, args = applyPaging(sql, p, args)
 
 	m := cabby.Manifest{}
 
@@ -58,7 +58,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 		me := cabby.ManifestEntry{}
 		var dateAdded, version string
 
-		if err := rows.Scan(&me.ID, &dateAdded, &version, &cr.Total); err != nil {
+		if err := rows.Scan(&me.ID, &dateAdded, &version, &p.Total); err != nil {
 			return m, err
 		}
 
@@ -74,7 +74,7 @@ func (s ManifestService) manifest(collectionID string, cr *cabby.Range, f cabby.
 		}
 		me.Version = ts
 
-		cr.SetAddedAfters(me.DateAdded.String())
+		p.SetAddedAfters(me.DateAdded.String())
 		me.MediaTypes = []string{cabby.StixContentType}
 		m.Objects = append(m.Objects, me)
 	}

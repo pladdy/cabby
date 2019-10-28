@@ -218,14 +218,14 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 		{cabby.Filter{AddedAfter: ts}, 5},
 	}
 
-	cr := cabby.Range{}
+	cr := cabby.Page{}
 	expectedTime := time.Now()
 
 	for _, test := range tests {
 		results, err := s.Objects(
 			context.Background(),
 			tester.CollectionID,
-			&cabby.Range{First: 0, Last: 0}, test.filter)
+			&cabby.Page{}, test.filter)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -244,7 +244,7 @@ func TestObjectsServiceObjectsFilter(t *testing.T) {
 	}
 }
 
-func TestObjectsServiceObjectsRange(t *testing.T) {
+func TestObjectsServiceObjectsPage(t *testing.T) {
 	setupSQLite()
 	ds := testDataStore()
 	s := ds.ObjectService()
@@ -258,16 +258,16 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 	totalObjects := 11
 
 	tests := []struct {
-		cabbyRange      cabby.Range
+		cabbyPage       cabby.Page
 		expectedObjects int
 	}{
 		// setupSQLite() creates 1 object, 10 created above (11 total)
-		{cabby.Range{First: 0, Last: 0}, 11},
-		{cabby.Range{First: 0, Last: 5, Set: true}, 6},
+		{cabby.Page{Limit: 11}, 11},
+		{cabby.Page{Limit: 6}, 6},
 	}
 
 	for _, test := range tests {
-		results, err := s.Objects(context.Background(), tester.CollectionID, &test.cabbyRange, cabby.Filter{})
+		results, err := s.Objects(context.Background(), tester.CollectionID, &test.cabbyPage, cabby.Filter{})
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -276,8 +276,8 @@ func TestObjectsServiceObjectsRange(t *testing.T) {
 			t.Error("Got:", len(results), "Expected:", test.expectedObjects)
 		}
 
-		if int(test.cabbyRange.Total) != totalObjects {
-			t.Error("Got:", test.cabbyRange.Total, "Expected:", totalObjects)
+		if int(test.cabbyPage.Total) != totalObjects {
+			t.Error("Got:", test.cabbyPage.Total, "Expected:", totalObjects)
 		}
 	}
 }
@@ -292,7 +292,7 @@ func TestObjectsServiceObjectsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Objects(context.Background(), tester.CollectionID, &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), tester.CollectionID, &cabby.Page{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -361,7 +361,7 @@ func TestObjectServiceCreateEnvelopeWithInvalidObject(t *testing.T) {
 	osv.CreateEnvelope(context.Background(), envelope, tester.CollectionID, st, ssv)
 
 	// check objects were saved; use an invalid range to get all
-	result, _ := osv.Objects(context.Background(), tester.CollectionID, &cabby.Range{First: 0, Last: 0}, cabby.Filter{})
+	result, _ := osv.Objects(context.Background(), tester.CollectionID, &cabby.Page{}, cabby.Filter{})
 	expected := 2
 	if len(result) != expected {
 		t.Error("Got:", len(result), "Expected:", expected)
@@ -395,7 +395,7 @@ func TestObjectServiceInvalidIDs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Objects(context.Background(), "fail", &cabby.Range{}, cabby.Filter{})
+	_, err = s.Objects(context.Background(), "fail", &cabby.Page{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

@@ -13,7 +13,7 @@ func TestVersionsServiceVersions(t *testing.T) {
 	ds := testDataStore()
 	s := ds.VersionsService()
 
-	result, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
+	result, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Page{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
@@ -34,7 +34,7 @@ func TestVersionsServiceVersionQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
+	_, err = s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Page{}, cabby.Filter{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}
@@ -45,7 +45,7 @@ func TestVersionsServiceVersionNoAPIRoot(t *testing.T) {
 	ds := testDataStore()
 	s := ds.VersionsService()
 
-	_, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Range{}, cabby.Filter{})
+	_, err := s.Versions(context.Background(), tester.CollectionID, tester.ObjectID, &cabby.Page{}, cabby.Filter{})
 	if err != nil {
 		t.Error("Got:", err, "Expected no error")
 	}
