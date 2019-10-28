@@ -175,124 +175,118 @@ func TestCollectionValidate(t *testing.T) {
 	}
 }
 
-func TestNewRange(t *testing.T) {
-	invalidRange := Range{}
-
+func TestNewPage(t *testing.T) {
 	tests := []struct {
 		input       string
-		resultRange Range
+		resultPage  Page
 		expectError bool
 	}{
-		{"items 0-10", Range{First: 0, Last: 10, Set: true}, false},
-		{"items 10-0", Range{First: 10, Last: 0}, true},
-		{"items a-z", Range{First: 0, Last: 0}, true},
-		{"items -4-0", invalidRange, true},
-		{"items 0 10", invalidRange, true},
-		{"items 10", invalidRange, true},
-		{"0-10", invalidRange, true},
-		{"", invalidRange, false},
+		{"10", Page{Limit: 10}, false},
+		{" 10", Page{Limit: 10}, true},
+		{"10 ", Page{Limit: 10}, true},
+		{"", Page{}, true},
 	}
 
 	for _, test := range tests {
-		result, err := NewRange(test.input)
-		if result != test.resultRange {
-			t.Error("Got:", result, "Expected:", test.resultRange)
+		result, err := NewPage(test.input)
+		if result != test.resultPage {
+			t.Error("Got:", result, "Expected:", test.resultPage)
 		}
 
 		if err != nil && test.expectError == false {
-			t.Error("Got:", err, "Expected: no error", "Range:", result)
+			t.Error("Got:", err, "Expected: no error", "Page:", result)
 		}
 	}
 }
 
-func TestRangeAddedAfterFirst(t *testing.T) {
+func TestPageAddedAfterFirst(t *testing.T) {
 	now := stones.NewTimestamp()
 
 	tests := []struct {
-		cr       Range
+		p        Page
 		expected string
 	}{
-		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MinimumAddedAfter: now}, now.String()},
+		{Page{}, time.Time{}.Format(time.RFC3339Nano)},
+		{Page{MinimumAddedAfter: now}, now.String()},
 	}
 
 	for _, test := range tests {
-		result := test.cr.AddedAfterFirst()
+		result := test.p.AddedAfterFirst()
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
 	}
 }
 
-func TestRangeAddedAfterLast(t *testing.T) {
+func TestPageAddedAfterLast(t *testing.T) {
 	now := stones.NewTimestamp()
 
 	tests := []struct {
-		cr       Range
+		p        Page
 		expected string
 	}{
-		{Range{}, time.Time{}.Format(time.RFC3339Nano)},
-		{Range{MaximumAddedAfter: now}, now.String()},
+		{Page{}, time.Time{}.Format(time.RFC3339Nano)},
+		{Page{MaximumAddedAfter: now}, now.String()},
 	}
 
 	for _, test := range tests {
-		result := test.cr.AddedAfterLast()
+		result := test.p.AddedAfterLast()
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}
 	}
 }
 
-func TestRangeSetAddedAfters(t *testing.T) {
-	r := Range{}
+func TestPageSetAddedAfters(t *testing.T) {
+	p := Page{}
 
-	// a range is mutated when setting a date
+	// a page is mutated when setting a date
 	// it will be used as a returned data set is iterated over
 
-	// the first date passed to a range should set min and max times
+	// the first date passed to a page should set min and max times
 	first, _ := time.Parse(time.RFC3339Nano, "2016-02-01T00:00:01.123Z")
-	r.SetAddedAfters(first.Format(time.RFC3339Nano))
+	p.SetAddedAfters(first.Format(time.RFC3339Nano))
 
-	if r.MinimumAddedAfter.UnixNano() != first.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	if p.MinimumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
 	}
-	if r.MaximumAddedAfter.UnixNano() != first.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	if p.MaximumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
 	}
 
 	// the second date is a duplicate, it won't change anything
 	second, _ := time.Parse(time.RFC3339Nano, "2016-02-01T00:00:01.123Z")
-	r.SetAddedAfters(second.Format(time.RFC3339Nano))
+	p.SetAddedAfters(second.Format(time.RFC3339Nano))
 
-	if r.MinimumAddedAfter.UnixNano() != second.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
+	if p.MinimumAddedAfter.UnixNano() != second.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
 	}
-	if r.MaximumAddedAfter.UnixNano() != second.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
+	if p.MaximumAddedAfter.UnixNano() != second.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", second.UnixNano())
 	}
 
 	third, _ := time.Parse(time.RFC3339Nano, "2017-02-01T00:00:01.123Z")
-	r.SetAddedAfters(third.Format(time.RFC3339Nano))
+	p.SetAddedAfters(third.Format(time.RFC3339Nano))
 
-	if r.MinimumAddedAfter.UnixNano() != first.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
+	if p.MinimumAddedAfter.UnixNano() != first.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", first.UnixNano())
 	}
-	if r.MaximumAddedAfter.UnixNano() != third.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
+	if p.MaximumAddedAfter.UnixNano() != third.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
 	}
 
 	fourth, _ := time.Parse(time.RFC3339Nano, "2015-02-01T00:00:01.123Z")
-	r.SetAddedAfters(fourth.Format(time.RFC3339Nano))
+	p.SetAddedAfters(fourth.Format(time.RFC3339Nano))
 
-	if r.MinimumAddedAfter.UnixNano() != fourth.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", fourth.UnixNano())
+	if p.MinimumAddedAfter.UnixNano() != fourth.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", fourth.UnixNano())
 	}
-	if r.MaximumAddedAfter.UnixNano() != third.UnixNano() {
-		t.Error("Got:", r.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
+	if p.MaximumAddedAfter.UnixNano() != third.UnixNano() {
+		t.Error("Got:", p.MinimumAddedAfter.UnixNano(), "Expected:", third.UnixNano())
 	}
 }
 
-func TestRangeSetAddedAftersFail(t *testing.T) {
+func TestPageSetAddedAftersFail(t *testing.T) {
 	// redirect log output for test
 	var buf bytes.Buffer
 
@@ -304,8 +298,8 @@ func TestRangeSetAddedAftersFail(t *testing.T) {
 		log.SetOutput(os.Stderr)
 	}()
 
-	r := Range{}
-	r.SetAddedAfters("fail")
+	p := Page{}
+	p.SetAddedAfters("fail")
 
 	// parse log into struct
 	var result errorLog
@@ -320,35 +314,17 @@ func TestRangeSetAddedAftersFail(t *testing.T) {
 	}
 }
 
-func TestRangeString(t *testing.T) {
+func TestPageValid(t *testing.T) {
 	tests := []struct {
-		testRange Range
-		expected  string
+		testPage Page
+		expected bool
 	}{
-		{Range{First: 0, Last: 0}, "items 0-0"},
-		{Range{First: 0, Last: 0, Total: 50}, "items 0-0/50"},
+		{Page{Limit: 10}, true},
+		{Page{Limit: 0}, false},
 	}
 
 	for _, test := range tests {
-		result := test.testRange.String()
-		if result != test.expected {
-			t.Error("Got:", result, "Expected:", test.expected)
-		}
-	}
-}
-
-func TestRangeValid(t *testing.T) {
-	tests := []struct {
-		testRange Range
-		expected  bool
-	}{
-		{Range{First: 1, Last: 0}, false},
-		{Range{First: 0, Last: 0}, true},
-		{Range{First: 0, Last: 3}, true},
-	}
-
-	for _, test := range tests {
-		result := test.testRange.Valid()
+		result := test.testPage.Valid()
 		if result != test.expected {
 			t.Error("Got:", result, "Expected:", test.expected)
 		}

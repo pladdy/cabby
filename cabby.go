@@ -149,7 +149,7 @@ type CollectionsInAPIRoot struct {
 // CollectionService interface for interacting with data store
 type CollectionService interface {
 	Collection(ctx context.Context, apiRoot, collectionID string) (Collection, error)
-	Collections(ctx context.Context, apiRoot string, cr *Range) (Collections, error)
+	Collections(ctx context.Context, apiRoot string, cr *Page) (Collections, error)
 	CollectionsInAPIRoot(ctx context.Context, apiRoot string) (CollectionsInAPIRoot, error)
 	CreateCollection(ctx context.Context, c Collection) error
 	DeleteCollection(ctx context.Context, collectionID string) error
@@ -303,7 +303,7 @@ type ManifestEntry struct {
 
 // ManifestService provides manifest data
 type ManifestService interface {
-	Manifest(ctx context.Context, collectionID string, cr *Range, f Filter) (Manifest, error)
+	Manifest(ctx context.Context, collectionID string, cr *Page, f Filter) (Manifest, error)
 }
 
 // MigrationService for performing database migrations
@@ -318,107 +318,72 @@ type ObjectService interface {
 	CreateObject(ctx context.Context, collectionID string, o stones.Object) error
 	DeleteObject(ctx context.Context, collectionID, objecteID string) error
 	Object(ctx context.Context, collectionID, objectID string, f Filter) ([]stones.Object, error)
-	Objects(ctx context.Context, collectionID string, cr *Range, f Filter) ([]stones.Object, error)
+	Objects(ctx context.Context, collectionID string, cr *Page, f Filter) ([]stones.Object, error)
 }
 
-// Range is used for paginated requests to represent the requested data range
-type Range struct {
-	First uint64
-	Last  uint64
+// Page is used for paginated requests to represent the requested data range
+type Page struct {
+	Limit uint64
 	// Used for setting X-TAXII-Date-Added-First
 	MinimumAddedAfter stones.Timestamp
 	// Used for setting X-TAXII-Date-Added-Last
 	MaximumAddedAfter stones.Timestamp
-	Set               bool
 	Total             uint64
 }
 
-// NewRange returns a Range given a string from the 'Range' HTTP header string
-// the Range HTTP Header is specified by the request with the syntax 'items X-Y'
-func NewRange(items string) (r Range, err error) {
-	if items == "" {
-		return r, err
+// NewPage returns a Page given a string from the 'Page' HTTP header string
+// the Page HTTP Header is specified by the request with the syntax 'items X-Y'
+func NewPage(limit string) (p Page, err error) {
+	if limit == "" {
+		return p, err
 	}
 
-	items = strings.TrimSpace(items)
+	limit = strings.TrimSpace(limit)
 
-	matched, err := regexp.MatchString(`^items \d+?-\d+?$`, items)
+	p.Limit, err = strconv.ParseUint(limit, 10, 64)
 	if err != nil {
-		return r, err
-	}
-	if !matched {
-		return r, errors.New("Invalid range specified")
+		return p, err
 	}
 
-	itemDelimiter := "-"
-	raw := strings.TrimSpace(strings.Replace(items, "items", "", 1))
-	tokens := strings.Split(raw, itemDelimiter)
-
-	if len(tokens) == 2 {
-		r.First, err = strconv.ParseUint(tokens[0], 10, 64)
-		if err != nil {
-			return r, err
-		}
-		r.Last, err = strconv.ParseUint(tokens[1], 10, 64)
-		if err != nil {
-			return r, err
-		}
+	if p.Valid() {
+		return p, err
 	}
-
-	if r.Valid() {
-		r.Set = true
-		return r, err
-	}
-	return r, errors.New("Invalid range specified")
+	return p, errors.New("Invalid limit specified")
 }
 
 // AddedAfterFirst returns the first added after as a string
-func (r *Range) AddedAfterFirst() string {
-	return r.MinimumAddedAfter.String()
+func (p *Page) AddedAfterFirst() string {
+	return p.MinimumAddedAfter.String()
 }
 
 // AddedAfterLast returns the last added after as a string
-func (r *Range) AddedAfterLast() string {
-	return r.MaximumAddedAfter.String()
+func (p *Page) AddedAfterLast() string {
+	return p.MaximumAddedAfter.String()
 }
 
 // SetAddedAfters only takes one date string and uses it to update the minimum and maximum added after fields
-func (r *Range) SetAddedAfters(date string) {
+func (p *Page) SetAddedAfters(date string) {
 	t, err := stones.TimestampFromString(date)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("Failed to parse date")
 		return
 	}
 
-	if r.MinimumAddedAfter.UnixNano() == UnsetUnixNano || t.UnixNano() < r.MinimumAddedAfter.UnixNano() {
-		r.MinimumAddedAfter = t
+	if p.MinimumAddedAfter.UnixNano() == UnsetUnixNano || t.UnixNano() < p.MinimumAddedAfter.UnixNano() {
+		p.MinimumAddedAfter = t
 	}
 
-	if t.UnixNano() > r.MaximumAddedAfter.UnixNano() {
-		r.MaximumAddedAfter = t
+	if t.UnixNano() > p.MaximumAddedAfter.UnixNano() {
+		p.MaximumAddedAfter = t
 	}
 }
 
-func (r *Range) String() string {
-	s := "items " +
-		strconv.FormatUint(r.First, 10) +
-		"-" +
-		strconv.FormatUint(r.Last, 10)
-
-	if r.Total > 0 {
-		s += "/" + strconv.FormatUint(r.Total, 10)
+// Valid returns whether the page is valid or not
+func (p *Page) Valid() bool {
+	if p.Limit > 0 {
+		return true
 	}
-
-	return s
-}
-
-// Valid returns whether the range is valid or not
-func (r *Range) Valid() bool {
-	if r.First > r.Last {
-		return false
-	}
-
-	return true
+	return false
 }
 
 // Status represents a TAXII status object
@@ -508,5 +473,5 @@ type Versions struct {
 
 // VersionsService provides object versions
 type VersionsService interface {
-	Versions(c context.Context, cid, oid string, cr *Range, f Filter) (Versions, error)
+	Versions(c context.Context, cid, oid string, cr *Page, f Filter) (Versions, error)
 }

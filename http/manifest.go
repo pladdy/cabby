@@ -26,31 +26,26 @@ func (h ManifestHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ManifestHandler"}).Debug("Handler called")
 
-	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	p, err := cabby.NewPage(takeLimit(r))
 	if err != nil {
-		rangeNotSatisfiable(w, err, cr)
+		badRequest(w, err)
 		return
 	}
 
-	manifest, err := h.ManifestService.Manifest(r.Context(), takeCollectionID(r), &cr, newFilter(r))
+	manifest, err := h.ManifestService.Manifest(r.Context(), takeCollectionID(r), &p, newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
-	if noResources(w, len(manifest.Objects), cr) {
+	if noResources(len(manifest.Objects)) {
+		resourceNotFound(w, errors.New("No resources available for this request"))
 		return
 	}
 
-	w.Header().Set("X-TAXII-Date-Added-First", cr.AddedAfterFirst())
-	w.Header().Set("X-TAXII-Date-Added-Last", cr.AddedAfterLast())
-
-	if cr.Set {
-		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(manifest))
-	} else {
-		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(manifest))
-	}
+	w.Header().Set("X-TAXII-Date-Added-First", p.AddedAfterFirst())
+	w.Header().Set("X-TAXII-Date-Added-Last", p.AddedAfterLast())
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(manifest))
 }
 
 // Post handler

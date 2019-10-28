@@ -11,18 +11,16 @@ import (
 )
 
 func TestNoResources(t *testing.T) {
-	res := httptest.NewRecorder()
 	resources := 0
-	cr := cabby.Range{Set: true}
 
-	result := noResources(res, resources, cr)
+	result := noResources(resources)
 	if result != true {
 		t.Error("Expected true")
 	}
 }
 
 func TestObjectsToEnvelopeMore(t *testing.T) {
-	e := objectsToEnvelope([]stones.Object{}, cabby.Range{Total: 1})
+	e := objectsToEnvelope([]stones.Object{}, cabby.Page{Total: 1})
 	expected := true
 	if e.More != expected {
 		t.Error("Got:", e.More, "Expected:", expected)

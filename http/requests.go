@@ -90,6 +90,15 @@ func takeCollectionID(r *http.Request) string {
 	return ""
 }
 
+func takeLimit(r *http.Request) string {
+	ls := r.URL.Query()["limit"]
+
+	if len(ls) > 0 {
+		return ls[0]
+	}
+	return ""
+}
+
 func takeMatchFilters(r *http.Request, filter string) string {
 	filters := r.URL.Query()[filter]
 

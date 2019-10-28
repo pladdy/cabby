@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 
@@ -11,22 +10,15 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func noResources(w http.ResponseWriter, resources int, cr cabby.Range) bool {
-	err := errors.New("No resources available for this request")
-
-	if cr.Set && resources <= 0 {
-		rangeNotSatisfiable(w, err, cr)
-		return true
-	}
+func noResources(resources int) bool {
 	if resources <= 0 {
-		resourceNotFound(w, err)
 		return true
 	}
 	return false
 }
 
-func objectsToEnvelope(objects []stones.Object, cr cabby.Range) (e cabby.Envelope) {
-	if int(cr.Total) > len(objects) {
+func objectsToEnvelope(objects []stones.Object, p cabby.Page) (e cabby.Envelope) {
+	if int(p.Total) > len(objects) {
 		e.More = true
 	}
 
@@ -66,11 +58,5 @@ func write(w http.ResponseWriter, r *http.Request, content string) {
 
 func writeContent(w http.ResponseWriter, r *http.Request, contentType, content string) {
 	w.Header().Set("Content-Type", contentType)
-	write(w, r, content)
-}
-
-func writePartialContent(w http.ResponseWriter, r *http.Request, contentType, content string) {
-	w.Header().Set("Content-Type", contentType)
-	w.WriteHeader(http.StatusPartialContent)
 	write(w, r, content)
 }
