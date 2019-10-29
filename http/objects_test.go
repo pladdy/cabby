@@ -94,38 +94,35 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerGetObjectsRange(t *testing.T) {
+func TestObjectsHandlerGetObjectsPage(t *testing.T) {
 	tests := []struct {
-		first    int
-		last     int
+		limit    int
 		expected int
 	}{
-		{0, 0, 1},
-		{0, 9, 10},
+		{1, 1},
+		{10, 10},
 	}
 
 	for _, test := range tests {
 		// set up mock service
 		obs := mockObjectService()
-		obs.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+		obs.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 			objects := []stones.Object{}
 			for i := 0; i < test.expected; i++ {
 				objects = append(objects, tester.GenerateObject("malware"))
 			}
 
-			cr.Total = uint64(test.expected)
+			p.Total = uint64(test.expected)
 			return objects, nil
 		}
 		h := ObjectsHandler{ObjectService: obs}
 
 		// set up request
-		req := newRequest(http.MethodGet, testObjectsURL, nil)
+		req := newRequest(http.MethodGet, testObjectsURL+"?limit="+strconv.Itoa(test.limit), nil)
 		req.Header.Set("Accept", cabby.TaxiiContentType)
-		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
-
 		res := httptest.NewRecorder()
-		h.Get(res, req)
 
+		h.Get(res, req)
 		body, _ := ioutil.ReadAll(res.Body)
 
 		var result cabby.Envelope
@@ -134,44 +131,43 @@ func TestObjectsHandlerGetObjectsRange(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if res.Code != http.StatusPartialContent {
-			t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
+		if res.Code != http.StatusOK {
+			t.Error("Got:", res.Code, "Expected:", http.StatusOK)
 		}
 
 		if len(result.Objects) != test.expected {
 			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
 		}
-
-		ra := cabby.Range{First: uint64(test.first), Last: uint64(test.last), Total: uint64(test.expected)}
-		if res.Header().Get("Content-Range") != ra.String() {
-			t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", ra.String())
-		}
 	}
 }
 
-func TestObjectsHandlerGetInvalidRange(t *testing.T) {
-	tests := []struct {
-		rangeString    string
-		expectedStatus int
-	}{
-		{"items invalid", http.StatusRequestedRangeNotSatisfiable},
-		{"items 0-0", http.StatusPartialContent},
-	}
+func TestObjectsHandlerGetInvalidPage(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
 
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 
-	for _, test := range tests {
-		// set up request
-		req := newRequest(http.MethodGet, testObjectsURL, nil)
-		req.Header.Set("Accept", cabby.TaxiiContentType)
-		req.Header.Set("Range", test.rangeString)
+	// set up request
+	req := newRequest(http.MethodGet, testObjectsURL+"?limit=0", nil)
+	req.Header.Set("Accept", cabby.TaxiiContentType)
+	res := httptest.NewRecorder()
 
-		res := httptest.NewRecorder()
-		h.Get(res, req)
+	h.Get(res, req)
+	body, _ := ioutil.ReadAll(res.Body)
 
-		if res.Code != test.expectedStatus {
-			t.Error("Got:", res.Code, "Expected:", test.expectedStatus)
-		}
+	if res.Code != http.StatusBadRequest {
+		t.Error("Got:", res.Code, "Expected:", http.StatusBadRequest)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
@@ -180,7 +176,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
 	s := mockObjectService()
-	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+	s.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 		return []stones.Object{}, errors.New(expected.Description)
 	}
 
@@ -218,7 +214,7 @@ func TestObjectsHandlerGetInvalidMimeType(t *testing.T) {
 
 func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	s := mockObjectService()
-	s.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+	s.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 		return []stones.Object{}, nil
 	}
 

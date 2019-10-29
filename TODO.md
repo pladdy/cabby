@@ -1,29 +1,18 @@
 ### Client error codes
 Check resource end points, verify 400-40X are handled per the spec
 
-### API Routes
-Are not a single token separated by a '/' and followed by 'collections'
-They can be multiple tokens...fix that bug
-
 ### Log level
 Set log level from command line / env var or make it configurable
 
-### Router
-Should I use a router library for dynamic routing?
-For example: path /<api root>/collections/<collection id>/objects/<object id>/versions
-  - a tool that puts <items in brackets> into vars?
-- [Vestigo](https://github.com/husobee/vestigo)
-  - [Introducing Vestigo](https://husobee.github.io/golang/urlrouter/vestigo/2015/09/22/vesigo.html)
-  - This router let's me set routes on explicit methods list too
-- [Gorilla/Mux](https://github.com/gorilla/mux)
-  - Can handle explicit methods for specific routes
-
 ### Service naming convention
 Rename services to be more explicit
-- DropObject
-- EditObject
-- MakeObject
-- ReadObject
+- Drop, Edit, Make, Read
+  - 4 letters each, synonyms for CRUD
+- Example:
+  - DropObject
+  - EditObject
+  - MakeObject
+  - ReadObject
 
 ### Var naming convention
 Replace 'ctx' vars with 'c'?  'c' can always mean context var...
@@ -40,6 +29,16 @@ Handle migrations with a tool?
          https://sqitch.org/
 
 Should we open port 443 in vagrant? https://help.ubuntu.com/community/UFW#UFW_-_Uncomplicated_Firewall
+
+### Router
+Should I use a router library for dynamic routing?
+For example: path /<api root>/collections/<collection id>/objects/<object id>/versions
+  - a tool that puts <items in brackets> into vars?
+- [Vestigo](https://github.com/husobee/vestigo)
+  - [Introducing Vestigo](https://husobee.github.io/golang/urlrouter/vestigo/2015/09/22/vesigo.html)
+  - This router let's me set routes on explicit methods list too
+- [Gorilla/Mux](https://github.com/gorilla/mux)
+  - Can handle explicit methods for specific routes
 
 #### SQL Generator
 - ditch hard coded queries?

@@ -60,15 +60,15 @@ func (s CollectionService) collection(user, apiRootPath, collectionID string) (c
 }
 
 // Collections will read from the data store and return the resource
-func (s CollectionService) Collections(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+func (s CollectionService) Collections(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
 	resource, action := "Collections", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.collections(cabby.TakeUser(ctx).Email, apiRootPath, cr)
+	result, err := s.collections(cabby.TakeUser(ctx).Email, apiRootPath, p)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
-func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+func (s CollectionService) collections(user, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
 	sql := `with data as (
 					  select id, title, description, can_read, can_write, media_types, 1 count
 					  from (
@@ -89,7 +89,7 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 					$paginate`
 
 	args := []interface{}{user, apiRootPath}
-	sql, args = applyPaging(sql, cr, args)
+	sql, args = applyPaging(sql, p, args)
 
 	cs := cabby.Collections{}
 	var err error
@@ -105,7 +105,7 @@ func (s CollectionService) collections(user, apiRootPath string, cr *cabby.Range
 		var c cabby.Collection
 		var mediaTypes string
 
-		if err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.CanRead, &c.CanWrite, &mediaTypes, &cr.Total); err != nil {
+		if err := rows.Scan(&c.ID, &c.Title, &c.Description, &c.CanRead, &c.CanWrite, &mediaTypes, &p.Total); err != nil {
 			return cs, err
 		}
 		c.MediaTypes = strings.Split(mediaTypes, ",")

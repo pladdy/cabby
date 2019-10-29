@@ -156,15 +156,15 @@ func (s ObjectService) object(collectionID, objectID string, f cabby.Filter) ([]
 }
 
 // Objects will read from the data store and return the resource
-func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+func (s ObjectService) Objects(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 	resource, action := "Objects", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.objects(collectionID, cr, f)
+	result, err := s.objects(collectionID, p, f)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
-func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+func (s ObjectService) objects(collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 	sql := `with data as (
 						select rowid, id, type, created, modified, collection_id, object, created_at date_added, 1 count
 						from objects_data
@@ -183,7 +183,7 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 	args := []interface{}{collectionID}
 
 	sql, args = applyFiltering(sql, f, args)
-	sql, args = applyPaging(sql, cr, args)
+	sql, args = applyPaging(sql, p, args)
 
 	objects := []stones.Object{}
 	var err error
@@ -200,7 +200,7 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 		var o stones.Object
 		var id, created, modified string
 
-		if err := rows.Scan(&id, &o.Type, &created, &modified, &o.Source, &dateAdded, &cr.Total); err != nil {
+		if err := rows.Scan(&id, &o.Type, &created, &modified, &o.Source, &dateAdded, &p.Total); err != nil {
 			return objects, err
 		}
 
@@ -210,7 +210,7 @@ func (s ObjectService) objects(collectionID string, cr *cabby.Range, f cabby.Fil
 		}
 
 		objects = append(objects, o)
-		cr.SetAddedAfters(dateAdded)
+		p.SetAddedAfters(dateAdded)
 	}
 
 	err = rows.Err()

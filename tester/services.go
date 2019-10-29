@@ -121,7 +121,7 @@ func (s APIRootService) UpdateAPIRoot(ctx context.Context, a cabby.APIRoot) erro
 // CollectionService is a mock implementation
 type CollectionService struct {
 	CollectionFn           func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error)
-	CollectionsFn          func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error)
+	CollectionsFn          func(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error)
 	CollectionsInAPIRootFn func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error)
 	CreateCollectionFn     func(ctx context.Context, c cabby.Collection) error
 	DeleteCollectionFn     func(ctx context.Context, collectionID string) error
@@ -134,8 +134,8 @@ func (s CollectionService) Collection(ctx context.Context, collectionID, apiRoot
 }
 
 // Collections is a mock implementation
-func (s CollectionService) Collections(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
-	return s.CollectionsFn(ctx, apiRootPath, cr)
+func (s CollectionService) Collections(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
+	return s.CollectionsFn(ctx, apiRootPath, p)
 }
 
 // CollectionsInAPIRoot is a mock implementation
@@ -188,12 +188,12 @@ func (s DiscoveryService) UpdateDiscovery(ctx context.Context, d cabby.Discovery
 
 // ManifestService is a mock implementation
 type ManifestService struct {
-	ManifestFn func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error)
+	ManifestFn func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error)
 }
 
 // Manifest is a mock implementation
-func (s ManifestService) Manifest(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
-	return s.ManifestFn(ctx, collectionID, cr, f)
+func (s ManifestService) Manifest(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
+	return s.ManifestFn(ctx, collectionID, p, f)
 }
 
 // MigrationService is a mock implementation
@@ -219,7 +219,7 @@ type ObjectService struct {
 	CreateObjectFn   func(ctx context.Context, collectionID string, object stones.Object) error
 	DeleteObjectFn   func(ctx context.Context, collectionID, objectID string) error
 	ObjectFn         func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error)
-	ObjectsFn        func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error)
+	ObjectsFn        func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error)
 }
 
 // CreateEnvelope is a mock implementation
@@ -243,8 +243,8 @@ func (s ObjectService) Object(ctx context.Context, collectionID, objectID string
 }
 
 // Objects is a mock implementation
-func (s ObjectService) Objects(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
-	return s.ObjectsFn(ctx, collectionID, cr, f)
+func (s ObjectService) Objects(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
+	return s.ObjectsFn(ctx, collectionID, p, f)
 }
 
 // StatusService is a mock implementation
@@ -323,10 +323,10 @@ func (s UserService) UserCollections(ctx context.Context, user string) (cabby.Us
 
 // VersionsService mock implementation
 type VersionsService struct {
-	VersionsFn func(c context.Context, cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error)
+	VersionsFn func(c context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error)
 }
 
 // Versions is a mock implementation
-func (v VersionsService) Versions(c context.Context, cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error) {
-	return v.VersionsFn(c, cid, oid, cr, f)
+func (v VersionsService) Versions(c context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
+	return v.VersionsFn(c, cid, oid, p, f)
 }

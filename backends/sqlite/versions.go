@@ -18,15 +18,15 @@ type VersionsService struct {
 }
 
 // Versions returns a given objects versions
-func (s VersionsService) Versions(ctx context.Context, cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error) {
+func (s VersionsService) Versions(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
 	resource, action := "Versions", "read"
 	start := cabby.LogServiceStart(ctx, resource, action)
-	result, err := s.versions(cid, oid, cr, f)
+	result, err := s.versions(cid, oid, p, f)
 	cabby.LogServiceEnd(ctx, resource, action, start)
 	return result, err
 }
 
-func (s VersionsService) versions(cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error) {
+func (s VersionsService) versions(cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
 	sql := `with data as (
 						select rowid, id, modified version
 						from objects_data
@@ -40,7 +40,7 @@ func (s VersionsService) versions(cid, oid string, cr *cabby.Range, f cabby.Filt
 
 	args := []interface{}{cid, oid}
 	sql, args = applyFiltering(sql, f, args)
-	sql, args = applyPaging(sql, cr, args)
+	sql, args = applyPaging(sql, p, args)
 
 	vs := cabby.Versions{}
 
@@ -63,7 +63,7 @@ func (s VersionsService) versions(cid, oid string, cr *cabby.Range, f cabby.Filt
 			return vs, err
 		}
 
-		cr.SetAddedAfters(ts.String())
+		p.SetAddedAfters(ts.String())
 		vs.Versions = append(vs.Versions, ts.String())
 	}
 

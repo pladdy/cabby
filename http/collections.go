@@ -31,28 +31,24 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	p, err := cabby.NewPage(takeLimit(r))
 	if err != nil {
-		rangeNotSatisfiable(w, err, cr)
+		badRequest(w, err)
 		return
 	}
 
-	collections, err := h.CollectionService.Collections(r.Context(), takeAPIRoot(r), &cr)
+	collections, err := h.CollectionService.Collections(r.Context(), takeAPIRoot(r), &p)
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
-	if noResources(w, len(collections.Collections), cr) {
+	if noResources(len(collections.Collections)) {
+		resourceNotFound(w, errors.New("No resources available for this request"))
 		return
 	}
 
-	if cr.Set {
-		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(collections))
-	} else {
-		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(collections))
-	}
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(collections))
 }
 
 // Post handler

@@ -65,37 +65,34 @@ func TestManifestHandlerGetHeaders(t *testing.T) {
 	}
 }
 
-func TestManifestHandlerGetRange(t *testing.T) {
+func TestManifestHandlerGetPage(t *testing.T) {
 	tests := []struct {
-		first    int
-		last     int
+		limit    int
 		expected int
 	}{
-		{0, 0, 1},
-		{0, 9, 10},
+		{1, 1},
+		{10, 10},
 	}
 
 	for _, test := range tests {
 		// set up mock service
 		ms := mockManifestService()
-		ms.ManifestFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+		ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 			manifest := cabby.Manifest{}
 			for i := 0; i < test.expected; i++ {
 				manifest.Objects = append(manifest.Objects, cabby.ManifestEntry{})
 			}
 
-			cr.Total = uint64(test.expected)
+			p.Total = uint64(test.expected)
 			return manifest, nil
 		}
 		h := ManifestHandler{ManifestService: ms}
 
 		// set up request
-		req := newRequest(http.MethodGet, testManifestURL, nil)
-		req.Header.Set("Range", "items "+strconv.Itoa(test.first)+"-"+strconv.Itoa(test.last))
-
+		req := newRequest(http.MethodGet, testManifestURL+"?limit="+strconv.Itoa(test.limit), nil)
 		res := httptest.NewRecorder()
-		h.Get(res, req)
 
+		h.Get(res, req)
 		body, _ := ioutil.ReadAll(res.Body)
 
 		var result cabby.Manifest
@@ -104,43 +101,36 @@ func TestManifestHandlerGetRange(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if res.Code != http.StatusPartialContent {
-			t.Error("Got:", res.Code, "Expected:", http.StatusPartialContent)
+		if res.Code != http.StatusOK {
+			t.Error("Got:", res.Code, "Expected:", http.StatusOK)
 		}
 
 		if len(result.Objects) != test.expected {
 			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
 		}
-
-		ra := cabby.Range{First: uint64(test.first), Last: uint64(test.last), Total: uint64(test.expected)}
-		if res.Header().Get("Content-Range") != ra.String() {
-			t.Error("Got:", res.Header().Get("Content-Range"), "Expected:", ra.String())
-		}
 	}
 }
 
-func TestManifestHandlerGetInvalidRange(t *testing.T) {
-	tests := []struct {
-		rangeString    string
-		expectedStatus int
-	}{
-		{"items invalid", http.StatusRequestedRangeNotSatisfiable},
-		{"items 0-0", http.StatusPartialContent},
-	}
+func TestManifestHandlerGetInvalidPage(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
 
 	h := ManifestHandler{ManifestService: mockManifestService()}
+	status, body := handlerTest(h.Get, http.MethodGet, testManifestURL+"?limit=0", nil)
 
-	for _, test := range tests {
-		// set up request
-		req := newRequest(http.MethodGet, testManifestURL, nil)
-		req.Header.Set("Range", test.rangeString)
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
 
-		res := httptest.NewRecorder()
-		h.Get(res, req)
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-		if res.Code != test.expectedStatus {
-			t.Error("Got:", res.Code, "Expected:", test.expectedStatus)
-		}
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
@@ -149,7 +139,7 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 		Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}
 
 	ms := mockManifestService()
-	ms.ManifestFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 		return cabby.Manifest{}, errors.New(expected.Description)
 	}
 
@@ -174,7 +164,7 @@ func TestManifestHandlerGetFailures(t *testing.T) {
 
 func TestManifestHandlerGetNoManifest(t *testing.T) {
 	ms := mockManifestService()
-	ms.ManifestFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 		return cabby.Manifest{}, nil
 	}
 

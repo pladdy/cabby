@@ -47,7 +47,7 @@ func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	envelope := objectsToEnvelope(objects, cabby.Range{})
+	envelope := objectsToEnvelope(objects, cabby.Page{})
 	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(envelope))
 }
 

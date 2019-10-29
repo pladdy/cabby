@@ -26,31 +26,26 @@ func (h VersionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h VersionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "VersionsHandler"}).Debug("Handler called")
 
-	cr, err := cabby.NewRange(r.Header.Get("Range"))
+	p, err := cabby.NewPage(takeLimit(r))
 	if err != nil {
-		rangeNotSatisfiable(w, err, cr)
+		badRequest(w, err)
 		return
 	}
 
-	versions, err := h.VersionsService.Versions(r.Context(), takeCollectionID(r), takeObjectID(r), &cr, newFilter(r))
+	versions, err := h.VersionsService.Versions(r.Context(), takeCollectionID(r), takeObjectID(r), &p, newFilter(r))
 	if err != nil {
 		internalServerError(w, err)
 		return
 	}
 
-	if noResources(w, len(versions.Versions), cr) {
+	if noResources(len(versions.Versions)) {
+		resourceNotFound(w, errors.New("No resources available for this request"))
 		return
 	}
 
-	w.Header().Set("X-TAXII-Date-Added-First", cr.AddedAfterFirst())
-	w.Header().Set("X-TAXII-Date-Added-Last", cr.AddedAfterLast())
-
-	if cr.Set {
-		w.Header().Set("Content-Range", cr.String())
-		writePartialContent(w, r, cabby.TaxiiContentType, resourceToJSON(versions))
-	} else {
-		writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(versions))
-	}
+	w.Header().Set("X-TAXII-Date-Added-First", p.AddedAfterFirst())
+	w.Header().Set("X-TAXII-Date-Added-Last", p.AddedAfterLast())
+	writeContent(w, r, cabby.TaxiiContentType, resourceToJSON(versions))
 }
 
 // Post handler

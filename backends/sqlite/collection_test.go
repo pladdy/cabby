@@ -56,16 +56,16 @@ func TestCollectionsServiceCollections(t *testing.T) {
 	totalCollections := 11
 
 	tests := []struct {
-		cabbyRange          cabby.Range
+		cabbyPage           cabby.Page
 		expectedCollections int
 	}{
 		// setupSQLite() creates 1 collection, 10 created above (11 total)
-		{cabby.Range{First: 0, Last: 0}, 11},
-		{cabby.Range{First: 0, Last: 5, Set: true}, 6},
+		{cabby.Page{Limit: 11}, 11},
+		{cabby.Page{Limit: 6}, 6},
 	}
 
 	for _, test := range tests {
-		results, err := s.Collections(tester.Context, tester.APIRootPath, &test.cabbyRange)
+		results, err := s.Collections(tester.Context, tester.APIRootPath, &test.cabbyPage)
 		if err != nil {
 			t.Error("Got:", err, "Expected no error")
 		}
@@ -74,8 +74,8 @@ func TestCollectionsServiceCollections(t *testing.T) {
 			t.Error("Got:", len(results.Collections), "Expected:", test.expectedCollections)
 		}
 
-		if int(test.cabbyRange.Total) != totalCollections {
-			t.Error("Got:", test.cabbyRange.Total, "Expected:", totalCollections)
+		if int(test.cabbyPage.Total) != totalCollections {
+			t.Error("Got:", test.cabbyPage.Total, "Expected:", totalCollections)
 		}
 	}
 }
@@ -90,7 +90,7 @@ func TestCollectionsServiceCollectionsQueryErr(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = s.Collections(tester.Context, tester.APIRootPath, &cabby.Range{})
+	_, err = s.Collections(tester.Context, tester.APIRootPath, &cabby.Page{})
 	if err == nil {
 		t.Error("Got:", err, "Expected an error")
 	}

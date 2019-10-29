@@ -303,25 +303,25 @@ func logSQLError(sql string, args []interface{}, err error) {
 	log.WithFields(log.Fields{"error": err, "sql": sql, "args": args}).Error("Error in sql")
 }
 
-// Range implementation for SQLite
-type Range struct {
-	*cabby.Range
+// Page implementation for SQLite
+type Page struct {
+	*cabby.Page
 }
 
 // QueryString returns sql for paginating a range of data
-func (r *Range) QueryString() (q string, args []interface{}) {
-	if r.Set && r.Valid() {
-		q = "limit ? offset ?"
-		args = []interface{}{(r.Last - r.First) + 1, r.First}
+func (p *Page) QueryString() (q string, args []interface{}) {
+	if p.Valid() {
+		q = "limit ?"
+		args = []interface{}{(p.Limit)}
 	}
 	return
 }
 
 /* pagination helpers */
 
-func applyPaging(sql string, cr *cabby.Range, args []interface{}) (newSQL string, newArgs []interface{}) {
-	r := Range{cr}
-	qs, pageArgs := r.QueryString()
+func applyPaging(sql string, cp *cabby.Page, args []interface{}) (newSQL string, newArgs []interface{}) {
+	p := Page{cp}
+	qs, pageArgs := p.QueryString()
 
 	if len(pageArgs) > 0 {
 		sql = strings.Replace(sql, "$paginate", qs, -1)

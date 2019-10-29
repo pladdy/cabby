@@ -176,7 +176,7 @@ func mockCollectionService() tester.CollectionService {
 	cs.CollectionFn = func(ctx context.Context, collectionID, apiRootPath string) (cabby.Collection, error) {
 		return tester.Collection, nil
 	}
-	cs.CollectionsFn = func(ctx context.Context, apiRootPath string, cr *cabby.Range) (cabby.Collections, error) {
+	cs.CollectionsFn = func(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
 		return tester.Collections, nil
 	}
 	cs.CollectionsInAPIRootFn = func(ctx context.Context, apiRootPath string) (cabby.CollectionsInAPIRoot, error) {
@@ -193,7 +193,7 @@ func mockDiscoveryService() tester.DiscoveryService {
 
 func mockManifestService() tester.ManifestService {
 	ms := tester.ManifestService{}
-	ms.ManifestFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) (cabby.Manifest, error) {
+	ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
 		return tester.Manifest, nil
 	}
 	return ms
@@ -223,7 +223,7 @@ func mockObjectService() tester.ObjectService {
 	osv.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 		return tester.Objects, nil
 	}
-	osv.ObjectsFn = func(ctx context.Context, collectionID string, cr *cabby.Range, f cabby.Filter) ([]stones.Object, error) {
+	osv.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 		return tester.Objects, nil
 	}
 	return osv
@@ -250,7 +250,7 @@ func mockUserService() tester.UserService {
 
 func mockVersionsService() tester.VersionsService {
 	vs := tester.VersionsService{}
-	vs.VersionsFn = func(ctx context.Context, cid, oid string, cr *cabby.Range, f cabby.Filter) (cabby.Versions, error) {
+	vs.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
 		return tester.Versions, nil
 	}
 	return vs

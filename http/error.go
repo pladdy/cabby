@@ -49,11 +49,6 @@ func methodNotAllowed(w http.ResponseWriter, err error) {
 	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
 }
 
-func rangeNotSatisfiable(w http.ResponseWriter, err error, r cabby.Range) {
-	log.WithFields(log.Fields{"range": r}).Warn("Invalid Range Specified")
-	errorStatus(w, "Requested Range Not Satisfiable", err, http.StatusRequestedRangeNotSatisfiable)
-}
-
 func resourceNotFound(w http.ResponseWriter, err error) {
 	errorStatus(w, "Resource Not Found", err, http.StatusNotFound)
 }
