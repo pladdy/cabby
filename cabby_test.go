@@ -185,6 +185,8 @@ func TestNewPage(t *testing.T) {
 		{" 10", Page{Limit: 10}, true},
 		{"10 ", Page{Limit: 10}, true},
 		{"", Page{}, true},
+		{"foo", Page{}, true},
+		{"0", Page{}, true},
 	}
 
 	for _, test := range tests {
@@ -321,6 +323,7 @@ func TestPageValid(t *testing.T) {
 	}{
 		{Page{Limit: 10}, true},
 		{Page{Limit: 0}, false},
+		{Page{}, false},
 	}
 
 	for _, test := range tests {
