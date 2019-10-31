@@ -112,8 +112,9 @@ func takeMatchVersions(r *http.Request) string {
 }
 
 func takeObjectID(r *http.Request) string {
+	objectIndex := 3
 	if objectPathRegex.Match([]byte(r.URL.Path)) {
-		return objectPathRegex.FindStringSubmatch(r.URL.Path)[1]
+		return objectPathRegex.FindStringSubmatch(r.URL.Path)[objectIndex]
 	}
 	return ""
 }
