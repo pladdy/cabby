@@ -196,6 +196,14 @@ curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oas
 curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.taxii+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/indicator--8e2e2d2b-17d4-4cbf-938f-98ee46b3cd3f/versions/' | jq .
 ```
 
+#### View Object
+```sh
+# with headers
+curl -isk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad/' && echo
+# parsed json
+curl -sk -basic -u test@cabby.com:test-password -H 'Accept: application/vnd.oasis.stix+json' 'https://localhost:1234/cabby_test_root/collections/352abc04-a474-4e22-9f4d-944ca508e68c/objects/relationship--44298a74-ba52-4f0c-87a3-1824e67d7fad/' | jq .
+```
+
 #### Filter objects
 ```sh
 # filter on types

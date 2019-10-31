@@ -158,6 +158,27 @@ func TestTakeStatusID(t *testing.T) {
 	}
 }
 
+func TestTakeObjectID(t *testing.T) {
+	cid := tester.CollectionID
+	oid := tester.ObjectID
+
+	tests := []struct {
+		request *http.Request
+		result  string
+	}{
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/", nil), oid},
+		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid, nil), oid},
+		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+	}
+
+	for _, test := range tests {
+		result := takeObjectID(test.request)
+		if result != test.result {
+			t.Error("Got:", result, "Expected:", test.result)
+		}
+	}
+}
+
 func TestTakeVersions(t *testing.T) {
 	cid := tester.CollectionID
 	oid := tester.ObjectID
