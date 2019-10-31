@@ -4,6 +4,8 @@ Vagrant.configure("2") do |config|
 
   config.vm.box_check_update = true
 
+  go_version = "1.13"
+
   config.vm.provider "virtualbox" do |v|
     v.cpus = 2
     v.memory = 2048
@@ -20,7 +22,10 @@ Vagrant.configure("2") do |config|
   config.vm.provision "dependencies", type: "shell" do |s|
     s.inline = <<-OUT
       apt-get update
-      apt-get install -y build-essential golang-1.10 jq make ruby-dev sqlite rsyslog
+      apt-get install -y --no-install-recommends software-properties-common
+      add-apt-repository ppa:longsleep/golang-backports
+      apt-get update
+      apt-get install -y build-essential golang-#{go_version} jq make ruby-dev sqlite rsyslog
       gem install --no-ri --no-doc fpm
     OUT
   end
@@ -51,7 +56,7 @@ Vagrant.configure("2") do |config|
   config.vm.provision "build-cabby", type: "shell", run: "never" do |s|
     s.inline = <<-OUT
       export GOPATH=/opt/go
-      export PATH=/usr/lib/go-1.10/bin/:$PATH
+      export PATH=/usr/lib/go-#{go_version}/bin/:$PATH
 
       SRC_DIR=/opt/go/src/github.com/pladdy/cabby
       mkdir -p $SRC_DIR
