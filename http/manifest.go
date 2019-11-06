@@ -18,8 +18,7 @@ type ManifestHandler struct {
 
 // Delete handler
 func (h ManifestHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", ManifestMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, ManifestMethods)
 }
 
 // Get serves a manifest resource
@@ -50,6 +49,5 @@ func (h ManifestHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h ManifestHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", ManifestMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, ManifestMethods)
 }

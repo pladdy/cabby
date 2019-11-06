@@ -18,8 +18,7 @@ type VersionsHandler struct {
 
 // Delete handler
 func (h VersionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", VersionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, VersionsMethods)
 }
 
 // Get serves a Versions resource
@@ -50,6 +49,5 @@ func (h VersionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h VersionsHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", VersionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, VersionsMethods)
 }

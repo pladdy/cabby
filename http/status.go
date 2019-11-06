@@ -17,8 +17,7 @@ type StatusHandler struct {
 
 // Delete handler
 func (h StatusHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", StatusMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, StatusMethods)
 }
 
 // Get serves a status resource
@@ -39,6 +38,5 @@ func (h StatusHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h StatusHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", StatusMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, StatusMethods)
 }

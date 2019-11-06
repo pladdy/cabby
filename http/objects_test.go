@@ -207,8 +207,8 @@ func TestObjectsHandlerGetInvalidMimeType(t *testing.T) {
 	req.Header.Set("Accept", "invalid")
 	status, _, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
-	if status != http.StatusUnsupportedMediaType {
-		t.Error("Got:", status, "Expected:", http.StatusUnsupportedMediaType)
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
 	}
 }
 

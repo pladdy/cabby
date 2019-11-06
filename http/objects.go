@@ -23,15 +23,15 @@ type ObjectsHandler struct {
 
 // Delete handler
 func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", VersionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, ObjectsMethods)
 }
 
 // Get handles a get request for the objects endpoint
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
+	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
+		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
 		return
 	}
 
@@ -106,11 +106,13 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isValid bool) {
-	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
+	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
+		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
 		return
 	}
 
-	if !verifySupportedMimeType(w, r, "Content-Type", cabby.TaxiiContentType) {
+	if !verifyRequestHeader(r, "Content-Type", cabby.TaxiiContentType) {
+		unsupportedMediaType(w, fmt.Errorf("Content-Type header must be '%v'", cabby.TaxiiContentType))
 		return
 	}
 

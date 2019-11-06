@@ -2,7 +2,6 @@ package http
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -27,13 +26,13 @@ func registerAPIRoots(ds cabby.DataStore, sm *http.ServeMux) {
 
 func registerAPIRoot(ah APIRootHandler, path string, sm *http.ServeMux) {
 	if path != "" {
-		registerRoute(sm, path, WithMimeType(routeHandler(ah), "Accept", cabby.TaxiiContentType))
+		registerRoute(sm, path, WithAcceptSet(routeHandler(ah), cabby.TaxiiContentType))
 	}
 }
 
 func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *http.ServeMux) {
 	csh := CollectionsHandler{CollectionService: ds.CollectionService()}
-	registerRoute(sm, apiRoot.Path+"/collections", WithMimeType(routeHandler(csh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/collections", WithAcceptSet(routeHandler(csh), cabby.TaxiiContentType))
 
 	ss := ds.StatusService()
 	osh := ObjectsHandler{
@@ -55,7 +54,7 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String(),
-			WithMimeType(routeHandler(ch), "Accept", cabby.TaxiiContentType))
+			WithAcceptSet(routeHandler(ch), cabby.TaxiiContentType))
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/objects",
@@ -63,11 +62,11 @@ func registerCollectionRoutes(ds cabby.DataStore, apiRoot cabby.APIRoot, sm *htt
 		registerRoute(
 			sm,
 			apiRoot.Path+"/collections/"+collectionID.String()+"/manifest",
-			WithMimeType(routeHandler(mh), "Accept", cabby.TaxiiContentType))
+			WithAcceptSet(routeHandler(mh), cabby.TaxiiContentType))
 	}
 
 	sh := StatusHandler{StatusService: ss}
-	registerRoute(sm, apiRoot.Path+"/status", WithMimeType(routeHandler(sh), "Accept", cabby.TaxiiContentType))
+	registerRoute(sm, apiRoot.Path+"/status", WithAcceptSet(routeHandler(sh), cabby.TaxiiContentType))
 }
 
 func registerRoute(sm *http.ServeMux, path string, h http.HandlerFunc) {
@@ -115,8 +114,7 @@ func runHandler(h RequestHandler, w http.ResponseWriter, r *http.Request) {
 		// for HEAD requests send to GET, it will omit response
 		h.Get(w, r)
 	default:
-		w.Header().Set("Allow", "Get, Head, Post")
-		methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+		methodNotAllowed(w, r, "Get, Head, Post")
 		return
 	}
 }

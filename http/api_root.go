@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
@@ -19,8 +18,7 @@ type APIRootHandler struct {
 
 // Delete handler
 func (h APIRootHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", APIRootMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, APIRootMethods)
 }
 
 // Get handles a get request
@@ -45,6 +43,5 @@ func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h APIRootHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", APIRootMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, APIRootMethods)
 }

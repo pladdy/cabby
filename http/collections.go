@@ -18,8 +18,7 @@ type CollectionsHandler struct {
 
 // Delete handler
 func (h CollectionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", CollectionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, CollectionsMethods)
 }
 
 // Get handles a get request
@@ -53,6 +52,5 @@ func (h CollectionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h CollectionsHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", CollectionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, CollectionsMethods)
 }

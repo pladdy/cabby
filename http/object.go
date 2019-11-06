@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -32,7 +33,8 @@ func (h ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectHandler", "objectID": takeObjectID(r)}).Debug("Handler called")
 
-	if !verifySupportedMimeType(w, r, "Accept", cabby.TaxiiContentType) {
+	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
+		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
 		return
 	}
 
@@ -53,6 +55,5 @@ func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h ObjectHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", VersionsMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, ObjectMethods)
 }

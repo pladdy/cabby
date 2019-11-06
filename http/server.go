@@ -16,7 +16,7 @@ func NewCabby(ds cabby.DataStore, c cabby.Config) *http.Server {
 	registerAPIRoots(ds, handler)
 
 	dh := DiscoveryHandler{DiscoveryService: ds.DiscoveryService(), Port: c.Port}
-	registerRoute(handler, "taxii2", WithMimeType(routeHandler(dh), "Accept", cabby.TaxiiContentType))
+	registerRoute(handler, "taxii2", WithAcceptSet(routeHandler(dh), cabby.TaxiiContentType))
 	registerRoute(handler, "/", handleUndefinedRoute)
 
 	return setupServer(ds, handler, c)

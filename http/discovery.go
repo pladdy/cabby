@@ -21,8 +21,7 @@ type DiscoveryHandler struct {
 
 // Delete handler
 func (h DiscoveryHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", DiscoveryMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, DiscoveryMethods)
 }
 
 // Get serves a discovery resource
@@ -51,8 +50,7 @@ func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 // Post handler
 func (h DiscoveryHandler) Post(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Allow", DiscoveryMethods)
-	methodNotAllowed(w, errors.New("HTTP Method "+r.Method+" unrecognized"))
+	methodNotAllowed(w, r, DiscoveryMethods)
 }
 
 /* helpers */
