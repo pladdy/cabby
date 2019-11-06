@@ -22,20 +22,19 @@ type RequestHandler interface {
 	Post(w http.ResponseWriter, r *http.Request)
 }
 
-func verifySupportedMimeType(w http.ResponseWriter, r *http.Request, mh, mv string) bool {
-	mimeType, _ := splitMimeType(r.Header.Get(mh))
-
-	if mimeType != mv {
-		unsupportedMediaType(w, fmt.Errorf("Invalid '%v' Header: %v", mh, mimeType))
+func verifyRequestHeader(r *http.Request, h, v string) bool {
+	setting, _ := splitMimeType(r.Header.Get(h))
+	if setting != v {
 		return false
 	}
 	return true
 }
 
-// WithMimeType decorates a handle with content type check
-func WithMimeType(h http.HandlerFunc, mh, mv string) http.HandlerFunc {
+// WithAcceptSet decorates a handle with an accept header check
+func WithAcceptSet(h http.HandlerFunc, accept string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !verifySupportedMimeType(w, r, mh, mv) {
+		if !verifyRequestHeader(r, "Accept", accept) {
+			notAcceptable(w, fmt.Errorf("Accept header must be '%v'", accept))
 			return
 		}
 		h(w, r)

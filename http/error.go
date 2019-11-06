@@ -45,8 +45,13 @@ func internalServerError(w http.ResponseWriter, err error) {
 	errorStatus(w, "Internal Server Error", err, http.StatusInternalServerError)
 }
 
-func methodNotAllowed(w http.ResponseWriter, err error) {
-	errorStatus(w, "Method Not Allowed", err, http.StatusMethodNotAllowed)
+func methodNotAllowed(w http.ResponseWriter, r *http.Request, allowed string) {
+	w.Header().Set("Allow", DiscoveryMethods)
+	errorStatus(w, "Method Not Allowed", errors.New(r.Method+" method unrecognized"), http.StatusMethodNotAllowed)
+}
+
+func notAcceptable(w http.ResponseWriter, err error) {
+	errorStatus(w, "The media type provided in the Accept header is invalid", err, http.StatusNotAcceptable)
 }
 
 func resourceNotFound(w http.ResponseWriter, err error) {
@@ -64,7 +69,7 @@ func unauthorized(w http.ResponseWriter, err error) {
 }
 
 func unsupportedMediaType(w http.ResponseWriter, err error) {
-	errorStatus(w, "Unsupported Media Type", err, http.StatusUnsupportedMediaType)
+	errorStatus(w, "The media type provided in the Content-Type header is invalid", err, http.StatusUnsupportedMediaType)
 }
 
 func recoverFromPanic(w http.ResponseWriter) {

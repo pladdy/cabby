@@ -40,7 +40,7 @@ func TestHandleUndefinedRequest(t *testing.T) {
 	}
 }
 
-func TestWithMimeType(t *testing.T) {
+func TestWithAcceptSet(t *testing.T) {
 	tests := []struct {
 		acceptedHeader string
 		acceptHeader   string
@@ -49,15 +49,15 @@ func TestWithMimeType(t *testing.T) {
 		{cabby.StixContentType, "application/vnd.oasis.stix+json; version=2.0", http.StatusOK},
 		{cabby.StixContentType, "application/vnd.oasis.stix+json", http.StatusOK},
 		{cabby.StixContentType, "application/vnd.oasis.stix+json;verion=2.0", http.StatusOK},
-		{cabby.StixContentType, "", http.StatusUnsupportedMediaType},
-		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp", http.StatusUnsupportedMediaType},
-		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp; version=3.0", http.StatusUnsupportedMediaType},
+		{cabby.StixContentType, "", http.StatusNotAcceptable},
+		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp", http.StatusNotAcceptable},
+		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp; version=3.0", http.StatusNotAcceptable},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json", http.StatusOK},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
-		{cabby.TaxiiContentType, "", http.StatusUnsupportedMediaType},
-		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp", http.StatusUnsupportedMediaType},
-		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusUnsupportedMediaType},
+		{cabby.TaxiiContentType, "", http.StatusNotAcceptable},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp", http.StatusNotAcceptable},
+		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusNotAcceptable},
 	}
 
 	for _, test := range tests {
@@ -65,7 +65,7 @@ func TestWithMimeType(t *testing.T) {
 			accept := r.Header.Get("Accept")
 			io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
 		}
-		testHandler = WithMimeType(testHandler, "Accept", test.acceptedHeader)
+		testHandler = WithAcceptSet(testHandler, test.acceptedHeader)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		req.Header.Add("Accept", test.acceptHeader)
@@ -75,7 +75,7 @@ func TestWithMimeType(t *testing.T) {
 		body, _ := ioutil.ReadAll(res.Body)
 
 		if res.Code != test.responseCode {
-			t.Error("Got:", res.Code, string(body), "Expected:", http.StatusOK)
+			t.Error("Got:", res.Code, string(body), "Expected:", test.responseCode)
 		}
 	}
 }
