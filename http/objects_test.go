@@ -77,7 +77,8 @@ func TestObjectsHandlerGetHeaders(t *testing.T) {
 
 func TestObjectsHandlerGetObjects(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
+	req := newServerRequest(http.MethodGet, testObjectsURL)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -181,7 +182,8 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
+	req := newServerRequest(http.MethodGet, testObjectsURL)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -219,7 +221,8 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	status, body := handlerTest(h.getObjects, http.MethodGet, testObjectsURL, nil)
+	req := newServerRequest(http.MethodGet, testObjectsURL)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)

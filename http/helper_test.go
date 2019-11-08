@@ -90,7 +90,7 @@ func newRequest(method, url string, b *bytes.Buffer) *http.Request {
 }
 
 func newServerRequest(method, url string) *http.Request {
-	req := httptest.NewRequest("GET", url, nil)
+	req := httptest.NewRequest(method, url, nil)
 
 	// this can't be set in client requests
 	req.RequestURI = ""

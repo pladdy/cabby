@@ -35,10 +35,6 @@ func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.getObjects(w, r)
-}
-
-func (h ObjectsHandler) getObjects(w http.ResponseWriter, r *http.Request) {
 	p, err := cabby.NewPage(takeLimit(r))
 	if err != nil {
 		badRequest(w, err)
