@@ -72,7 +72,7 @@ func dataStoreFromConfig(path string) cabby.DataStore {
 }
 
 func main() {
-	log.SetLevel(log.ErrorLevel)
+	log.SetLevel(log.InfoLevel)
 
 	// set up root and subcommands
 	var rootCmd = &cobra.Command{Use: "cabby-cli"}
