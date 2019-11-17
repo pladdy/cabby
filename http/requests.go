@@ -22,7 +22,7 @@ const (
 // Golang regexes: https://github.com/google/re2/wiki/Syntax
 // Regex testing tool: https://regex101.com/ (the fact I needed this may indicate this was a bad choice)
 var (
-	apiRootRegex         = `/(?P<apiroot>[\w\\\/]+)/`
+	apiRootRegex         = `/(?P<apiroot>[\w\\\/\-]+)/`
 	apiRootPathRegex     = regexp.MustCompile(apiRootRegex + `(status|collections)/`)
 	statusPathRegex      = regexp.MustCompile(apiRootRegex + `status/(?P<statusid>[a-zA-Z\-\d]+)/?`)
 	collectionsPathRegex = regexp.MustCompile(apiRootRegex + "collections/")
@@ -43,6 +43,28 @@ func newFilter(r *http.Request) (f cabby.Filter) {
 		f.Versions = defaultVersion
 	}
 	return
+}
+
+func requestIsReadAuthorized(r *http.Request) bool {
+	user := cabby.TakeUser(r.Context())
+	ca := takeCollectionAccess(r)
+
+	if user.CanAdmin || ca.CanRead {
+		return true
+	}
+	log.WithFields(log.Fields{"url": r.URL, "user": user.Email, "collectionAccess": ca}).Warn("Unauthorized access")
+	return false
+}
+
+func requestIsWriteAuthorized(r *http.Request) bool {
+	user := cabby.TakeUser(r.Context())
+	ca := takeCollectionAccess(r)
+
+	if user.CanAdmin || ca.CanWrite {
+		return true
+	}
+	log.WithFields(log.Fields{"url": r.URL, "user": user.Email, "collectionAccess": ca}).Warn("Unauthorized access")
+	return false
 }
 
 func takeAddedAfter(r *http.Request) stones.Timestamp {
@@ -68,14 +90,11 @@ func takeAPIRoot(r *http.Request) string {
 func takeCollectionAccess(r *http.Request) cabby.CollectionAccess {
 	u := cabby.TakeUser(r.Context())
 	ca := u.CollectionAccessList
+	cid := takeCollectionID(r)
 
-	id, err := cabby.IDFromString(takeCollectionID(r))
+	id, err := cabby.IDFromString(cid)
 	if err != nil {
-		log.WithFields(log.Fields{
-			"user":         u.Email,
-			"collectionID": takeCollectionID(r),
-			"error":        err,
-		}).Warn("Failed to convert collection id from string")
+		log.WithFields(log.Fields{"user": u.Email, "collectionID": cid, "error": err}).Warn("Invalid collection ID")
 		return cabby.CollectionAccess{}
 	}
 
