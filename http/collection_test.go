@@ -22,7 +22,8 @@ func TestCollectionHandleDelete(t *testing.T) {
 
 func TestCollectionHandlerGet(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
-	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -69,6 +70,17 @@ func TestCollectionHandlerGetFailures(t *testing.T) {
 	}
 }
 
+func TestCollectionHandlerGetForbidden(t *testing.T) {
+	h := CollectionHandler{CollectionService: mockCollectionService()}
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
 func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	cs := mockCollectionService()
 	cs.CollectionFn = func(ctx context.Context, apiRootPath, collectionID string) (cabby.Collection, error) {
@@ -76,7 +88,8 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	}
 
 	h := CollectionHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -94,6 +107,17 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
+	}
+}
+
+func TestCollectionHandlerGetNotAcceptable(t *testing.T) {
+	h := CollectionHandler{CollectionService: mockCollectionService()}
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
 	}
 }
 

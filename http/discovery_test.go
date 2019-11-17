@@ -102,6 +102,17 @@ func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	}
 }
 
+func TestDiscoveryHandlerGetNotAcceptable(t *testing.T) {
+	h := DiscoveryHandler{DiscoveryService: mockDiscoveryService()}
+	req := newClientRequest(http.MethodGet, testDiscoveryURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
 func TestDiscoveryHandlePost(t *testing.T) {
 	ds := mockDiscoveryService()
 	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {

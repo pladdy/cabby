@@ -13,10 +13,6 @@ import (
 
 func TestAPIRootHandleDelete(t *testing.T) {
 	as := mockAPIRootService()
-	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
-		return cabby.APIRoot{Title: ""}, nil
-	}
-
 	h := APIRootHandler{APIRootService: &as}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testAPIRootURL, nil)
 
@@ -78,11 +74,12 @@ func TestAPIRootHandlerGetFailures(t *testing.T) {
 func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	as := mockAPIRootService()
 	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
-		return cabby.APIRoot{Title: ""}, nil
+		return cabby.APIRoot{}, nil
 	}
 
 	h := APIRootHandler{APIRootService: &as}
-	status, body := handlerTest(h.Get, http.MethodGet, testAPIRootURL, nil)
+	req := newClientRequest(http.MethodGet, testAPIRootURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -103,13 +100,19 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	}
 }
 
-func TestAPIRootHandlePost(t *testing.T) {
-	as := mockAPIRootService()
-	as.APIRootFn = func(ctx context.Context, path string) (cabby.APIRoot, error) {
-		return cabby.APIRoot{Title: ""}, nil
-	}
+func TestAPIRootHandlerGetNotAcceptable(t *testing.T) {
+	h := APIRootHandler{APIRootService: mockAPIRootService()}
+	req := newClientRequest(http.MethodGet, testAPIRootURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
 
-	h := APIRootHandler{APIRootService: &as}
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
+func TestAPIRootHandlePost(t *testing.T) {
+	h := APIRootHandler{APIRootService: mockAPIRootService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testAPIRootURL, nil)
 
 	if status != http.StatusMethodNotAllowed {

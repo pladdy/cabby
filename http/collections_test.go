@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
 
@@ -67,11 +65,8 @@ func TestCollectionsHandlerGetPage(t *testing.T) {
 		h := CollectionsHandler{CollectionService: cs}
 
 		// set up request
-		req := newRequest(http.MethodGet, testCollectionsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		res := httptest.NewRecorder()
-
-		h.Get(res, req)
-		body, _ := ioutil.ReadAll(res.Body)
+		req := newClientRequest(http.MethodGet, testCollectionsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
 
 		var result cabby.Collections
 		err := json.Unmarshal([]byte(body), &result)
@@ -79,8 +74,8 @@ func TestCollectionsHandlerGetPage(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if res.Code != http.StatusOK {
-			t.Error("Got:", res.Code, "Expected:", http.StatusOK)
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
 		}
 
 		if len(result.Collections) != test.expected {

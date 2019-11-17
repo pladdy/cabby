@@ -56,11 +56,9 @@ func TestEnvelopeFromBytesUnmarshalFail(t *testing.T) {
 
 func TestObjectsHandlerGetHeaders(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newRequest(http.MethodGet, testObjectsURL, nil)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
-
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
 	res := httptest.NewRecorder()
-	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	h.Get(res, req)
 
 	tm := time.Time{}
 
@@ -77,7 +75,7 @@ func TestObjectsHandlerGetHeaders(t *testing.T) {
 
 func TestObjectsHandlerGetObjects(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newServerRequest(http.MethodGet, testObjectsURL)
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
 	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
@@ -92,6 +90,17 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 
 	if len(envelope.Objects) <= 0 {
 		t.Error("Got:", len(envelope.Objects), "Expected: > 0")
+	}
+}
+
+func TestObjectsHandlerGetObjectsForbidden(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
 	}
 }
 
@@ -118,13 +127,8 @@ func TestObjectsHandlerGetObjectsPage(t *testing.T) {
 		}
 		h := ObjectsHandler{ObjectService: obs}
 
-		// set up request
-		req := newRequest(http.MethodGet, testObjectsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		req.Header.Set("Accept", cabby.TaxiiContentType)
-		res := httptest.NewRecorder()
-
-		h.Get(res, req)
-		body, _ := ioutil.ReadAll(res.Body)
+		req := newClientRequest(http.MethodGet, testObjectsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
 
 		var result cabby.Envelope
 		err := json.Unmarshal([]byte(body), &result)
@@ -132,8 +136,8 @@ func TestObjectsHandlerGetObjectsPage(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if res.Code != http.StatusOK {
-			t.Error("Got:", res.Code, "Expected:", http.StatusOK)
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
 		}
 
 		if len(result.Objects) != test.expected {
@@ -143,21 +147,12 @@ func TestObjectsHandlerGetObjectsPage(t *testing.T) {
 }
 
 func TestObjectsHandlerGetInvalidPage(t *testing.T) {
-	expected := cabby.Error{
-		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
-
 	h := ObjectsHandler{ObjectService: mockObjectService()}
+	req := newClientRequest(http.MethodGet, testObjectsURL+"?limit=0", nil)
+	status, body, _ := callHandler(h.Get, req)
 
-	// set up request
-	req := newRequest(http.MethodGet, testObjectsURL+"?limit=0", nil)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
-	res := httptest.NewRecorder()
-
-	h.Get(res, req)
-	body, _ := ioutil.ReadAll(res.Body)
-
-	if res.Code != http.StatusBadRequest {
-		t.Error("Got:", res.Code, "Expected:", http.StatusBadRequest)
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
 	}
 
 	var result cabby.Error
@@ -165,6 +160,9 @@ func TestObjectsHandlerGetInvalidPage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	expected := cabby.Error{
+		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
 
 	passed := tester.CompareError(result, expected)
 	if !passed {
@@ -182,7 +180,7 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	req := newServerRequest(http.MethodGet, testObjectsURL)
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
 	status, body, _ := callHandler(h.Get, req)
 
 	if status != expected.HTTPStatus {
@@ -201,27 +199,14 @@ func TestObjectsGetObjectsFailure(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerGetInvalidMimeType(t *testing.T) {
-	h := ObjectsHandler{ObjectService: mockObjectService()}
-
-	// call handler for object
-	req := newRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
-func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
+func TestObjectsHandlerGetNoObjects(t *testing.T) {
 	s := mockObjectService()
 	s.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
 		return []stones.Object{}, nil
 	}
 
 	h := ObjectsHandler{ObjectService: &s}
-	req := newServerRequest(http.MethodGet, testObjectsURL)
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
 	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotFound {
@@ -243,6 +228,19 @@ func TestObjectsHandlerGetObjectsNoObjects(t *testing.T) {
 	}
 }
 
+func TestObjectsHandlerGetNotAcceptable(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+
+	// call handler for object
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
 /* Post */
 
 func TestObjectsHandlerPost(t *testing.T) {
@@ -256,10 +254,9 @@ func TestObjectsHandlerPost(t *testing.T) {
 
 	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
 	envelope, _ := ioutil.ReadAll(envelopeFile)
-	b := bytes.NewBuffer(envelope)
 
-	req := newPostRequest(testObjectsURL, b)
-	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
+	status, body, headers := callHandler(h.Post, req)
 
 	if status != http.StatusAccepted {
 		t.Error("Got:", status, "Expected:", http.StatusAccepted)
@@ -284,9 +281,13 @@ func TestObjectsHandlerPost(t *testing.T) {
 }
 
 func TestObjectsHandlerPostForbidden(t *testing.T) {
-	h := ObjectsHandler{ObjectService: mockObjectService()}
+	h := ObjectsHandler{MaxContentLength: 8192, ObjectService: mockObjectService()}
 
-	req := newPostRequest(testObjectsURL, nil)
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
+	req = req.WithContext(context.Background())
 	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusForbidden {
@@ -301,8 +302,8 @@ func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	envelope, _ := ioutil.ReadAll(envelopeFile)
 	b := bytes.NewBuffer(envelope)
 
-	req := newPostRequest(testObjectsURL, b)
-	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodPost, testObjectsURL, b)
+	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusRequestEntityTooLarge {
 		t.Error("Got:", status, "Expected:", http.StatusRequestEntityTooLarge)
@@ -313,10 +314,8 @@ func TestObjectsHandlerPostInvalidEnvelope(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
 	envelope := []byte(`{"foo":"bar"`)
-	b := bytes.NewBuffer(envelope)
-
-	req := newPostRequest(testObjectsURL, b)
-	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
+	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -330,8 +329,8 @@ func TestObjectsHandlerPostEmptyEnvelope(t *testing.T) {
 	envelope := []byte(`{"objects": []}`)
 	b := bytes.NewBuffer(envelope)
 
-	req := newPostRequest(testObjectsURL, b)
-	status, _, _ := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodPost, testObjectsURL, b)
+	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusBadRequest {
 		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
@@ -351,10 +350,9 @@ func TestObjectsPostStatusFail(t *testing.T) {
 
 	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
 	envelope, _ := ioutil.ReadAll(envelopeFile)
-	b := bytes.NewBuffer(envelope)
 
-	req := newPostRequest(testObjectsURL, b)
-	status, body, headers := callHandler(h.Post, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
+	status, body, headers := callHandler(h.Post, req)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -390,13 +388,12 @@ func TestObjectsPostValidPost(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
 	for _, test := range tests {
-		r := newRequest(http.MethodPost, testObjectsURL, nil)
+		r := newClientRequest(http.MethodPost, testObjectsURL, nil)
 		r.Header.Set("Accept", test.accept)
 		r.Header.Set("Content-Type", test.contentType)
-
 		w := httptest.NewRecorder()
 
-		result := h.validPost(w, r.WithContext(cabby.WithUser(r.Context(), tester.User)))
+		result := h.validPost(w, r)
 		if result != test.valid {
 			t.Error("Got:", result, "Expected:", test.valid)
 		}

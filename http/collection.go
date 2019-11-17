@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -24,6 +25,16 @@ func (h CollectionHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // Get handles a get request
 func (h CollectionHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "CollectionHandler"}).Debug("Handler called")
+
+	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
+		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
+		return
+	}
+
+	if !requestIsReadAuthorized(r) {
+		forbidden(w, errors.New("Unauthorized access"))
+		return
+	}
 
 	collection, err := h.CollectionService.Collection(r.Context(), takeAPIRoot(r), takeCollectionID(r))
 	if err != nil {

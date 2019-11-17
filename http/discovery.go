@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -27,6 +28,11 @@ func (h DiscoveryHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // Get serves a discovery resource
 func (h DiscoveryHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "DiscoveryHandler"}).Debug("Handler called")
+
+	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
+		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
+		return
+	}
 
 	discovery, err := h.DiscoveryService.Discovery(r.Context())
 	if err != nil {
