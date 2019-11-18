@@ -23,22 +23,23 @@ func handleUndefinedRoute(w http.ResponseWriter, r *http.Request) {
 }
 
 func verifyRequestHeader(r *http.Request, h, v string) bool {
-	setting, _ := splitMimeType(r.Header.Get(h))
-	if setting != v {
-		return false
+	givenMimeType, _ := splitMimeType(r.Header.Get(h))
+	acceptedMimeType, _ := splitMimeType(v)
+
+	if givenMimeType == acceptedMimeType {
+		return true
 	}
-	return true
+	return false
 }
 
-// WithAcceptSet decorates a handle with an accept header check
-func WithAcceptSet(h http.HandlerFunc, accept string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func withAcceptSet(h http.Handler, accept string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !verifyRequestHeader(r, "Accept", accept) {
-			notAcceptable(w, fmt.Errorf("Accept header must be '%v'", accept))
+			notAcceptable(w, fmt.Errorf("Accept header must be '%v', not '%v'", accept, r.Header.Get("Accept")))
 			return
 		}
-		h(w, r)
-	}
+		h.ServeHTTP(w, r)
+	})
 }
 
 func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {

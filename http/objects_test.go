@@ -186,19 +186,6 @@ func TestObjectsHandlerGetNoObjects(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerGetNotAcceptable(t *testing.T) {
-	h := ObjectsHandler{ObjectService: mockObjectService()}
-
-	// call handler for object
-	req := newClientRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestObjectsHandlerGetPage(t *testing.T) {
 	tests := []struct {
 		limit    int
@@ -381,7 +368,6 @@ func TestValidPost(t *testing.T) {
 		valid       bool
 	}{
 		{cabby.TaxiiContentType, cabby.TaxiiContentType, true},
-		{"invalid", cabby.TaxiiContentType, false},
 		{cabby.TaxiiContentType, "invalid", false},
 	}
 

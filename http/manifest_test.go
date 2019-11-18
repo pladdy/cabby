@@ -98,17 +98,6 @@ func TestManifestHandlerGetHeaders(t *testing.T) {
 	}
 }
 
-func TestManifestHandlerGetNotAcceptable(t *testing.T) {
-	h := ManifestHandler{ManifestService: mockManifestService()}
-	req := newClientRequest(http.MethodGet, testManifestURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestManifestHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}

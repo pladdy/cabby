@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -37,11 +36,6 @@ func (h ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // Get handles a get request for the objects endpoint
 func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectHandler", "objectID": takeObjectID(r)}).Debug("Handler called")
-
-	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
-		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
-		return
-	}
 
 	if !requestIsReadAuthorized(r) {
 		forbidden(w, errors.New("Unauthorized access"))

@@ -110,19 +110,6 @@ func TestObjectHandlerGetForbidden(t *testing.T) {
 	}
 }
 
-func TestObjectHandlerGetNotAcceptable(t *testing.T) {
-	h := ObjectHandler{ObjectService: mockObjectService()}
-
-	// call handler for object
-	req := newClientRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestObjectHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}

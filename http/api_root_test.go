@@ -100,17 +100,6 @@ func TestAPIRootHandlerGetNoAPIRoot(t *testing.T) {
 	}
 }
 
-func TestAPIRootHandlerGetNotAcceptable(t *testing.T) {
-	h := APIRootHandler{APIRootService: mockAPIRootService()}
-	req := newClientRequest(http.MethodGet, testAPIRootURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestAPIRootHandlerPost(t *testing.T) {
 	h := APIRootHandler{APIRootService: mockAPIRootService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testAPIRootURL, nil)

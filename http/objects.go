@@ -30,11 +30,6 @@ func (h ObjectsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectsHandler"}).Debug("Handler called")
 
-	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
-		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
-		return
-	}
-
 	if !requestIsReadAuthorized(r) {
 		forbidden(w, errors.New("Unauthorized access"))
 		return
@@ -107,11 +102,6 @@ func (h ObjectsHandler) Post(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isValid bool) {
-	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
-		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
-		return
-	}
-
 	if !verifyRequestHeader(r, "Content-Type", cabby.TaxiiContentType) {
 		unsupportedMediaType(w, fmt.Errorf("Content-Type header must be '%v'", cabby.TaxiiContentType))
 		return

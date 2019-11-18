@@ -2,7 +2,6 @@ package http
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/pladdy/cabby"
@@ -25,11 +24,6 @@ func (h VersionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 // Get serves a Versions resource
 func (h VersionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "VersionsHandler"}).Debug("Handler called")
-
-	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
-		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
-		return
-	}
 
 	if !requestIsReadAuthorized(r) {
 		forbidden(w, errors.New("Unauthorized access"))
