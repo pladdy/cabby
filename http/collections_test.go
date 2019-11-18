@@ -12,7 +12,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestCollectionsHandleDelete(t *testing.T) {
+func TestCollectionsHandlerDelete(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testCollectionsURL, nil)
 
@@ -41,50 +41,7 @@ func TestCollectionsHandlerGet(t *testing.T) {
 	}
 }
 
-func TestCollectionsHandlerGetPage(t *testing.T) {
-	tests := []struct {
-		limit    int
-		expected int
-	}{
-		{1, 1},
-		{10, 10},
-	}
-
-	for _, test := range tests {
-		// set up mock service
-		cs := mockCollectionService()
-		cs.CollectionsFn = func(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
-			collections := cabby.Collections{}
-			for i := 0; i < test.expected; i++ {
-				collections.Collections = append(collections.Collections, cabby.Collection{})
-			}
-
-			p.Total = uint64(test.expected)
-			return collections, nil
-		}
-		h := CollectionsHandler{CollectionService: cs}
-
-		// set up request
-		req := newClientRequest(http.MethodGet, testCollectionsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		status, body, _ := callHandler(h.Get, req)
-
-		var result cabby.Collections
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if status != http.StatusOK {
-			t.Error("Got:", status, "Expected:", http.StatusOK)
-		}
-
-		if len(result.Collections) != test.expected {
-			t.Error("Got:", len(result.Collections), "Expected:", test.expected)
-		}
-	}
-}
-
-func TestCollectionsHandlerGetInvalidPage(t *testing.T) {
+func TestCollectionsHandlerGetBadRequest(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
 
@@ -107,7 +64,7 @@ func TestCollectionsHandlerGetInvalidPage(t *testing.T) {
 	}
 }
 
-func TestCollectionsHandlerGetFailures(t *testing.T) {
+func TestCollectionsHandlerGetInternalSeverError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -190,7 +147,50 @@ func TestCollectionsHandlerGetCollectionsNonExistant(t *testing.T) {
 	}
 }
 
-func TestCollectionsHandlePost(t *testing.T) {
+func TestCollectionsHandlerGetPage(t *testing.T) {
+	tests := []struct {
+		limit    int
+		expected int
+	}{
+		{1, 1},
+		{10, 10},
+	}
+
+	for _, test := range tests {
+		// set up mock service
+		cs := mockCollectionService()
+		cs.CollectionsFn = func(ctx context.Context, apiRootPath string, p *cabby.Page) (cabby.Collections, error) {
+			collections := cabby.Collections{}
+			for i := 0; i < test.expected; i++ {
+				collections.Collections = append(collections.Collections, cabby.Collection{})
+			}
+
+			p.Total = uint64(test.expected)
+			return collections, nil
+		}
+		h := CollectionsHandler{CollectionService: cs}
+
+		// set up request
+		req := newClientRequest(http.MethodGet, testCollectionsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
+
+		var result cabby.Collections
+		err := json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+
+		if len(result.Collections) != test.expected {
+			t.Error("Got:", len(result.Collections), "Expected:", test.expected)
+		}
+	}
+}
+
+func TestCollectionsHandlerPost(t *testing.T) {
 	h := CollectionsHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionsURL, nil)
 

@@ -19,15 +19,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func TestObjectsHandleDelete(t *testing.T) {
-	h := ObjectsHandler{ObjectService: mockObjectService()}
-	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectsURL, nil)
-
-	if status != http.StatusMethodNotAllowed {
-		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
-	}
-}
-
 func TestEnvelopeFromBytes(t *testing.T) {
 	envelopeFile, err := os.Open("testdata/malware_envelope.json")
 	if err != nil {
@@ -52,28 +43,18 @@ func TestEnvelopeFromBytesUnmarshalFail(t *testing.T) {
 	}
 }
 
-/* Get */
-
-func TestObjectsHandlerGetHeaders(t *testing.T) {
+func TestObjectsHandlerDelete(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
-	res := httptest.NewRecorder()
-	h.Get(res, req)
+	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectsURL, nil)
 
-	tm := time.Time{}
-
-	if res.Header().Get("Content-Type") != cabby.TaxiiContentType {
-		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.TaxiiContentType)
-	}
-	if res.Header().Get("X-Taxii-Date-Added-First") != tm.Format(time.RFC3339Nano) {
-		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
-	}
-	if res.Header().Get("X-Taxii-Date-Added-Last") != tm.Format(time.RFC3339Nano) {
-		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
+	if status != http.StatusMethodNotAllowed {
+		t.Error("Got:", status, "Expected:", http.StatusMethodNotAllowed)
 	}
 }
 
-func TestObjectsHandlerGetObjects(t *testing.T) {
+/* Get */
+
+func TestObjectsHandlerGet(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
 	status, body, _ := callHandler(h.Get, req)
@@ -93,60 +74,7 @@ func TestObjectsHandlerGetObjects(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerGetObjectsForbidden(t *testing.T) {
-	h := ObjectsHandler{ObjectService: mockObjectService()}
-	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
-	req = req.WithContext(context.Background())
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusForbidden {
-		t.Error("Got:", status, "Expected:", http.StatusForbidden)
-	}
-}
-
-func TestObjectsHandlerGetObjectsPage(t *testing.T) {
-	tests := []struct {
-		limit    int
-		expected int
-	}{
-		{1, 1},
-		{10, 10},
-	}
-
-	for _, test := range tests {
-		// set up mock service
-		obs := mockObjectService()
-		obs.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
-			objects := []stones.Object{}
-			for i := 0; i < test.expected; i++ {
-				objects = append(objects, tester.GenerateObject("malware"))
-			}
-
-			p.Total = uint64(test.expected)
-			return objects, nil
-		}
-		h := ObjectsHandler{ObjectService: obs}
-
-		req := newClientRequest(http.MethodGet, testObjectsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		status, body, _ := callHandler(h.Get, req)
-
-		var result cabby.Envelope
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if status != http.StatusOK {
-			t.Error("Got:", status, "Expected:", http.StatusOK)
-		}
-
-		if len(result.Objects) != test.expected {
-			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
-		}
-	}
-}
-
-func TestObjectsHandlerGetInvalidPage(t *testing.T) {
+func TestObjectsHandlerGetBadRequest(t *testing.T) {
 	h := ObjectsHandler{ObjectService: mockObjectService()}
 	req := newClientRequest(http.MethodGet, testObjectsURL+"?limit=0", nil)
 	status, body, _ := callHandler(h.Get, req)
@@ -170,7 +98,37 @@ func TestObjectsHandlerGetInvalidPage(t *testing.T) {
 	}
 }
 
-func TestObjectsGetObjectsFailure(t *testing.T) {
+func TestObjectsHandlerGetHeaders(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
+	res := httptest.NewRecorder()
+	h.Get(res, req)
+
+	tm := time.Time{}
+
+	if res.Header().Get("Content-Type") != cabby.TaxiiContentType {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", cabby.TaxiiContentType)
+	}
+	if res.Header().Get("X-Taxii-Date-Added-First") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
+	}
+	if res.Header().Get("X-Taxii-Date-Added-Last") != tm.Format(time.RFC3339Nano) {
+		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
+	}
+}
+
+func TestObjectsHandlerGetForbidden(t *testing.T) {
+	h := ObjectsHandler{ObjectService: mockObjectService()}
+	req := newClientRequest(http.MethodGet, testObjectsURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestObjectsHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -241,6 +199,48 @@ func TestObjectsHandlerGetNotAcceptable(t *testing.T) {
 	}
 }
 
+func TestObjectsHandlerGetPage(t *testing.T) {
+	tests := []struct {
+		limit    int
+		expected int
+	}{
+		{1, 1},
+		{10, 10},
+	}
+
+	for _, test := range tests {
+		// set up mock service
+		obs := mockObjectService()
+		obs.ObjectsFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) ([]stones.Object, error) {
+			objects := []stones.Object{}
+			for i := 0; i < test.expected; i++ {
+				objects = append(objects, tester.GenerateObject("malware"))
+			}
+
+			p.Total = uint64(test.expected)
+			return objects, nil
+		}
+		h := ObjectsHandler{ObjectService: obs}
+
+		req := newClientRequest(http.MethodGet, testObjectsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
+
+		var result cabby.Envelope
+		err := json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+
+		if len(result.Objects) != test.expected {
+			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
+		}
+	}
+}
+
 /* Post */
 
 func TestObjectsHandlerPost(t *testing.T) {
@@ -280,21 +280,6 @@ func TestObjectsHandlerPost(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostForbidden(t *testing.T) {
-	h := ObjectsHandler{MaxContentLength: 8192, ObjectService: mockObjectService()}
-
-	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
-	envelope, _ := ioutil.ReadAll(envelopeFile)
-
-	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
-	req = req.WithContext(context.Background())
-	status, _, _ := callHandler(h.Post, req)
-
-	if status != http.StatusForbidden {
-		t.Error("Got:", status, "Expected:", http.StatusForbidden)
-	}
-}
-
 func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(1), ObjectService: mockObjectService()}
 
@@ -310,18 +295,6 @@ func TestObjectsHandlerPostContentTooLarge(t *testing.T) {
 	}
 }
 
-func TestObjectsHandlerPostInvalidEnvelope(t *testing.T) {
-	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
-
-	envelope := []byte(`{"foo":"bar"`)
-	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
-	status, _, _ := callHandler(h.Post, req)
-
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
-	}
-}
-
 func TestObjectsHandlerPostEmptyEnvelope(t *testing.T) {
 	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
 
@@ -330,6 +303,33 @@ func TestObjectsHandlerPostEmptyEnvelope(t *testing.T) {
 	b := bytes.NewBuffer(envelope)
 
 	req := newClientRequest(http.MethodPost, testObjectsURL, b)
+	status, _, _ := callHandler(h.Post, req)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+}
+
+func TestObjectsHandlerPostForbidden(t *testing.T) {
+	h := ObjectsHandler{MaxContentLength: 8192, ObjectService: mockObjectService()}
+
+	envelopeFile, _ := os.Open("testdata/malware_envelope.json")
+	envelope, _ := ioutil.ReadAll(envelopeFile)
+
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Post, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestObjectsHandlerPostInvalidEnvelope(t *testing.T) {
+	h := ObjectsHandler{MaxContentLength: int64(2048), ObjectService: mockObjectService()}
+
+	envelope := []byte(`{"foo":"bar"`)
+	req := newClientRequest(http.MethodPost, testObjectsURL, bytes.NewBuffer(envelope))
 	status, _, _ := callHandler(h.Post, req)
 
 	if status != http.StatusBadRequest {
@@ -374,7 +374,7 @@ func TestObjectsPostStatusFail(t *testing.T) {
 	}
 }
 
-func TestObjectsPostValidPost(t *testing.T) {
+func TestValidPost(t *testing.T) {
 	tests := []struct {
 		accept      string
 		contentType string

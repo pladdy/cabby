@@ -11,7 +11,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestAPIRootHandleDelete(t *testing.T) {
+func TestAPIRootHandlerDelete(t *testing.T) {
 	as := mockAPIRootService()
 	h := APIRootHandler{APIRootService: &as}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testAPIRootURL, nil)
@@ -43,7 +43,7 @@ func TestAPIRootHandlerGet(t *testing.T) {
 	}
 }
 
-func TestAPIRootHandlerGetFailures(t *testing.T) {
+func TestAPIRootHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "APIRoot failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -111,7 +111,7 @@ func TestAPIRootHandlerGetNotAcceptable(t *testing.T) {
 	}
 }
 
-func TestAPIRootHandlePost(t *testing.T) {
+func TestAPIRootHandlerPost(t *testing.T) {
 	h := APIRootHandler{APIRootService: mockAPIRootService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testAPIRootURL, nil)
 

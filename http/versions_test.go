@@ -14,7 +14,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestVersionHandleDelete(t *testing.T) {
+func TestVersionHandlerDelete(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testVersionsURL, nil)
 
@@ -41,6 +41,17 @@ func TestVersionsHandlerGet(t *testing.T) {
 	expected := "2016-04-06T20:07:09.000Z"
 	if result.Versions[0] != expected {
 		t.Error("Got:", result.Versions[0], "Expected:", expected)
+	}
+}
+
+func TestVersionsHandlerGetForbidden(t *testing.T) {
+	h := VersionsHandler{VersionsService: mockVersionsService()}
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
 	}
 }
 
@@ -71,60 +82,6 @@ func TestVersionsHandlerGetInvalidAccept(t *testing.T) {
 
 	if status != http.StatusNotAcceptable {
 		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
-func TestVersionsHandlerGetUnauthorized(t *testing.T) {
-	h := VersionsHandler{VersionsService: mockVersionsService()}
-	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
-	req = req.WithContext(context.Background())
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusForbidden {
-		t.Error("Got:", status, "Expected:", http.StatusForbidden)
-	}
-}
-
-func TestVersionsHandlerGetPage(t *testing.T) {
-	tests := []struct {
-		limit    int
-		expected int
-	}{
-		{1, 1},
-		{10, 10},
-	}
-
-	for _, test := range tests {
-		// set up mock service
-		ms := mockVersionsService()
-		ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
-			v := cabby.Versions{}
-			for i := 0; i < test.expected; i++ {
-				v.Versions = append(v.Versions, "")
-			}
-
-			p.Total = uint64(test.expected)
-			return v, nil
-		}
-		h := VersionsHandler{VersionsService: ms}
-
-		// set up request
-		req := newClientRequest(http.MethodGet, testVersionsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		status, body, _ := callHandler(h.Get, req)
-
-		var result cabby.Versions
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if status != http.StatusOK {
-			t.Error("Got:", status, "Expected:", http.StatusOK)
-		}
-
-		if len(result.Versions) != test.expected {
-			t.Error("Got:", len(result.Versions), "Expected:", test.expected)
-		}
 	}
 }
 
@@ -210,7 +167,50 @@ func TestVersionsHandlerGetNoVersion(t *testing.T) {
 	}
 }
 
-func TestVersionHandlePost(t *testing.T) {
+func TestVersionsHandlerGetPage(t *testing.T) {
+	tests := []struct {
+		limit    int
+		expected int
+	}{
+		{1, 1},
+		{10, 10},
+	}
+
+	for _, test := range tests {
+		// set up mock service
+		ms := mockVersionsService()
+		ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
+			v := cabby.Versions{}
+			for i := 0; i < test.expected; i++ {
+				v.Versions = append(v.Versions, "")
+			}
+
+			p.Total = uint64(test.expected)
+			return v, nil
+		}
+		h := VersionsHandler{VersionsService: ms}
+
+		// set up request
+		req := newClientRequest(http.MethodGet, testVersionsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
+
+		var result cabby.Versions
+		err := json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+
+		if len(result.Versions) != test.expected {
+			t.Error("Got:", len(result.Versions), "Expected:", test.expected)
+		}
+	}
+}
+
+func TestVersionHandlerPost(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testVersionsURL, nil)
 

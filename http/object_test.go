@@ -35,7 +35,7 @@ func TestObjectHandlerDeleteForbidden(t *testing.T) {
 	}
 }
 
-func TestObjectHandlerDeleteObjectBadRequest(t *testing.T) {
+func TestObjectHandlerDeleteInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -123,7 +123,7 @@ func TestObjectHandlerGetNotAcceptable(t *testing.T) {
 	}
 }
 
-func TestObjectHandlerGetFailure(t *testing.T) {
+func TestObjectHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -181,7 +181,7 @@ func TestObjectHandlerGetNoObject(t *testing.T) {
 	}
 }
 
-func TestObjectHandlePost(t *testing.T) {
+func TestObjectHandlerPost(t *testing.T) {
 	h := ObjectHandler{ObjectService: mockObjectService()}
 	status, _ := handlerTest(h.Post, http.MethodDelete, testObjectsURL, nil)
 

@@ -14,7 +14,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestManifestHandleDelete(t *testing.T) {
+func TestManifestHandlerDelete(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testManifestURL, nil)
 
@@ -40,6 +40,30 @@ func TestManifestHandlerGet(t *testing.T) {
 	expected := tester.ManifestEntry
 
 	passed := tester.CompareManifestEntry(result.Objects[0], expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestManifestHandlerGetBadRequest(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
+
+	h := ManifestHandler{ManifestService: mockManifestService()}
+	req := newClientRequest(http.MethodGet, testManifestURL+"?limit=0", nil)
+	status, body, _ := callHandler(h.Get, req)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
 	}
@@ -85,73 +109,7 @@ func TestManifestHandlerGetNotAcceptable(t *testing.T) {
 	}
 }
 
-func TestManifestHandlerGetPage(t *testing.T) {
-	tests := []struct {
-		limit    int
-		expected int
-	}{
-		{1, 1},
-		{10, 10},
-	}
-
-	for _, test := range tests {
-		// set up mock service
-		ms := mockManifestService()
-		ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
-			manifest := cabby.Manifest{}
-			for i := 0; i < test.expected; i++ {
-				manifest.Objects = append(manifest.Objects, cabby.ManifestEntry{})
-			}
-
-			p.Total = uint64(test.expected)
-			return manifest, nil
-		}
-		h := ManifestHandler{ManifestService: ms}
-
-		req := newClientRequest(http.MethodGet, testManifestURL+"?limit="+strconv.Itoa(test.limit), nil)
-		status, body, _ := callHandler(h.Get, req)
-
-		var result cabby.Manifest
-		err := json.Unmarshal([]byte(body), &result)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if status != http.StatusOK {
-			t.Error("Got:", status, "Expected:", http.StatusOK)
-		}
-
-		if len(result.Objects) != test.expected {
-			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
-		}
-	}
-}
-
-func TestManifestHandlerGetInvalidPage(t *testing.T) {
-	expected := cabby.Error{
-		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
-
-	h := ManifestHandler{ManifestService: mockManifestService()}
-	req := newClientRequest(http.MethodGet, testManifestURL+"?limit=0", nil)
-	status, body, _ := callHandler(h.Get, req)
-
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
-	}
-
-	var result cabby.Error
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	passed := tester.CompareError(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-}
-
-func TestManifestHandlerGetFailures(t *testing.T) {
+func TestManifestHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Manifest failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -209,7 +167,49 @@ func TestManifestHandlerGetNoManifest(t *testing.T) {
 	}
 }
 
-func TestManifestHandlePost(t *testing.T) {
+func TestManifestHandlerGetPage(t *testing.T) {
+	tests := []struct {
+		limit    int
+		expected int
+	}{
+		{1, 1},
+		{10, 10},
+	}
+
+	for _, test := range tests {
+		// set up mock service
+		ms := mockManifestService()
+		ms.ManifestFn = func(ctx context.Context, collectionID string, p *cabby.Page, f cabby.Filter) (cabby.Manifest, error) {
+			manifest := cabby.Manifest{}
+			for i := 0; i < test.expected; i++ {
+				manifest.Objects = append(manifest.Objects, cabby.ManifestEntry{})
+			}
+
+			p.Total = uint64(test.expected)
+			return manifest, nil
+		}
+		h := ManifestHandler{ManifestService: ms}
+
+		req := newClientRequest(http.MethodGet, testManifestURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
+
+		var result cabby.Manifest
+		err := json.Unmarshal([]byte(body), &result)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
+		}
+
+		if len(result.Objects) != test.expected {
+			t.Error("Got:", len(result.Objects), "Expected:", test.expected)
+		}
+	}
+}
+
+func TestManifestHandlerPost(t *testing.T) {
 	h := ManifestHandler{ManifestService: mockManifestService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testManifestURL, nil)
 

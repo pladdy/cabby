@@ -11,7 +11,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestCollectionHandleDelete(t *testing.T) {
+func TestCollectionHandlerDelete(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testCollectionURL, nil)
 
@@ -42,7 +42,18 @@ func TestCollectionHandlerGet(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlerGetFailures(t *testing.T) {
+func TestCollectionHandlerGetForbidden(t *testing.T) {
+	h := CollectionHandler{CollectionService: mockCollectionService()}
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestCollectionHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -67,17 +78,6 @@ func TestCollectionHandlerGetFailures(t *testing.T) {
 	passed := tester.CompareError(result, expected)
 	if !passed {
 		t.Error("Comparison failed")
-	}
-}
-
-func TestCollectionHandlerGetForbidden(t *testing.T) {
-	h := CollectionHandler{CollectionService: mockCollectionService()}
-	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
-	req = req.WithContext(context.Background())
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusForbidden {
-		t.Error("Got:", status, "Expected:", http.StatusForbidden)
 	}
 }
 
@@ -121,7 +121,7 @@ func TestCollectionHandlerGetNotAcceptable(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlePost(t *testing.T) {
+func TestCollectionHandlerPost(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionURL, nil)
 
