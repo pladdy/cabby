@@ -6,7 +6,7 @@
 [![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/pladdy/cabby/releases/latest)
 
 # cabby
-TAXII 2.0 server in Golang.
+TAXII 2.1 server in Golang.
 
 ## Dependencies
 - Golang 1.10 or 1.11

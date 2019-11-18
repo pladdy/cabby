@@ -47,7 +47,8 @@ func withBasicAuth(h http.Handler, us cabby.UserService) http.Handler {
 
 		u, p, ok := r.BasicAuth()
 		if !ok {
-			internalServerError(w, errors.New("Authentication failed, try again"))
+			log.WithFields(log.Fields{"user": u}).Warn("User authentication failed!")
+			unauthorized(w, errors.New("Invalid user / password combination"))
 			return
 		}
 

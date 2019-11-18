@@ -118,16 +118,13 @@ func TestWithBasicAuth(t *testing.T) {
 
 	for _, test := range tests {
 		// set up service
-		us := tester.UserService{}
-		us.UserFn = test.userFn
-		us.UserCollectionsFn = test.userCollectionsFn
+		us := tester.UserService{UserFn: test.userFn, UserCollectionsFn: test.userCollectionsFn}
 
 		// set up handler
-		testHandler := testHandler(t.Name())
-		decoratedHandler := withBasicAuth(testHandler, &us)
+		testHandler := withBasicAuth(testHandler(t.Name()), &us)
 
 		// set up a server
-		server := httptest.NewServer(decoratedHandler)
+		server := httptest.NewServer(testHandler)
 		defer server.Close()
 
 		req := newServerRequest(http.MethodGet, server.URL)
@@ -136,6 +133,32 @@ func TestWithBasicAuth(t *testing.T) {
 		if res.StatusCode != test.expectedStatus {
 			t.Error("Got:", res.StatusCode, "Expected:", test.expectedStatus)
 		}
+	}
+}
+
+func TestWithBasicAuthFailAuth(t *testing.T) {
+	// set up service
+	userFn := func(ctx context.Context, user, password string) (cabby.User, error) {
+		return cabby.User{Email: tester.UserEmail}, nil
+	}
+	userCollectionsFn := func(ctx context.Context, user string) (cabby.UserCollectionList, error) {
+		return cabby.UserCollectionList{}, nil
+	}
+	us := tester.UserService{UserFn: userFn, UserCollectionsFn: userCollectionsFn}
+
+	// set up handler
+	testHandler := withBasicAuth(testHandler(t.Name()), &us)
+
+	// set up a server
+	server := httptest.NewServer(testHandler)
+	defer server.Close()
+
+	req := newServerRequest(http.MethodGet, server.URL)
+	req.Header.Set("Authorization", "")
+	res, _ := getResponse(req, server)
+
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Error("Got:", res.StatusCode, "Expected:", http.StatusUnauthorized)
 	}
 }
 
