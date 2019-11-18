@@ -29,7 +29,9 @@ func setupServer(ds cabby.DataStore, h http.Handler, c cabby.Config) *http.Serve
 	return &http.Server{
 		Addr: ":" + p,
 		// Wrap the server handler with logging, then basicAuth, then an 'Accept' header check
-		Handler:      withAcceptSet(withBasicAuth(withLogging(h), ds.UserService()), cabby.TaxiiContentType),
+		Handler: withAcceptSet(
+			withBasicAuth(withLogging(h), ds.UserService()),
+			cabby.TaxiiContentType),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}
