@@ -35,6 +35,11 @@ func (h ObjectsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !requestIsReadAuthorized(r) {
+		forbidden(w, errors.New("Unauthorized access"))
+		return
+	}
+
 	p, err := cabby.NewPage(takeLimit(r))
 	if err != nil {
 		badRequest(w, err)
@@ -117,7 +122,7 @@ func (h ObjectsHandler) validPost(w http.ResponseWriter, r *http.Request) (isVal
 		return
 	}
 
-	if !takeCollectionAccess(r).CanWrite {
+	if !requestIsWriteAuthorized(r) {
 		forbidden(w, fmt.Errorf("Unauthorized to write to collection"))
 		return
 	}

@@ -21,6 +21,11 @@ type ObjectHandler struct {
 func (h ObjectHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "ObjectHandler"}).Debug("Handler called")
 
+	if !requestIsWriteAuthorized(r) {
+		forbidden(w, errors.New("Unauthorized access"))
+		return
+	}
+
 	err := h.ObjectService.DeleteObject(r.Context(), takeCollectionID(r), takeObjectID(r))
 	if err != nil {
 		internalServerError(w, err)
@@ -35,6 +40,11 @@ func (h ObjectHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
 		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
+		return
+	}
+
+	if !requestIsReadAuthorized(r) {
+		forbidden(w, errors.New("Unauthorized access"))
 		return
 	}
 

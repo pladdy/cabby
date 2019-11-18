@@ -11,7 +11,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestCollectionHandleDelete(t *testing.T) {
+func TestCollectionHandlerDelete(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testCollectionURL, nil)
 
@@ -22,7 +22,8 @@ func TestCollectionHandleDelete(t *testing.T) {
 
 func TestCollectionHandlerGet(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
-	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -41,7 +42,18 @@ func TestCollectionHandlerGet(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlerGetFailures(t *testing.T) {
+func TestCollectionHandlerGetForbidden(t *testing.T) {
+	h := CollectionHandler{CollectionService: mockCollectionService()}
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestCollectionHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Collection failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -76,7 +88,8 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	}
 
 	h := CollectionHandler{CollectionService: &cs}
-	status, body := handlerTest(h.Get, http.MethodGet, testCollectionURL, nil)
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotFound {
 		t.Error("Got:", status, "Expected:", http.StatusNotFound)
@@ -97,7 +110,18 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlePost(t *testing.T) {
+func TestCollectionHandlerGetNotAcceptable(t *testing.T) {
+	h := CollectionHandler{CollectionService: mockCollectionService()}
+	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
+func TestCollectionHandlerPost(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionURL, nil)
 

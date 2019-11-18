@@ -11,7 +11,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestDiscoveryHandleDelete(t *testing.T) {
+func TestDiscoveryHandlerDelete(t *testing.T) {
 	ds := mockDiscoveryService()
 	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil
@@ -46,7 +46,7 @@ func TestDiscoveryHandlerGet(t *testing.T) {
 	}
 }
 
-func TestDiscoveryHandlerGetFailures(t *testing.T) {
+func TestDiscoveryHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Discovery failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -102,7 +102,18 @@ func TestDiscoveryHandlerGetNoDiscovery(t *testing.T) {
 	}
 }
 
-func TestDiscoveryHandlePost(t *testing.T) {
+func TestDiscoveryHandlerGetNotAcceptable(t *testing.T) {
+	h := DiscoveryHandler{DiscoveryService: mockDiscoveryService()}
+	req := newClientRequest(http.MethodGet, testDiscoveryURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
+func TestDiscoveryHandlerPost(t *testing.T) {
 	ds := mockDiscoveryService()
 	ds.DiscoveryFn = func(ctx context.Context) (cabby.Discovery, error) {
 		return cabby.Discovery{Title: ""}, nil

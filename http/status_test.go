@@ -11,7 +11,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestStatusHandleDelete(t *testing.T) {
+func TestStatusHandlerDelete(t *testing.T) {
 	h := StatusHandler{StatusService: mockStatusService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testStatusURL, nil)
 
@@ -41,7 +41,7 @@ func TestStatusHandlerGet(t *testing.T) {
 	}
 }
 
-func TestStatusHandlerGetFailures(t *testing.T) {
+func TestStatusHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Status failure", HTTPStatus: http.StatusInternalServerError}
 

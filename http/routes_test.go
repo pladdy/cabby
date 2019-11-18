@@ -18,15 +18,25 @@ import (
 
 // set up mock handler to use for testing
 type mockRequestHandler struct {
+	Type string
 }
 
 func (m mockRequestHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handlerType": m.Type, "method": r.Method, "url": r.URL}).Info(
+		"Calling from mock request handler",
+	)
 	io.WriteString(w, r.Method)
 }
 func (m mockRequestHandler) Get(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handlerType": m.Type, "method": r.Method, "url": r.URL}).Info(
+		"Calling from mock request handler",
+	)
 	io.WriteString(w, r.Method)
 }
 func (m mockRequestHandler) Post(w http.ResponseWriter, r *http.Request) {
+	log.WithFields(log.Fields{"handlerType": m.Type, "method": r.Method, "url": r.URL}).Info(
+		"Calling from mock request handler",
+	)
 	io.WriteString(w, r.Method)
 }
 
@@ -102,7 +112,7 @@ func TestRegisterCollectionRoutesFail(t *testing.T) {
 
 func TestRouteObjectsHandler(t *testing.T) {
 	// use mock hanlders and register them to the route
-	oh, osh, vsh := mockRequestHandler{}, mockRequestHandler{}, mockRequestHandler{}
+	oh, osh, vsh := mockRequestHandler{Type: "object"}, mockRequestHandler{Type: "objects"}, mockRequestHandler{Type: "versions"}
 
 	// set up a server
 	server := httptest.NewServer(routeObjectsHandler(oh, osh, vsh))
@@ -111,9 +121,9 @@ func TestRouteObjectsHandler(t *testing.T) {
 	tests := []struct {
 		url string
 	}{
-		{server.URL + "/api-root/collections/collection-id/objects"},
-		{server.URL + "/api-root/collections/collection-id/objects/object-id"},
-		{server.URL + "/api-root/collections/collection-id/objects/object-id/versions/"},
+		{server.URL + "/api-root/collections/" + tester.CollectionID + "/objects"},
+		{server.URL + "/api-root/collections/" + tester.CollectionID + "/objects/" + tester.ObjectID},
+		{server.URL + "/api-root/collections/" + tester.CollectionID + "/objects/" + tester.ObjectID + "/versions/"},
 	}
 
 	for _, test := range tests {

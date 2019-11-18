@@ -16,14 +16,26 @@ import (
 
 func TestObjectHandlerDelete(t *testing.T) {
 	h := ObjectHandler{ObjectService: mockObjectService()}
-	status, _ := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+	req := newClientRequest(http.MethodDelete, testObjectURL, nil)
+	status, _, _ := callHandler(h.Delete, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
 	}
 }
 
-func TestObjectHandlerDeleteObjectBadRequest(t *testing.T) {
+func TestObjectHandlerDeleteForbidden(t *testing.T) {
+	h := ObjectHandler{ObjectService: mockObjectService()}
+	req := newClientRequest(http.MethodDelete, testObjectURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Delete, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestObjectHandlerDeleteInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -33,7 +45,8 @@ func TestObjectHandlerDeleteObjectBadRequest(t *testing.T) {
 	}
 
 	h := ObjectHandler{ObjectService: &s}
-	status, body := handlerTest(h.Delete, http.MethodDelete, testObjectURL, nil)
+	req := newClientRequest(http.MethodDelete, testObjectURL, nil)
+	status, body, _ := callHandler(h.Delete, req)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -57,9 +70,8 @@ func TestObjectHandlerGet(t *testing.T) {
 	h := ObjectHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
-	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -86,20 +98,32 @@ func TestObjectHandlerGet(t *testing.T) {
 	}
 }
 
-func TestObjectHandlerGetInvalidMimeType(t *testing.T) {
+func TestObjectHandlerGetForbidden(t *testing.T) {
+	h := ObjectHandler{ObjectService: mockObjectService()}
+
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
+func TestObjectHandlerGetNotAcceptable(t *testing.T) {
 	h := ObjectHandler{ObjectService: mockObjectService()}
 
 	// call handler for object
-	req := newRequest(http.MethodGet, testObjectURL, nil)
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
 	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	status, _, _ := callHandler(h.Get, req)
 
 	if status != http.StatusNotAcceptable {
 		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
 	}
 }
 
-func TestObjectHandlerGetObjectFailure(t *testing.T) {
+func TestObjectHandlerGetInternalServerError(t *testing.T) {
 	expected := cabby.Error{
 		Title: "Internal Server Error", Description: "Object failure", HTTPStatus: http.StatusInternalServerError}
 
@@ -109,11 +133,8 @@ func TestObjectHandlerGetObjectFailure(t *testing.T) {
 	}
 
 	h := ObjectHandler{ObjectService: &s}
-	req := newRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
-	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
-
-	//status, body := handlerTest(h.Get, http.MethodGet, testObjectURL, nil)
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != expected.HTTPStatus {
 		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
@@ -131,15 +152,14 @@ func TestObjectHandlerGetObjectFailure(t *testing.T) {
 	}
 }
 
-func TestObjectHandlerGetObjectNoObject(t *testing.T) {
+func TestObjectHandlerGetNoObject(t *testing.T) {
 	s := mockObjectService()
 	s.ObjectFn = func(ctx context.Context, collectionID, objectID string, f cabby.Filter) ([]stones.Object, error) {
 		return []stones.Object{}, nil
 	}
 
 	h := ObjectHandler{ObjectService: &s}
-	req := newRequest(http.MethodGet, testObjectURL, nil)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
+	req := newClientRequest(http.MethodGet, testObjectURL, nil)
 	status, body, _ := callHandler(h.Get, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
 
 	if status != http.StatusNotFound {
@@ -161,7 +181,7 @@ func TestObjectHandlerGetObjectNoObject(t *testing.T) {
 	}
 }
 
-func TestObjectHandlePost(t *testing.T) {
+func TestObjectHandlerPost(t *testing.T) {
 	h := ObjectHandler{ObjectService: mockObjectService()}
 	status, _ := handlerTest(h.Post, http.MethodDelete, testObjectsURL, nil)
 

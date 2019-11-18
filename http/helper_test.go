@@ -65,28 +65,21 @@ func getResponse(req *http.Request, server *httptest.Server) (*http.Response, er
 // test a HandlerFunc.  given a HandlerFunc, method, url, and bytes.Buffer, call the request and record response.
 // it returns the status code and response as a string
 func handlerTest(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	req := newRequest(method, url, b)
-	code, body, _ := callHandler(h, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	req := newClientRequest(method, url, b)
+	code, body, _ := callHandler(h, req)
 	return code, body
 }
 
-func handlerTestNoAuth(h http.HandlerFunc, method, url string, b *bytes.Buffer) (int, string) {
-	code, body, _ := callHandler(h, newRequest(method, url, b))
-	return code, body
-}
-
-func newPostRequest(url string, b *bytes.Buffer) *http.Request {
-	req := newRequest("POST", url, b)
-	req.Header.Set("Accept", cabby.TaxiiContentType)
-	req.Header.Set("Content-Type", cabby.TaxiiContentType)
-	return req
-}
-
-func newRequest(method, url string, b *bytes.Buffer) *http.Request {
+func newClientRequest(method, url string, b *bytes.Buffer) (r *http.Request) {
 	if b != nil {
-		return httptest.NewRequest(method, url, b)
+		r = httptest.NewRequest(method, url, b)
+	} else {
+		r = httptest.NewRequest(method, url, nil)
 	}
-	return httptest.NewRequest(method, url, nil)
+
+	r.Header.Set("Accept", cabby.TaxiiContentType)
+	r.Header.Set("Content-Type", cabby.TaxiiContentType)
+	return r.WithContext(cabby.WithUser(r.Context(), tester.User))
 }
 
 func newServerRequest(method, url string) *http.Request {

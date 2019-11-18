@@ -64,7 +64,7 @@ func requestTooLarge(w http.ResponseWriter, rc, mc int64) {
 }
 
 func unauthorized(w http.ResponseWriter, err error) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.0")
+	w.Header().Set("WWW-Authenticate", "Basic realm=TAXII 2.1")
 	errorStatus(w, "Unauthorized", err, http.StatusUnauthorized)
 }
 

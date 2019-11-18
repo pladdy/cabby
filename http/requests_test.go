@@ -65,9 +65,11 @@ func TestTakeCollectionID(t *testing.T) {
 		request *http.Request
 		id      string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid, nil), cid},
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects", nil), cid},
-		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid, nil), cid},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid, nil), cid},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid+"/objects", nil), cid},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid+"/objects", nil), cid},
+		{httptest.NewRequest("GET", "/api_root-path/collections/", nil), ""},
 	}
 
 	for _, test := range tests {
@@ -145,9 +147,11 @@ func TestTakeStatusID(t *testing.T) {
 		request *http.Request
 		id      string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/status/"+sid, nil), sid},
-		{httptest.NewRequest("GET", "/api_root_path/status/"+sid+"/", nil), sid},
-		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+		{httptest.NewRequest("GET", "/api_root-path/status/"+sid, nil), sid},
+		{httptest.NewRequest("GET", "/api/root/path/status/"+sid, nil), sid},
+		{httptest.NewRequest("GET", "/api_root-path/status/"+sid+"/", nil), sid},
+		{httptest.NewRequest("GET", "/api/root/path/status/"+sid+"/", nil), sid},
+		{httptest.NewRequest("GET", "/api_root-path/collections/", nil), ""},
 	}
 
 	for _, test := range tests {
@@ -166,9 +170,11 @@ func TestTakeObjectID(t *testing.T) {
 		request *http.Request
 		result  string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/", nil), oid},
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid, nil), oid},
-		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid+"/objects/"+oid+"/", nil), oid},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid+"/objects/"+oid+"/", nil), oid},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid+"/objects/"+oid, nil), oid},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid+"/objects/"+oid, nil), oid},
+		{httptest.NewRequest("GET", "/api_root-path/collections/", nil), ""},
 	}
 
 	for _, test := range tests {
@@ -187,9 +193,11 @@ func TestTakeVersions(t *testing.T) {
 		request *http.Request
 		result  string
 	}{
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/versions", nil), "versions"},
-		{httptest.NewRequest("GET", "/api_root_path/collections/"+cid+"/objects/"+oid+"/versions/", nil), "versions"},
-		{httptest.NewRequest("GET", "/api_root_path/collections/", nil), ""},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid+"/objects/"+oid+"/versions", nil), "versions"},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid+"/objects/"+oid+"/versions", nil), "versions"},
+		{httptest.NewRequest("GET", "/api_root-path/collections/"+cid+"/objects/"+oid+"/versions/", nil), "versions"},
+		{httptest.NewRequest("GET", "/api/root/path/collections/"+cid+"/objects/"+oid+"/versions/", nil), "versions"},
+		{httptest.NewRequest("GET", "/api_root-path/collections/", nil), ""},
 	}
 
 	for _, test := range tests {

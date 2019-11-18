@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -15,7 +14,7 @@ import (
 	"github.com/pladdy/cabby/tester"
 )
 
-func TestVersionHandleDelete(t *testing.T) {
+func TestVersionHandlerDelete(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
 	status, _ := handlerTest(h.Delete, http.MethodDelete, testVersionsURL, nil)
 
@@ -26,7 +25,8 @@ func TestVersionHandleDelete(t *testing.T) {
 
 func TestVersionsHandlerGet(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
-	status, body := handlerTest(h.Get, http.MethodGet, testVersionsURL, nil)
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	status, body, _ := callHandler(h.Get, req)
 
 	if status != http.StatusOK {
 		t.Error("Got:", status, "Expected:", http.StatusOK)
@@ -44,12 +44,22 @@ func TestVersionsHandlerGet(t *testing.T) {
 	}
 }
 
+func TestVersionsHandlerGetForbidden(t *testing.T) {
+	h := VersionsHandler{VersionsService: mockVersionsService()}
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	req = req.WithContext(context.Background())
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusForbidden {
+		t.Error("Got:", status, "Expected:", http.StatusForbidden)
+	}
+}
+
 func TestVersionsHandlerGetHeaders(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
-	req := newRequest(http.MethodGet, testVersionsURL, nil)
-
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
 	res := httptest.NewRecorder()
-	h.Get(res, req.WithContext(cabby.WithUser(req.Context(), tester.User)))
+	h.Get(res, req)
 
 	tm := time.Time{}
 
@@ -61,6 +71,99 @@ func TestVersionsHandlerGetHeaders(t *testing.T) {
 	}
 	if res.Header().Get("X-Taxii-Date-Added-Last") != tm.Format(time.RFC3339Nano) {
 		t.Error("Got:", res.Header().Get("Content-Type"), "Expected:", tm.Format(time.RFC3339Nano))
+	}
+}
+
+func TestVersionsHandlerGetInvalidAccept(t *testing.T) {
+	h := VersionsHandler{VersionsService: mockVersionsService()}
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	req.Header.Set("Accept", "invalid")
+	status, _, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotAcceptable {
+		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
+	}
+}
+
+func TestVersionsHandlerGetInvalidPage(t *testing.T) {
+	h := VersionsHandler{VersionsService: mockVersionsService()}
+	req := newClientRequest(http.MethodGet, testVersionsURL+"?limit=0", nil)
+	status, body, _ := callHandler(h.Get, req)
+
+	if status != http.StatusBadRequest {
+		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := cabby.Error{
+		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestVersionsHandlerGetFailures(t *testing.T) {
+	expected := cabby.Error{
+		Title: "Internal Server Error", Description: "Version failure", HTTPStatus: http.StatusInternalServerError}
+
+	ms := mockVersionsService()
+	ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
+		return cabby.Versions{}, errors.New(expected.Description)
+	}
+
+	h := VersionsHandler{VersionsService: &ms}
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	status, body, _ := callHandler(h.Get, req)
+
+	if status != expected.HTTPStatus {
+		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
+	}
+}
+
+func TestVersionsHandlerGetNoVersion(t *testing.T) {
+	ms := mockVersionsService()
+	ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
+		return cabby.Versions{}, nil
+	}
+
+	h := VersionsHandler{VersionsService: &ms}
+	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
+	status, body, _ := callHandler(h.Get, req)
+
+	if status != http.StatusNotFound {
+		t.Error("Got:", status, "Expected:", http.StatusNotFound)
+	}
+
+	var result cabby.Error
+	err := json.Unmarshal([]byte(body), &result)
+	if err != nil {
+		t.Fatal(err, result, body)
+	}
+
+	expected := tester.ErrorResourceNotFound
+	expected.Description = "No resources available for this request"
+
+	passed := tester.CompareError(result, expected)
+	if !passed {
+		t.Error("Comparison failed")
 	}
 }
 
@@ -88,11 +191,8 @@ func TestVersionsHandlerGetPage(t *testing.T) {
 		h := VersionsHandler{VersionsService: ms}
 
 		// set up request
-		req := newRequest(http.MethodGet, testVersionsURL+"?limit="+strconv.Itoa(test.limit), nil)
-		res := httptest.NewRecorder()
-
-		h.Get(res, req)
-		body, _ := ioutil.ReadAll(res.Body)
+		req := newClientRequest(http.MethodGet, testVersionsURL+"?limit="+strconv.Itoa(test.limit), nil)
+		status, body, _ := callHandler(h.Get, req)
 
 		var result cabby.Versions
 		err := json.Unmarshal([]byte(body), &result)
@@ -100,8 +200,8 @@ func TestVersionsHandlerGetPage(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if res.Code != http.StatusOK {
-			t.Error("Got:", res.Code, "Expected:", http.StatusOK)
+		if status != http.StatusOK {
+			t.Error("Got:", status, "Expected:", http.StatusOK)
 		}
 
 		if len(result.Versions) != test.expected {
@@ -110,86 +210,7 @@ func TestVersionsHandlerGetPage(t *testing.T) {
 	}
 }
 
-func TestVersionsHandlerGetInvalidPage(t *testing.T) {
-	expected := cabby.Error{
-		Title: "Bad Request", Description: "Invalid limit specified", HTTPStatus: http.StatusBadRequest}
-
-	h := VersionsHandler{VersionsService: mockVersionsService()}
-	status, body := handlerTest(h.Get, http.MethodGet, testVersionsURL+"?limit=0", nil)
-
-	if status != http.StatusBadRequest {
-		t.Error("Got:", status, "Expected:", http.StatusBadRequest)
-	}
-
-	var result cabby.Error
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	passed := tester.CompareError(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-}
-
-func TestVersionsHandlerGetFailures(t *testing.T) {
-	expected := cabby.Error{
-		Title: "Internal Server Error", Description: "Version failure", HTTPStatus: http.StatusInternalServerError}
-
-	ms := mockVersionsService()
-	ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
-		return cabby.Versions{}, errors.New(expected.Description)
-	}
-
-	h := VersionsHandler{VersionsService: &ms}
-	status, body := handlerTest(h.Get, http.MethodGet, testVersionsURL, nil)
-
-	if status != expected.HTTPStatus {
-		t.Error("Got:", status, "Expected:", expected.HTTPStatus)
-	}
-
-	var result cabby.Error
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	passed := tester.CompareError(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-}
-
-func TestVersionsHandlerGetNoVersion(t *testing.T) {
-	ms := mockVersionsService()
-	ms.VersionsFn = func(ctx context.Context, cid, oid string, p *cabby.Page, f cabby.Filter) (cabby.Versions, error) {
-		return cabby.Versions{}, nil
-	}
-
-	h := VersionsHandler{VersionsService: &ms}
-	status, body := handlerTest(h.Get, http.MethodGet, testVersionsURL, nil)
-
-	if status != http.StatusNotFound {
-		t.Error("Got:", status, "Expected:", http.StatusNotFound)
-	}
-
-	var result cabby.Error
-	err := json.Unmarshal([]byte(body), &result)
-	if err != nil {
-		t.Fatal(err, result, body)
-	}
-
-	expected := tester.ErrorResourceNotFound
-	expected.Description = "No resources available for this request"
-
-	passed := tester.CompareError(result, expected)
-	if !passed {
-		t.Error("Comparison failed")
-	}
-}
-
-func TestVersionHandlePost(t *testing.T) {
+func TestVersionHandlerPost(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testVersionsURL, nil)
 

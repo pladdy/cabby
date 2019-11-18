@@ -1,5 +1,8 @@
-### Client error codes
-Check resource end points, verify 400-40X are handled per the spec
+### Static analyis
+`make static` could run gosec and https://staticcheck.io/docs/#running-the-tools
+
+### Static files
+Could use something like https://github.com/gobuffalo/packr to separate SQL into static files
 
 ### Log level
 Set log level from command line / env var or make it configurable
