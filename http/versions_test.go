@@ -74,17 +74,6 @@ func TestVersionsHandlerGetHeaders(t *testing.T) {
 	}
 }
 
-func TestVersionsHandlerGetInvalidAccept(t *testing.T) {
-	h := VersionsHandler{VersionsService: mockVersionsService()}
-	req := newClientRequest(http.MethodGet, testVersionsURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestVersionsHandlerGetInvalidPage(t *testing.T) {
 	h := VersionsHandler{VersionsService: mockVersionsService()}
 	req := newClientRequest(http.MethodGet, testVersionsURL+"?limit=0", nil)

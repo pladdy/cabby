@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -46,36 +45,30 @@ func TestWithAcceptSet(t *testing.T) {
 		acceptHeader   string
 		responseCode   int
 	}{
-		{cabby.StixContentType, "application/vnd.oasis.stix+json; version=2.0", http.StatusOK},
-		{cabby.StixContentType, "application/vnd.oasis.stix+json", http.StatusOK},
-		{cabby.StixContentType, "application/vnd.oasis.stix+json;verion=2.0", http.StatusOK},
-		{cabby.StixContentType, "", http.StatusNotAcceptable},
-		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp", http.StatusNotAcceptable},
-		{cabby.StixContentType, "application/vnd.oasis.stix+jsonp; version=3.0", http.StatusNotAcceptable},
-		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json; version=2.0", http.StatusOK},
+		{cabby.TaxiiContentType21, "application/vnd.oasis.taxii+json;version=2.1", http.StatusOK},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json", http.StatusOK},
-		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+json;verion=2.0", http.StatusOK},
 		{cabby.TaxiiContentType, "", http.StatusNotAcceptable},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp", http.StatusNotAcceptable},
 		{cabby.TaxiiContentType, "application/vnd.oasis.taxii+jsonp; version=3.0", http.StatusNotAcceptable},
 	}
 
 	for _, test := range tests {
-		testHandler := func(w http.ResponseWriter, r *http.Request) {
+		serveFn := func(w http.ResponseWriter, r *http.Request) {
 			accept := r.Header.Get("Accept")
-			io.WriteString(w, fmt.Sprintf("Accept Header: %v", accept))
+			io.WriteString(w, fmt.Sprintf("testHandler Request Accept Header: %v", accept))
 		}
-		testHandler = WithAcceptSet(testHandler, test.acceptedHeader)
+		testHandler := withAcceptSet(http.HandlerFunc(serveFn), test.acceptedHeader)
 
-		req := httptest.NewRequest(http.MethodGet, "/test", nil)
-		req.Header.Add("Accept", test.acceptHeader)
-		res := httptest.NewRecorder()
+		// set up a server
+		server := httptest.NewServer(testHandler)
+		defer server.Close()
 
-		testHandler(res, req)
-		body, _ := ioutil.ReadAll(res.Body)
+		req := newServerRequest(http.MethodGet, server.URL)
+		req.Header.Set("Accept", test.acceptHeader)
+		res, _ := getResponse(req, server)
 
-		if res.Code != test.responseCode {
-			t.Error("Got:", res.Code, string(body), "Expected:", test.responseCode)
+		if res.StatusCode != test.responseCode {
+			t.Error("Got:", res.StatusCode, "Expected:", test.responseCode)
 		}
 	}
 }

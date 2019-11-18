@@ -16,7 +16,7 @@ func NewCabby(ds cabby.DataStore, c cabby.Config) *http.Server {
 	registerAPIRoots(ds, handler)
 
 	dh := DiscoveryHandler{DiscoveryService: ds.DiscoveryService(), Port: c.Port}
-	registerRoute(handler, "taxii2", WithAcceptSet(routeHandler(dh), cabby.TaxiiContentType))
+	registerRoute(handler, "taxii2", routeHandler(dh))
 	registerRoute(handler, "/", handleUndefinedRoute)
 
 	return setupServer(ds, handler, c)
@@ -27,8 +27,11 @@ func setupServer(ds cabby.DataStore, h http.Handler, c cabby.Config) *http.Serve
 	log.WithFields(log.Fields{"port": p}).Info("Server port configured")
 
 	return &http.Server{
-		Addr:         ":" + p,
-		Handler:      withBasicAuth(withLogging(h), ds.UserService()),
+		Addr: ":" + p,
+		// Wrap the server handler with logging, then basicAuth, then an 'Accept' header check
+		Handler: withAcceptSet(
+			withBasicAuth(withLogging(h), ds.UserService()),
+			cabby.TaxiiContentType),
 		TLSConfig:    setupTLS(),
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
 	}

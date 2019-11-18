@@ -110,17 +110,6 @@ func TestCollectionHandlerGetNoCollection(t *testing.T) {
 	}
 }
 
-func TestCollectionHandlerGetNotAcceptable(t *testing.T) {
-	h := CollectionHandler{CollectionService: mockCollectionService()}
-	req := newClientRequest(http.MethodGet, testCollectionURL, nil)
-	req.Header.Set("Accept", "invalid")
-	status, _, _ := callHandler(h.Get, req)
-
-	if status != http.StatusNotAcceptable {
-		t.Error("Got:", status, "Expected:", http.StatusNotAcceptable)
-	}
-}
-
 func TestCollectionHandlerPost(t *testing.T) {
 	h := CollectionHandler{CollectionService: mockCollectionService()}
 	status, _ := handlerTest(h.Post, http.MethodPost, testCollectionURL, nil)

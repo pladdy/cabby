@@ -25,11 +25,6 @@ func (h APIRootHandler) Delete(w http.ResponseWriter, r *http.Request) {
 func (h APIRootHandler) Get(w http.ResponseWriter, r *http.Request) {
 	log.WithFields(log.Fields{"handler": "APIRootHandler"}).Debug("Handler called")
 
-	if !verifyRequestHeader(r, "Accept", cabby.TaxiiContentType) {
-		notAcceptable(w, fmt.Errorf("Accept header must be '%v'", cabby.TaxiiContentType))
-		return
-	}
-
 	path := trimSlashes(r.URL.Path)
 
 	apiRoot, err := h.APIRootService.APIRoot(r.Context(), path)
