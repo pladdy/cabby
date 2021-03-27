@@ -115,7 +115,6 @@ dependencies:
 	go get github.com/fzipp/gocyclo
 	go get golang.org/x/lint/golint
 	go get github.com/securego/gosec/cmd/gosec/...
-	go get -u github.com/rakyll/gotest
 
 dev-db: db/cabby.db
 
@@ -149,16 +148,16 @@ endif
 test:
 ifdef pkg
 	go test $(BUILD_TAGS) -i ./$(pkg)
-	gotest $(BUILD_TAGS) -v -failfast -cover ./$(pkg)
+	go test $(BUILD_TAGS) -v -failfast -cover ./$(pkg)
 else
 	go test $(BUILD_TAGS) -i ./...
-	gotest $(BUILD_TAGS) -v -failfast -cover ./...
+	go test $(BUILD_TAGS) -v -failfast -cover ./...
 endif
 
 test-run:
 ifdef test
 	go test $(BUILD_TAGS) -i ./...
-	gotest $(BUILD_TAGS) -v -failfast ./... -run $(test)
+	go test $(BUILD_TAGS) -v -failfast ./... -run $(test)
 else
 	@echo Syntax is 'make $@ test=<test name>'
 endif

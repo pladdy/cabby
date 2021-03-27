@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"fmt"
 	"regexp"
 	"testing"
 
@@ -79,7 +80,7 @@ func TestSQLiteBatchWriteExecuteLarge(t *testing.T) {
 
 	recordsToWrite := 1000
 	for i := 0; i <= recordsToWrite; i++ {
-		toWrite <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
+		toWrite <- []interface{}{"test" + fmt.Sprint(i), "api root", "collection", "a test collection"}
 	}
 	close(toWrite)
 
@@ -131,7 +132,7 @@ func TestSQLiteBatchWriteExecuteError(t *testing.T) {
 			// a commit is about to happen
 			ds.Close()
 		}
-		toWrite <- []interface{}{"test" + string(i), "api root", "collection", "a test collection"}
+		toWrite <- []interface{}{"test" + fmt.Sprint(i), "api root", "collection", "a test collection"}
 	}
 	close(toWrite)
 
