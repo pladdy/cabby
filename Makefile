@@ -108,6 +108,7 @@ coverage.txt: cover-cabby.txt cover-http.txt cover-sqlite.txt
 
 db/cabby.db: cmd/cabby-cli/cabby-cli
 	rm -f $@
+	-mkdir db
 	cmd/local-db
 
 dependencies:
